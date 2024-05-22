@@ -1,111 +1,91 @@
 #include "velma.h"
+#include "shader.h"
 
-velma::velma(const shader_core_config* config, 
-             const memory_config* mem_config, 
-             shader_core_ctx* core, 
-             memory_stats_t* stats)
-    : pipelined_simd_unit(config, core, 8, stats, 1) {
-    // Initialization code if needed
+velma::velma(const shader_core_config* config, const memory_config* mem_config, shader_core_ctx* core, memory_stats_t* stats)
+    : pipelined_simd_unit(config), m_shader_config(config), m_mem_config(mem_config), m_core(core), m_stats(stats), m_busy(false) {
 }
 
 velma::~velma() {
-    // Cleanup code if needed
 }
 
 void velma::issue(warp_inst_t* inst) {
-    // Add the instruction to the buffer
-    instruction_buffer.push_back(inst);
-    // Mark the request as not complete
-    request_status[inst] = false;
-
-    // Check if the buffer has reached the threshold of 8 instructions
-    if (instruction_buffer.size() == 8) {
-        // Process the batch of instructions
-        process_batch();
+    m_instruction_buffer.push(inst);
+    if (m_instruction_buffer.size() == 8) {
+        m_busy = true;
+        process_instructions();
     }
 }
 
-void velma::process_batch() {
-    // Calculate unique cache lines and their accesses
-    calculate_cache_lines();
-
-    // Issue one memory request per unique cache line
-    for (const auto& entry : cache_line_accesses) {
-        uint64_t cache_line = entry.first;
-        // Create a memory request for this cache line
-        warp_inst_t* dummy_inst = new warp_inst_t(); // Create a dummy instruction for the request
-        dummy_inst->set_cache_line(cache_line); // Assuming set_cache_line sets the address to the cache line address
-        dummy_inst->accessq_push_back(dummy_inst);
+void velma::cycle() {
+    if (m_busy) {
+        handle_memory_return();
+        if (m_instruction_buffer.empty()) {
+            m_busy = false;
+        }
     }
 }
 
-void velma::calculate_cache_lines() {
-    cache_line_accesses.clear();
-    for (auto inst : instruction_buffer) {
-        for (unsigned i = 0; i < inst->warp_size(); ++i) {
-            if (inst->active(i)) {
-                uint64_t address = inst->get_address(i);
-                uint64_t cache_line = address & ~0x7F; // Calculate the cache line address
-                int warp_id = inst->warp_id();
-                int thread_id = inst->get_thread_id(i);
-                cache_line_accesses[cache_line].emplace(warp_id, thread_id);
+bool velma::is_busy() const {
+    return m_busy;
+}
+
+void velma::process_instructions() {
+    // Clear previous cache line mapping
+    m_cache_line_mapping.clear();
+
+    // Process each instruction in the buffer
+    while (!m_instruction_buffer.empty()) {
+        warp_inst_t* inst = m_instruction_buffer.front();
+        m_instruction_buffer.pop();
+
+        // Iterate over threads in the warp
+        for (unsigned t = 0; t < m_shader_config->warp_size; ++t) {
+            if (inst->active(t)) {
+                new_addr_type addr = inst->get_addr(t);
+                new_addr_type cache_line = addr & ~(m_mem_config->line_size - 1);
+                m_cache_line_mapping[cache_line].emplace_back(inst->warp_id(), t);
             }
         }
     }
+
+    // Issue memory requests for each unique cache line
+    for (const auto& entry : m_cache_line_mapping) {
+        new_addr_type cache_line = entry.first;
+        m_core->memory_system->issue_request(cache_line);
+    }
 }
 
-void velma::data_return(warp_inst_t* inst, const std::vector<uint64_t>& data) {
-    uint64_t cache_line = inst->get_cache_line(); // Assuming get_cache_line retrieves the cache line address
-    cache_line_data[cache_line] = data;
+void velma::handle_memory_return() {
+    // Check if memory returns are completed
+    if (m_core->memory_system->all_memory_responses_ready()) {
+        for (const auto& entry : m_cache_line_mapping) {
+            new_addr_type cache_line = entry.first;
+            const std::vector<std::pair<unsigned, unsigned>>& threads = entry.second;
 
-    // Mark the request as complete
-    for (auto& entry : request_status) {
-        if (entry.first->get_cache_line() == cache_line) {
-            entry.second = true;
-        }
-    }
-
-    // Check if all data has been returned for the buffered instructions
-    if (all_requests_complete()) {
-        // Distribute data to threads and write back to registers
-        for (auto inst : instruction_buffer) {
-            std::vector<uint64_t> thread_data(inst->warp_size(), 0);
-            for (unsigned i = 0; i < inst->warp_size(); ++i) {
-                if (inst->active(i)) {
-                    uint64_t address = inst->get_address(i);
-                    uint64_t cache_line = address & ~0x7F;
-                    int warp_id = inst->warp_id();
-                    int thread_id = inst->get_thread_id(i);
-                    thread_data[i] = cache_line_data[cache_line][thread_id];
-                }
+            for (const auto& [warp_id, thread_id] : threads) {
+                unsigned data = m_core->memory_system->get_data(cache_line, thread_id);
+                m_data_table[warp_id][thread_id].push_back(data);
             }
-            writeback_to_register(inst, thread_data);
         }
-        instruction_buffer.clear();
-        request_status.clear();
-        cache_line_accesses.clear();
-        cache_line_data.clear();
+
+        write_to_registers();
     }
 }
 
-void velma::writeback_to_register(warp_inst_t* inst, const std::vector<uint64_t>& data) {
-    // Iterate over each active thread in the warp
-    for (unsigned i = 0; i < inst->warp_size(); ++i) {
-        if (inst->active(i)) {
-            // Write data back to the register file
-            int reg_id = inst->out[i]; // Assuming inst->out contains the destination registers
-            m_core->set_reg(inst->warp_id(), reg_id, data[i]);
-        }
-    }
-}
+void velma::write_to_registers() {
+    for (const auto& warp_entry : m_data_table) {
+        unsigned warp_id = warp_entry.first;
+        for (const auto& thread_entry : warp_entry.second) {
+            unsigned thread_id = thread_entry.first;
+            const std::vector<unsigned>& data_list = thread_entry.second;
 
-bool velma::all_requests_complete() {
-    // Check if all requests in the batch are complete
-    for (const auto& entry : request_status) {
-        if (!entry.second) {
-            return false;
+            for (unsigned data : data_list) {
+                m_core->get_shader_warp(warp_id)->set_register(thread_id, data);
+            }
         }
     }
-    return true;
+
+    // Clear data table after writing
+    m_data_table.clear();
 }
 

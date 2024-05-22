@@ -42,6 +42,8 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
 
 //#include "../cuda-sim/ptx.tab.h"
 
@@ -54,6 +56,9 @@
 #include "stack.h"
 #include "stats.h"
 #include "traffic_breakdown.h"
+#include "velma.h"
+#include "velma-sched.h"
+
 
 #define NO_OP_FLAG 0xFF
 

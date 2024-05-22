@@ -24,6 +24,7 @@ void velma_gto_scheduler::cycle() {
                 const warp_inst_t* inst = warp->ibuffer_next_inst();
                 if (inst && inst->is_load()) {
                     m_velma_unit->issue(inst);
+                    issued_inst = true;
                     break;
                 }
             }
@@ -31,6 +32,7 @@ void velma_gto_scheduler::cycle() {
     }
 
     order_warps();
+    //gotta figure out how to reorder the warps. 
     for (std::vector<shd_warp_t*>::const_iterator iter = m_next_cycle_prioritized_warps.begin(); iter != m_next_cycle_prioritized_warps.end(); iter++) {
         if ((*iter) == NULL || (*iter)->done_exit()) {
             continue;

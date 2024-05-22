@@ -988,6 +988,53 @@ bool gpgpu_sim::active() {
   if (get_more_cta_left()) return true;
   return false;
 }
+/*
+void gpgpu_sim::init() {
+  // run a CUDA grid on the GPU microarchitecture simulator
+  gpu_sim_cycle = 0;
+  gpu_sim_insn = 0;
+  last_gpu_sim_insn = 0;
+  m_total_cta_launched = 0;
+  gpu_completed_cta = 0;
+  partiton_reqs_in_parallel = 0;
+  partiton_replys_in_parallel = 0;
+  partiton_reqs_in_parallel_util = 0;
+  gpu_sim_cycle_parition_util = 0;
+
+  reinit_clock_domains();
+  gpgpu_ctx->func_sim->set_param_gpgpu_num_shaders(m_config.num_shader());
+  for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
+    m_cluster[i]->reinit();
+  m_shader_stats->new_grid();
+  // initialize the control-flow, memory access, memory latency logger
+  if (m_config.g_visualizer_enabled) {
+    create_thread_CFlogger(gpgpu_ctx, m_config.num_shader(),
+                           m_shader_config->n_thread_per_shader, 0,
+                           m_config.gpgpu_cflog_interval);
+  }
+  shader_CTA_count_create(m_config.num_shader(), m_config.gpgpu_cflog_interval);
+  if (m_config.gpgpu_cflog_interval != 0) {
+    insn_warp_occ_create(m_config.num_shader(), m_shader_config->warp_size);
+    shader_warp_occ_create(m_config.num_shader(), m_shader_config->warp_size,
+                           m_config.gpgpu_cflog_interval);
+    shader_mem_acc_create(m_config.num_shader(), m_memory_config->m_n_mem, 4,
+                          m_config.gpgpu_cflog_interval);
+    shader_mem_lat_create(m_config.num_shader(), m_config.gpgpu_cflog_interval);
+    shader_cache_access_create(m_config.num_shader(), 3,
+                               m_config.gpgpu_cflog_interval);
+    set_spill_interval(m_config.gpgpu_cflog_interval * 40);
+  }
+
+  if (g_network_mode) icnt_init();
+
+    // McPAT initialization function. Called on first launch of GPU
+#ifdef GPGPUSIM_POWER_MODEL
+  if (m_config.g_power_simulation_enabled) {
+    init_mcpat(m_config, m_gpgpusim_wrapper, m_config.gpu_stat_sample_freq,
+               gpu_tot_sim_insn, gpu_sim_insn);
+  }
+#endif
+}*/
 
 void gpgpu_sim::init() {
   // run a CUDA grid on the GPU microarchitecture simulator
@@ -1035,6 +1082,7 @@ void gpgpu_sim::init() {
   }
 #endif
 }
+
 
 void gpgpu_sim::update_stats() {
   m_memory_stats->memlatstat_lat_pw();

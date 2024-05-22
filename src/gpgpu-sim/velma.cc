@@ -61,7 +61,7 @@ void velma::handle_memory_return() {
         for (const auto& entry : m_cache_line_mapping) {
             new_addr_type cache_line = entry.first;
             const std::vector<std::pair<unsigned, unsigned>>& threads = entry.second;
-
+            //route data to appropriate threads 
             for (const auto& [warp_id, thread_id] : threads) {
                 unsigned data = m_core->memory_system->get_data(cache_line, thread_id);
                 m_data_table[warp_id][thread_id].push_back(data);

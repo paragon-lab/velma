@@ -23,6 +23,7 @@ private:
 
     bool m_busy;
     std::queue<warp_inst_t*> m_instruction_buffer;
+    //figure out which thread waits on which $line
     std::map<new_addr_type, std::vector<std::pair<unsigned, unsigned>>> m_cache_line_mapping;
     std::map<unsigned, std::map<unsigned, std::vector<unsigned>>> m_data_table;
     const shader_core_config* m_shader_config;

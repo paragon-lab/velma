@@ -1257,52 +1257,6 @@ class ldst_unit : public pipelined_simd_unit {
             const memory_config *mem_config, class shader_core_stats *stats,
             unsigned sid, unsigned tpc);
 
-/////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////// VELMA STUFF  /////////////////////////
-//////////////////////////////////////////////
-
-  //velma. 
-  //will need to update ldst_unit constructor for this. 5/21 10:02 not done 
-  bool use_velma = false;
-  const int max_velma_warps = 8;
-  int velma_warp_ct;
-  std::set<unsigned> velma_warp_ids;
-  std::set<address_type> velma_cache_lines; 
-  unsigned velma_pc; 
-
-  //TODO HIGH PRIO: figure out how functional units generate their memory requests 
-
-  struct velma_thread_access{
-    unsigned warp_id = 0;
-    unsigned thread_id = 0;
-    address_type line_address = 0;
-    unsigned byte_offset = 0;
-    unsigned op_width = 0;
-
-    //TODO: convert add_velma_warp_inst to just taking the warp_inst_t. finish thread access constructor.
-    // need to change the constructor for the thread_access to also take a thread id, since we wanna loop 
-    // through the threading info according to the mask. 
-    velma_thread_access(warp_inst_t& winst){
-      warp_id = winst.warp_id();
-
-    }
-  };
-
-  bool add_velma_warp_inst(unsigned wid, unsigned vpc, warp_inst_t& winst){
-    if (vpc != velma_pc || not use_velma || velma_warp_ct >= max_velma_warps) return false;
-    
-    //add this warp id to velma's warps 
-    bool id_ok = velma_warp_ids.insert(wid).second;
-    if (not id_ok){
-      cout << "Duplicate physical warp id! Insertion failed. Velma doesn't want this.";
-      return false;
-    }
-    
-    //a function that processes a warp_inst_t to get a std::map<thread_id_t, cache_access>
-
-    velma_warp_ct++;
-  }
-
 
 
   // modifiers

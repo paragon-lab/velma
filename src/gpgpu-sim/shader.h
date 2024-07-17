@@ -504,6 +504,47 @@ class lrr_scheduler : public scheduler_unit {
   }
 };
 
+class velma_scheduler : public scheduler_unit {
+ public:
+   //set of warp ids being managed by velma mapped to their velma ids 
+  std::map<unsigned, unsigned> velma_dynamic_wids;
+  //set of pcs being managed by velma mapped to their velma ids 
+  std::map<unsigned, unsigned> velma_pcs; 
+  //set of velma ids mapped to kill-timers -- this is how we decide to stop prioritizing 
+  //the scheduling of certain warps 
+  std::map<unsigned, unsigned> velma_killtimers;
+  //
+
+  velma_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
+                Scoreboard *scoreboard, simt_stack **simt,
+                std::vector<shd_warp_t *> *warp, register_set *sp_out,
+                register_set *dp_out, register_set *sfu_out,
+                register_set *int_out, register_set *tensor_core_out,
+                std::vector<register_set *> &spec_cores_out,
+                register_set *mem_out, int id)
+      : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out,
+                       sfu_out, int_out, tensor_core_out, spec_cores_out,
+                       mem_out, id) {}
+  virtual ~velma_scheduler() {}
+  virtual void order_warps();
+  virtual void done_adding_supervised_warps() {
+    m_last_supervised_issued = m_supervised_warps.end();
+  }
+
+  void insert_new_vpc(unsigned vpc){
+    auto insres = velma_pcs.insert({vpc, 0});
+    bool succ = insres.second; 
+    /* If the insertion succeeds, we have added a new PC to velma, thus we need to 
+     * figure out a method for determining the velma ids. 
+     *
+     * */
+    if (succ){
+      
+    }
+  }
+
+};
+
 class rrr_scheduler : public scheduler_unit {
  public:
   rrr_scheduler(shader_core_stats *stats, shader_core_ctx *shader,

@@ -1252,6 +1252,8 @@ void scheduler_unit::order_by_priority(
   }
 }
 
+//TODO: WHEN WE ISSUE A VELMA PC warp_inst_t, WHEREVER THAT IS, WE NEED TO ENSURE THAT THE WARP ID 
+//AND PC ARE ADDED TO THE WARP->VELMAID AND WARP->PC MAPS 
 void scheduler_unit::cycle() {
   SCHED_DPRINTF("scheduler_unit::cycle()\n");
   bool valid_inst =
@@ -1297,6 +1299,16 @@ void scheduler_unit::cycle() {
     while (!warp(warp_id).waiting() && !warp(warp_id).ibuffer_empty() &&
            (checked < max_issue) && (checked <= issued) &&
            (issued < max_issue)) {
+      
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+///////TODO: THIS IS WHERE WE CHECK IF THE INSTRUCTION GOES WITH VELMA! //////////////////// 
+//////////////////////////////////////////////////////////////////////////////
+
+      /* If it does happen to, the shceduler has velma data structures that need updating. 
+       * If so, we can 
+       */
+
       const warp_inst_t *pI = warp(warp_id).ibuffer_next_inst();
       // Jin: handle cdp latency;
       if (pI && pI->m_is_cdp && warp(warp_id).m_cdp_latency > 0) {
@@ -1569,6 +1581,9 @@ void scheduler_unit::do_on_warp_issued(
   warp(warp_id).ibuffer_step();
 }
 
+//TODO: NOTE:   shd_warp_t has a  warp id. let's add a velma warp label of some kind, 
+//              maybe some sort of index into a structure that maps dynamic_warp_id to 
+//              velma ID. 
 bool scheduler_unit::sort_warps_by_oldest_dynamic_id(shd_warp_t *lhs,
                                                      shd_warp_t *rhs) {
   if (rhs && lhs) {

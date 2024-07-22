@@ -34,7 +34,7 @@ TRACE?=1
 
 include ../version_detection.mk
 
-CXXFLAGS = -Wall -DDEBUG
+CXXFLAGS =  -w -DDEBUG -Wall
 CXXFLAGS += -DCUDART_VERSION=$(CUDART_VERSION)
 
 ifeq ($(GNUC_CPP0X), 1)

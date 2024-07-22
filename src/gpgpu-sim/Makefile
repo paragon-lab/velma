@@ -30,11 +30,12 @@
 
 DEBUG?=0
 TRACE?=0
+JOBS?=32
 
 ifeq ($(DEBUG),1)
-	CXXFLAGS = -Wall -DDEBUG
+	CXXFLAGS =  -w  #-Wall -DDEBUG
 else
-	CXXFLAGS = -Wall
+	CXXFLAGS = -w  #-Wall
 endif
 
 ifeq ($(TRACE),1)

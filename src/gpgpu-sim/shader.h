@@ -59,6 +59,7 @@
 #include "traffic_breakdown.h"
 
 #define NO_OP_FLAG 0xFF
+#define MAX_VELMA_PCS 1024
 
 /* READ_PACKET_SIZE:
    bytes: 6 address (flit can specify chanel so this gives up to ~2GB/channel,
@@ -405,7 +406,7 @@ class scheduler_unit {  // this can be copied freely, so can be used in std
   // all the derived schedulers.  The scheduler's behaviour can be
   // modified by changing the contents of the m_next_cycle_prioritized_warps
   // list.
-  void cycle();
+  virtual void cycle();
 
   // These are some common ordering fucntions that the
   // higher order schedulers can take advantage of
@@ -507,12 +508,14 @@ class lrr_scheduler : public scheduler_unit {
 class velma_scheduler : public scheduler_unit {
  public:
    //set of warp ids being managed by velma mapped to their velma ids 
-  std::map<unsigned, unsigned> velma_dynamic_wids;
+  //std::map<unsigned, unsigned> velma_dynamic_wids;
+   std::set<unsigned> velma_warpids;
   //set of pcs being managed by velma mapped to their velma ids 
-  std::map<unsigned, unsigned> velma_pcs; 
-  //set of velma ids mapped to kill-timers -- this is how we decide to stop prioritizing 
+  //std::map<unsigned, unsigned> velma_pcs;
+   //std::set<unsigned> velma_pcs;
+  //set of pcs mapped to kill-timers -- this is how we decide to stop prioritizing 
   //the scheduling of certain warps 
-  std::map<unsigned, unsigned> velma_killtimers;
+  std::map<unsigned, unsigned> velma_pc_killtimers;
   //
 
   velma_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
@@ -531,19 +534,52 @@ class velma_scheduler : public scheduler_unit {
     m_last_supervised_issued = m_supervised_warps.end();
   }
 
-  void insert_new_vpc(unsigned vpc){
-    auto insres = velma_pcs.insert({vpc, 0});
+template <class T>
+ void order_velma_lrr(
+    std::vector<T> &reordered, const typename std::vector<T> &warps,
+    const typename std::vector<T>::const_iterator &just_issued,
+    unsigned num_warps_to_add);
+
+  bool insert_new_vpc(unsigned vpc){
+    auto insres = velma_pc_killtimers.insert({vpc, 0});
     bool succ = insres.second; 
-    /* If the insertion succeeds, we have added a new PC to velma, thus we need to 
-     * figure out a method for determining the velma ids. 
-     *
-     * */
-    if (succ){
-      
+    return succ; 
+  }
+
+  void reset_pc_killtimer(unsigned vpc){
+    auto findres = velma_pc_killtimers.find(vpc);
+    if (findres != velma_pc_killtimers.end()){
+      velma_pc_killtimers[vpc] = 0; 
     }
   }
 
+  bool remove_vpc(unsigned vpc){
+    int removed = velma_pc_killtimers.erase(vpc);
+    return removed > 0;
+  }
+
+  void incr_pc_killtimers(){
+    for (auto& pct : velma_pc_killtimers){
+      pct.second++;
+    }
+  }
+
+  void clear_pcs(){
+    velma_pc_killtimers.clear();
+  }
+
+  unsigned num_warps(){
+    velma_warpids.size();
+  }
+
+  void cycle();
+  
+  
+
+  
+
 };
+
 
 class rrr_scheduler : public scheduler_unit {
  public:
@@ -2054,6 +2090,7 @@ class shader_core_stats : public shader_core_stats_pod {
   friend class scheduler_unit;
   friend class TwoLevelScheduler;
   friend class LooseRoundRobbinScheduler;
+  friend class velma_scheduler;
 };
 
 class memory_config;
@@ -2477,6 +2514,7 @@ class shader_core_ctx : public core_t {
   friend class scheduler_unit;  // this is needed to use private issue warp.
   friend class TwoLevelScheduler;
   friend class LooseRoundRobbinScheduler;
+  friend class velma_scheduler;
   virtual void issue_warp(register_set &warp, const warp_inst_t *pI,
                           const active_mask_t &active_mask, unsigned warp_id,
                           unsigned sch_id);

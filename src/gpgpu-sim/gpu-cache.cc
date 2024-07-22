@@ -243,9 +243,12 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
   return probe(addr, idx, mask, is_write, probe_mode, mf);
 }
 
+
+//probe just checks the status of a $line without actually affecting LRU behavior
 enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
                                            mem_access_sector_mask_t mask,
-                                           bool is_write, bool probe_mode,
+                                           bool is_write, 
+                                           bool probe_mode,
                                            mem_fetch *mf) const {
   // assert( m_config.m_write_policy == READ_ONLY );
   unsigned set_index = m_config.set_index(addr);
@@ -256,10 +259,14 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
   unsigned long long valid_timestamp = (unsigned)-1;
 
   bool all_reserved = true;
+  bool all_nonres_velma = true;
+
   // check for hit or pending hit
   for (unsigned way = 0; way < m_config.m_assoc; way++) {
     unsigned index = set_index * m_config.m_assoc + way;
     cache_block_t *line = m_lines[index];
+
+
     if (line->m_tag == tag) {
       if (line->get_status(mask) == RESERVED) {
         idx = index;
@@ -268,7 +275,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
         idx = index;
         return HIT;
       } else if (line->get_status(mask) == MODIFIED) {
-        if ((!is_write && line->is_readable(mask)) || is_write) {
+        if (line->is_readable(mask)) {
           idx = index;
           return HIT;
         } else {
@@ -283,42 +290,69 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
         assert(line->get_status(mask) == INVALID);
       }
     }
+
+
     if (!line->is_reserved_line()) {
-      // percentage of dirty lines in the cache
-      // number of dirty lines / total lines in the cache
-      float dirty_line_percentage =
-          ((float)m_dirty / (m_config.m_nset * m_config.m_assoc)) * 100;
-      // If the cacheline is from a load op (not modified),
-      // or the total dirty cacheline is above a specific value,
-      // Then this cacheline is eligible to be considered for replacement
-      // candidate i.e. Only evict clean cachelines until total dirty cachelines
-      // reach the limit.
-      if (!line->is_modified_line() ||
-          dirty_line_percentage >= m_config.m_wr_percent) {
-        all_reserved = false;
-        if (line->is_invalid_line()) {
-          invalid_line = index;
-        } else {
-          // valid line : keep track of most appropriate replacement candidate
-          if (m_config.m_replacement_policy == LRU) {
-            if (line->get_last_access_time() < valid_timestamp) {
-              valid_timestamp = line->get_last_access_time();
-              valid_line = index;
-            }
-          } else if (m_config.m_replacement_policy == FIFO) {
-            if (line->get_alloc_time() < valid_timestamp) {
-              valid_timestamp = line->get_alloc_time();
-              valid_line = index;
-            }
+      all_reserved = false;
+      //need to add a velma_modified state, which can write back if it needs evicting. 
+      if (!line->is_velma_line()){
+        all_nonres_velma = false; 
+      }
+      if (line->is_invalid_line()) {
+        invalid_line = index;
+      } else {
+        // valid line : keep track of most appropriate replacement candidate
+        if (m_config.m_replacement_policy == LRU) {
+          if (line->get_last_access_time() < valid_timestamp) {
+            valid_timestamp = line->get_last_access_time();
+            valid_line = index;
+          }
+        } else if (m_config.m_replacement_policy == FIFO) {
+          if (line->get_alloc_time() < valid_timestamp) {
+            valid_timestamp = line->get_alloc_time();
+            valid_line = index;
+          }
+        } else if (m_config.m_replacement_policy == VELRU){
+          //don't evict velma lines!!!!
+          if (line->get_last_access_time() < valid_timestamp && !line->is_velma_line()){
+            valid_timestamp = line->get_last_access_time();
+            valid_line = index;
           }
         }
       }
     }
   }
-  if (all_reserved) {
+
+//at this point, we know that we have no hits. run through the for-loop again,
+//only handling the replacement component. we only care here about cache blocks which are 
+//not reserved and are velma blocks. 
+  bool velma_victim = false;
+  if (all_nonres_velma && m_config.m_replacement_policy == VELRU){
+    for (unsigned way = 0; way < m_config.m_assoc; way++) {
+      unsigned index = set_index * m_config.m_assoc + way;
+      cache_block_t *line = m_lines[index];
+      //filter out reserved lines 
+      if (!line->is_reserved_line()){
+        if (line->is_invalid_line()){
+          invalid_line = index;
+        }
+        else {
+        // valid line : keep track of most appropriate replacement candidate
+           //ok fine, evict a velma line, i don't care 
+          if (line->get_last_access_time() < valid_timestamp){
+            valid_timestamp = line->get_last_access_time();
+            valid_line = index;
+            velma_victim = true;
+          }
+        }
+      } 
+    }
+  }
+  
+  
+  if (all_reserved && !velma_victim) {
     assert(m_config.m_alloc_policy == ON_MISS);
-    return RESERVATION_FAIL;  // miss and not enough space in cache to allocate
-                              // on miss
+    return RESERVATION_FAIL;
   }
 
   if (invalid_line != (unsigned)-1) {
@@ -329,22 +363,57 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
     abort();  // if an unreserved block exists, it is either invalid or
               // replaceable
 
+  if (probe_mode && m_config.is_streaming()) {
+    line_table::const_iterator i =
+        pending_lines.find(m_config.block_addr(addr));
+    assert(mf);
+    if (!mf->is_write() && i != pending_lines.end()) {
+      if (i->second != mf->get_inst().get_uid()) return SECTOR_MISS;
+    }
+  }
+
   return MISS;
 }
 
-enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
-                                            unsigned &idx, mem_fetch *mf) {
-  bool wb = false;
-  evicted_block_info evicted;
-  enum cache_request_status result = access(addr, time, idx, wb, evicted, mf);
-  assert(!wb);
-  return result;
-}
+
 
 enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
                                             unsigned &idx, bool &wb,
                                             evicted_block_info &evicted,
                                             mem_fetch *mf) {
+  ///////////////// VELMA checking /////////////////////////  
+  /// basically: is this fetch for a velma pc? 
+  /// if not, see if we can add it. 
+  /// if we can add it, great. if we can't, the allocated
+  /// line just gets 0 for the velma_pc 
+  unsigned fetch_pc = mf->get_pc();
+  unsigned velma_pc_here = 0;
+
+  auto vpc_find = velma_pcs_cts.find(fetch_pc);
+  auto vpcs_end = velma_pcs_cts.end();
+  bool space_made = false; 
+
+  //we support explicitly inter-warp-- but not inter-pc-- coalescing. 
+  //what does this mean? 1 velma pc/$line
+  if (vpc_find == vpcs_end && velma_pcs_cts.size() >= VELMA_MAX_ENTRIES)
+  {
+    space_made = velma_evict(false); //for now, evict least used, no random victim.
+    if (space_made){
+      velma_pcs_cts.insert({fetch_pc, 1});
+      velma_pc_here = fetch_pc;
+    }
+  }
+  else if (vpc_find == vpcs_end){
+    velma_pcs_cts.insert({fetch_pc, 1});
+    velma_pc_here = fetch_pc;
+  }
+  else {
+    //indicate new access to this vpc
+    velma_pc_here = fetch_pc;
+    vpc_find->second++;
+  }
+
+
   m_access++;
   is_used = true;
   shader_cache_access_log(m_core_id, m_type_id, 0);  // log accesses to cache
@@ -361,15 +430,15 @@ enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
       if (m_config.m_alloc_policy == ON_MISS) {
         if (m_lines[idx]->is_modified_line()) {
           wb = true;
-          // m_lines[idx]->set_byte_mask(mf);
           evicted.set_info(m_lines[idx]->m_block_addr,
                            m_lines[idx]->get_modified_size(),
                            m_lines[idx]->get_dirty_byte_mask(),
                            m_lines[idx]->get_dirty_sector_mask());
           m_dirty--;
         }
+        //note: this is gonna cause errors due to difering allocate signatures.
         m_lines[idx]->allocate(m_config.tag(addr), m_config.block_addr(addr),
-                               time, mf->get_access_sector_mask());
+                               time, mf->get_access_sector_mask(), velma_pc_here);
       }
       break;
     case SECTOR_MISS:
@@ -384,6 +453,7 @@ enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
           m_dirty--;
         }
       }
+      
       break;
     case RESERVATION_FAIL:
       m_res_fail++;
@@ -397,6 +467,16 @@ enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
       abort();
   }
   return status;
+}
+
+
+enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
+                                            unsigned &idx, mem_fetch *mf) {
+  bool wb = false;
+  evicted_block_info evicted;
+  enum cache_request_status result = access(addr, time, idx, wb, evicted, mf);
+  assert(!wb);
+  return result;
 }
 
 void tag_array::fill(new_addr_type addr, unsigned time, mem_fetch *mf,

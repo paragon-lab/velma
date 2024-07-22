@@ -1002,6 +1002,10 @@ class inst_t {
   address_type pc;  // program counter address of instruction
   unsigned isize;   // size of instruction in bytes
   op_type op;       // opcode (uarch visible)
+  
+  address_type get_pc(){
+    return pc; 
+  }
 
   barrier_type bar_type;
   reduction_type red_type;

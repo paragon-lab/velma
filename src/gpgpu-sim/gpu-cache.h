@@ -38,11 +38,13 @@
 #include "../tr1_hash_map.h"
 #include "gpu-misc.h"
 #include "mem_fetch.h"
+//#include <numeric_limits>
 
 #include <iostream>
 #include "addrdec.h"
 
 #define MAX_DEFAULT_CACHE_SIZE_MULTIBLIER 4
+#define VELMA_MAX_ENTRIES 1024 
 
 enum cache_block_state { INVALID = 0, RESERVED, VALID, MODIFIED };
 
@@ -123,7 +125,8 @@ struct cache_block_t {
 
   virtual void allocate(new_addr_type tag, new_addr_type block_addr,
                         unsigned time,
-                        mem_access_sector_mask_t sector_mask) = 0;
+                        mem_access_sector_mask_t sector_mask, unsigned velma_pc_here=0) = 0;
+
   virtual void fill(unsigned time, mem_access_sector_mask_t sector_mask,
                     mem_access_byte_mask_t byte_mask) = 0;
 
@@ -160,6 +163,12 @@ struct cache_block_t {
 
   new_addr_type m_tag;
   new_addr_type m_block_addr;
+ public:
+  bool is_velma = false; 
+  bool m_set_velma_on_fill = false; 
+  virtual bool is_velma_line() { return is_velma; }
+  virtual void set_velma_line(bool setting){ is_velma = setting;}
+
 };
 
 struct line_cache_block : public cache_block_t {
@@ -172,9 +181,10 @@ struct line_cache_block : public cache_block_t {
     m_set_modified_on_fill = false;
     m_set_readable_on_fill = false;
     m_readable = true;
+    //is_velma = false; 
   }
   void allocate(new_addr_type tag, new_addr_type block_addr, unsigned time,
-                mem_access_sector_mask_t sector_mask) {
+                mem_access_sector_mask_t sector_mask, unsigned velma_pc_here=0) {
     m_tag = tag;
     m_block_addr = block_addr;
     m_alloc_time = time;
@@ -185,6 +195,7 @@ struct line_cache_block : public cache_block_t {
     m_set_modified_on_fill = false;
     m_set_readable_on_fill = false;
     m_set_byte_mask_on_fill = false;
+    m_set_velma_on_fill = velma_pc_here != 0; 
   }
   virtual void fill(unsigned time, mem_access_sector_mask_t sector_mask,
                     mem_access_byte_mask_t byte_mask) {
@@ -202,6 +213,9 @@ struct line_cache_block : public cache_block_t {
   virtual bool is_valid_line() { return m_status == VALID; }
   virtual bool is_reserved_line() { return m_status == RESERVED; }
   virtual bool is_modified_line() { return m_status == MODIFIED; }
+  virtual bool is_velma_line() { return is_velma; }
+  virtual void set_velma_line(bool setting){ is_velma = setting;}
+
 
   virtual enum cache_block_state get_status(
       mem_access_sector_mask_t sector_mask) {
@@ -262,6 +276,8 @@ struct line_cache_block : public cache_block_t {
     printf("m_block_addr is %llu, status = %u\n", m_block_addr, m_status);
   }
 
+
+
  private:
   unsigned long long m_alloc_time;
   unsigned long long m_last_access_time;
@@ -273,6 +289,10 @@ struct line_cache_block : public cache_block_t {
   bool m_set_byte_mask_on_fill;
   bool m_readable;
   mem_access_byte_mask_t m_dirty_byte_mask;
+ 
+ public:
+  bool is_velma = false; 
+  bool m_set_velma_on_fill = false; 
 };
 
 struct sector_cache_block : public cache_block_t {
@@ -296,7 +316,8 @@ struct sector_cache_block : public cache_block_t {
   }
 
   virtual void allocate(new_addr_type tag, new_addr_type block_addr,
-                        unsigned time, mem_access_sector_mask_t sector_mask) {
+                        unsigned time, mem_access_sector_mask_t sector_mask, 
+                        unsigned velma_pc_here=0) {
     allocate_line(tag, block_addr, time, sector_mask);
   }
 
@@ -377,6 +398,9 @@ struct sector_cache_block : public cache_block_t {
     }
     return true;
   }
+
+  virtual bool is_velma_line(){return false;}
+
   virtual bool is_valid_line() { return !(is_invalid_line()); }
   virtual bool is_reserved_line() {
     // if any of the sector is reserved, then the line is reserved
@@ -502,9 +526,12 @@ struct sector_cache_block : public cache_block_t {
     }
     return SECTOR_CHUNCK_SIZE;  // error
   }
+
+ public: 
+  bool velma_line = false; 
 };
 
-enum replacement_policy_t { LRU, FIFO };
+enum replacement_policy_t { LRU, FIFO, VELRU};
 
 enum write_policy_t {
   READ_ONLY,
@@ -1012,6 +1039,26 @@ class tag_array {
 
   typedef tr1_hash_map<new_addr_type, unsigned> line_table;
   line_table pending_lines;
+
+ public:
+  std::map<unsigned, unsigned> velma_pcs_cts;
+
+  //VELMA STUFF 
+  unsigned velma_evict(bool random_too){
+    //go through velma_pcs_cts, finding least used. 
+    //return the least used pc. 
+    std::pair<unsigned, unsigned> lu = {0, ~0U}; 
+    unsigned lu_val = ~0U;
+    for (auto pc_ct : velma_pcs_cts){
+      if (lu.second >= pc_ct.second){
+        lu = pc_ct;
+      }
+    }
+  //having found the least used, record its PC and evict it.
+  unsigned lu_pc = lu.first;
+  velma_pcs_cts.erase(lu.first);
+  return lu_pc;
+  }
 };
 
 class mshr_table {

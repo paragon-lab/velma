@@ -22,7 +22,8 @@ else
 endif
 
 #CXXFLAGS = -Wall -Wno-unknown-pragmas -Winline $(DBG) $(OPT) 
-CXXFLAGS = -Wno-unknown-pragmas $(DBG) $(OPT) 
+#CXXFLAGS = -Wno-unknown-pragmas $(DBG) $(OPT) 
+CXXFLAGS = -w $(DBG) $(OPT) 
 
 ifeq ($(shell getconf LONG_BIT),64) 
 	CXX = g++ -m64

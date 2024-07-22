@@ -76,11 +76,15 @@ CC = gcc $(SNOW)
 CREATELIBRARY    =  1
 DEBUG ?= 0
 ifeq ($(DEBUG),1)
-	CXXFLAGS +=  -Wall -Wno-unused-function -Wno-sign-compare -g -fPIC $(GL)
-	CCFLAGS += -Wall -Wno-unused-function -Wno-sign-compare -ggdb -fPIC
+	#CXXFLAGS +=  -Wall -Wno-unused-function -Wno-sign-compare -g -fPIC $(GL)
+	CXXFLAGS +=  -w -g -fPIC $(GL)
+	#CCFLAGS += -Wall -Wno-unused-function -Wno-sign-compare -ggdb -fPIC
+	CCFLAGS += -w -ggdb -fPIC
 else
-	CXXFLAGS += -O3 -g -Wall -Wno-unused-function -Wno-sign-compare -fPIC $(GL)
-	CCFLAGS += -Wall -Wno-unused-function -Wno-sign-compare -fPIC
+	#CXXFLAGS += -O3 -g -Wall -Wno-unused-function -Wno-sign-compare -fPIC $(GL)
+	CXXFLAGS += -O3 -g -w -fPIC $(GL)
+	#CCFLAGS += -Wall -Wno-unused-function -Wno-sign-compare -fPIC
+	CCFLAGS += -w -fPIC
 endif
 
 PROG     =cuda

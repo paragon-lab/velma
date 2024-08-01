@@ -1088,8 +1088,9 @@ class tag_array {
     }
   }
       
-  //the scheduler will figure out which lines to label upon instruction issue,
-  //and tell L1 to call this. 
+  /* The scheduler figures out the mapping between velma_ids, PCs, and warp clusters, then  
+   * calls this to label the appropriate line with the velma_id in question. 
+   */
   bool label_velma_line(int16_t velma_id, new_addr_type lineaddr){
     bool labeled = false;
     for (int idx = 0; idx < size(); idx++){
@@ -1103,6 +1104,8 @@ class tag_array {
     return labeled; 
   }
 
+  /*The scheduler will call this if it needs to label more than one cache line 
+    with the same velma_id at one time. */
   unsigned label_velma_lines(int16_t velma_id, std::vector<new_addr_type> lineaddrs){
     unsigned num_labeled = 0;
     for (auto addr : lineaddrs){

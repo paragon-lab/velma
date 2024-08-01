@@ -292,16 +292,16 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
     }
 
 
-    if (!line->is_reserved_line()) {
+    if (not line->is_reserved_line()) {
       all_reserved = false;
-      //need to add a velma_modified state, which can write back if it needs evicting. 
-      if (!line->is_velma_line()){
+      
+      if (not line->is_velma_line()){
         all_nonres_velma = false; 
       }
+      //invalid line? doesn't matter if it's velma. 
       if (line->is_invalid_line()) {
         invalid_line = index;
       } else {
-        // valid line : keep track of most appropriate replacement candidate
         if (m_config.m_replacement_policy == LRU) {
           if (line->get_last_access_time() < valid_timestamp) {
             valid_timestamp = line->get_last_access_time();
@@ -314,7 +314,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
           }
         } else if (m_config.m_replacement_policy == VELRU){
           //don't evict velma lines!!!!
-          if (line->get_last_access_time() < valid_timestamp && !line->is_velma_line()){
+          if (line->get_last_access_time() < valid_timestamp && not line->is_velma_line()){
             valid_timestamp = line->get_last_access_time();
             valid_line = index;
           }
@@ -332,13 +332,11 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
       unsigned index = set_index * m_config.m_assoc + way;
       cache_block_t *line = m_lines[index];
       //filter out reserved lines 
-      if (!line->is_reserved_line()){
+      if (not line->is_reserved_line()){
         if (line->is_invalid_line()){
           invalid_line = index;
         }
         else {
-        // valid line : keep track of most appropriate replacement candidate
-           //ok fine, evict a velma line, i don't care 
           if (line->get_last_access_time() < valid_timestamp){
             valid_timestamp = line->get_last_access_time();
             valid_line = index;
@@ -383,35 +381,8 @@ enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
                                             mem_fetch *mf) {
   ///////////////// VELMA checking /////////////////////////  
   /// basically: is this fetch for a velma pc? 
-  /// if not, see if we can add it. 
-  /// if we can add it, great. if we can't, the allocated
-  /// line just gets 0 for the velma_pc 
   unsigned fetch_pc = mf->get_pc();
   unsigned velma_pc_here = 0;
-
-  auto vpc_find = velma_pcs_cts.find(fetch_pc);
-  auto vpcs_end = velma_pcs_cts.end();
-  bool space_made = false; 
-
-  //we support explicitly inter-warp-- but not inter-pc-- coalescing. 
-  //what does this mean? 1 velma pc/$line
-  if (vpc_find == vpcs_end && velma_pcs_cts.size() >= VELMA_MAX_ENTRIES)
-  {
-    space_made = velma_evict(false); //for now, evict least used, no random victim.
-    if (space_made){
-      velma_pcs_cts.insert({fetch_pc, 1});
-      velma_pc_here = fetch_pc;
-    }
-  }
-  else if (vpc_find == vpcs_end){
-    velma_pcs_cts.insert({fetch_pc, 1});
-    velma_pc_here = fetch_pc;
-  }
-  else {
-    //indicate new access to this vpc
-    velma_pc_here = fetch_pc;
-    vpc_find->second++;
-  }
 
 
   m_access++;
@@ -436,7 +407,6 @@ enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
                            m_lines[idx]->get_dirty_sector_mask());
           m_dirty--;
         }
-        //note: this is gonna cause errors due to difering allocate signatures.
         m_lines[idx]->allocate(m_config.tag(addr), m_config.block_addr(addr),
                                time, mf->get_access_sector_mask(), velma_pc_here);
       }

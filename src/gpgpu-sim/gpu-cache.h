@@ -44,6 +44,7 @@
 #include "addrdec.h"
 
 #define MAX_DEFAULT_CACHE_SIZE_MULTIBLIER 4
+#define VELMA_WARPCLUSTER_SIZE 4
 #define VELMA_MAX_ENTRIES 1024 
 
 enum cache_block_state { INVALID = 0, RESERVED, VALID, MODIFIED };
@@ -159,16 +160,28 @@ struct cache_block_t {
                               mem_access_sector_mask_t sector_mask) = 0;
   virtual bool is_readable(mem_access_sector_mask_t sector_mask) = 0;
   virtual void print_status() = 0;
+
   virtual ~cache_block_t() {}
 
   new_addr_type m_tag;
   new_addr_type m_block_addr;
- public:
-  bool is_velma = false; 
-  bool m_set_velma_on_fill = false; 
-  virtual bool is_velma_line() { return is_velma; }
-  virtual void set_velma_line(bool setting){ is_velma = setting;}
 
+
+ public:
+  int16_t velma_id = -1;
+  virtual bool is_velma_line() { return velma_id != -1; }
+  virtual int get_velma_id() {return velma_id;} 
+  virtual void set_velma_id(int16_t new_vid){
+    velma_id = new_vid; 
+  }
+
+  virtual void clear_velma_id(){
+    velma_id = -1; 
+  }
+
+  virtual new_addr_type get_block_address(){
+    return m_block_addr;
+  }
 };
 
 struct line_cache_block : public cache_block_t {
@@ -181,7 +194,6 @@ struct line_cache_block : public cache_block_t {
     m_set_modified_on_fill = false;
     m_set_readable_on_fill = false;
     m_readable = true;
-    //is_velma = false; 
   }
   void allocate(new_addr_type tag, new_addr_type block_addr, unsigned time,
                 mem_access_sector_mask_t sector_mask, unsigned velma_pc_here=0) {
@@ -195,7 +207,6 @@ struct line_cache_block : public cache_block_t {
     m_set_modified_on_fill = false;
     m_set_readable_on_fill = false;
     m_set_byte_mask_on_fill = false;
-    m_set_velma_on_fill = velma_pc_here != 0; 
   }
   virtual void fill(unsigned time, mem_access_sector_mask_t sector_mask,
                     mem_access_byte_mask_t byte_mask) {
@@ -213,8 +224,7 @@ struct line_cache_block : public cache_block_t {
   virtual bool is_valid_line() { return m_status == VALID; }
   virtual bool is_reserved_line() { return m_status == RESERVED; }
   virtual bool is_modified_line() { return m_status == MODIFIED; }
-  virtual bool is_velma_line() { return is_velma; }
-  virtual void set_velma_line(bool setting){ is_velma = setting;}
+  virtual bool is_velma_line() { return velma_id != -1; }
 
 
   virtual enum cache_block_state get_status(
@@ -291,8 +301,7 @@ struct line_cache_block : public cache_block_t {
   mem_access_byte_mask_t m_dirty_byte_mask;
  
  public:
-  bool is_velma = false; 
-  bool m_set_velma_on_fill = false; 
+  int16_t velma_id = -1;
 };
 
 struct sector_cache_block : public cache_block_t {
@@ -399,7 +408,7 @@ struct sector_cache_block : public cache_block_t {
     return true;
   }
 
-  virtual bool is_velma_line(){return false;}
+  virtual bool is_velma_line(){return velma_id != -1;}
 
   virtual bool is_valid_line() { return !(is_invalid_line()); }
   virtual bool is_reserved_line() {
@@ -1041,24 +1050,70 @@ class tag_array {
   line_table pending_lines;
 
  public:
-  std::map<unsigned, unsigned> velma_pcs_cts;
 
-  //VELMA STUFF 
-  unsigned velma_evict(bool random_too){
-    //go through velma_pcs_cts, finding least used. 
-    //return the least used pc. 
-    std::pair<unsigned, unsigned> lu = {0, ~0U}; 
-    unsigned lu_val = ~0U;
-    for (auto pc_ct : velma_pcs_cts){
-      if (lu.second >= pc_ct.second){
-        lu = pc_ct;
+//////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////     VELMA STUFF      //////////////////////////////// 
+/////////////////////////////////////////////////////////////////////
+
+  ///////////////////////   VELMA MEMBERS  /////////////////////////////////////    
+
+  /*we don't yet pre-populate this in the constructor with N velma ids because
+  . the value of N depends on simulation results */
+  std::multimap<int16_t, cache_block_t&> velma_ids_linerefs;
+
+
+  //////////////////////    VELMA METHODS /////////////////////////////////////
+   
+  //returns count of relinquished lines 
+  unsigned release_velma_id_lines(int16_t expired_velma_id){
+    //traverse multimap, clearing the velma_ids that correspond to the expired one. 
+    for (auto v_id_lineref : velma_ids_linerefs){
+      if (v_id_lineref.first == expired_velma_id){ 
+        v_id_lineref.second.clear_velma_id(); 
       }
     }
-  //having found the least used, record its PC and evict it.
-  unsigned lu_pc = lu.first;
-  velma_pcs_cts.erase(lu.first);
-  return lu_pc;
+    //now we get rid of that velma_id in our multimap. 
+    unsigned num_lines_released = velma_ids_linerefs.erase(expired_velma_id);
+    return num_lines_released; 
   }
+
+
+  //returns count of relinquished lines 
+  unsigned release_velma_id_lines_grug(int16_t expired_velma_id){
+    //for now, this is going to be naive and slow. 
+    for (int idx = 0; idx < size(); idx++){
+      if (m_lines[idx]->get_velma_id() == expired_velma_id){
+          m_lines[idx]->clear_velma_id();
+      }
+    }
+  }
+      
+  //the scheduler will figure out which lines to label upon instruction issue,
+  //and tell L1 to call this. 
+  bool label_velma_line(int16_t velma_id, new_addr_type lineaddr){
+    bool labeled = false;
+    for (int idx = 0; idx < size(); idx++){
+      cache_block_t* line = m_lines[idx];  
+      if (line->get_block_address() == lineaddr){
+        line->set_velma_id(velma_id);
+        labeled = true;
+        break;
+      }
+    }
+    return labeled; 
+  }
+
+  unsigned label_velma_lines(int16_t velma_id, std::vector<new_addr_type> lineaddrs){
+    unsigned num_labeled = 0;
+    for (auto addr : lineaddrs){
+      num_labeled += label_velma_line(velma_id, addr);
+    }
+    return num_labeled; 
+  }
+
+  
+
+
 };
 
 class mshr_table {

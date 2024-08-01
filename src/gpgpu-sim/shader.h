@@ -60,6 +60,8 @@
 
 #define NO_OP_FLAG 0xFF
 #define MAX_VELMA_PCS 1024
+#define VELMA_WARPCLUSTER_SIZE 4
+
 
 /* READ_PACKET_SIZE:
    bytes: 6 address (flit can specify chanel so this gives up to ~2GB/channel,
@@ -568,16 +570,7 @@ template <class T>
     velma_pc_killtimers.clear();
   }
 
-  unsigned num_warps(){
-    velma_warpids.size();
-  }
-
   void cycle();
-  
-  
-
-  
-
 };
 
 

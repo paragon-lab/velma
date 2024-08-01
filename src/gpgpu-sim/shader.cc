@@ -1231,7 +1231,7 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
    * if this is super slow, can reduce from 2N to N by making two vectors and pushing 
    * those at the end, with the velma ones first.*/ 
   auto itr = (just_issued == warps.end()) ? warps.begin() : just_issued + 1; // at end? loop. 
-  unsigned num_velma_warps = num_warps();
+  unsigned num_velma_warps = velma_warpids.size(); 
   unsigned velma_warps_seen = 0; 
   for (unsigned warps_added = 0; warps_added < num_warps_to_add; ++itr) {
     //rr bounds check 
@@ -1241,6 +1241,9 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
     //velma check. 
     unsigned wid = (*itr)->get_warp_id();
     bool is_velma_warp = velma_warpids.find(wid) != velma_warpids.end();
+    //TODO: NOTE: this is currently too simplistic. we need to not prioritize velma warps that 
+    //have already reached the point of interest. i.e. the leader doesn't need to be prioritized 
+    //if it's way ahead of everyone else in the cluster 
     if (is_velma_warp and velma_warps_seen < num_velma_warps){
       reordered.push_back(*itr); 
       velma_warps_seen++; 

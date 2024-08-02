@@ -29,9 +29,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-//#ifndef GPU_CACHE_H
-//#define GPU_CACHE_H
-#pragma once
+#ifndef GPU_CACHE_H
+#define GPU_CACHE_H
+//#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,6 +50,7 @@
 
 //forward declaration to shader.
 class velma_scheduler;
+//forward declaration of cache_config 
 using velma_id_t = int16_t; 
 
 extern std::set<velma_id_t> expiring_velma_ids; 
@@ -133,7 +134,7 @@ struct cache_block_t {
 
   virtual void allocate(new_addr_type tag, new_addr_type block_addr,
                         unsigned time,
-                        mem_access_sector_mask_t sector_mask, unsigned velma_pc_here=0) = 0;
+                        mem_access_sector_mask_t sector_mask) = 0;
 
   virtual void fill(unsigned time, mem_access_sector_mask_t sector_mask,
                     mem_access_byte_mask_t byte_mask) = 0;
@@ -203,7 +204,7 @@ struct line_cache_block : public cache_block_t {
     m_readable = true;
   }
   void allocate(new_addr_type tag, new_addr_type block_addr, unsigned time,
-                mem_access_sector_mask_t sector_mask, unsigned velma_pc_here=0) {
+                mem_access_sector_mask_t sector_mask) {
     m_tag = tag;
     m_block_addr = block_addr;
     m_alloc_time = time;
@@ -332,8 +333,7 @@ struct sector_cache_block : public cache_block_t {
   }
 
   virtual void allocate(new_addr_type tag, new_addr_type block_addr,
-                        unsigned time, mem_access_sector_mask_t sector_mask, 
-                        unsigned velma_pc_here=0) {
+                        unsigned time, mem_access_sector_mask_t sector_mask) {
     allocate_line(tag, block_addr, time, sector_mask);
   }
 
@@ -929,6 +929,7 @@ class cache_config {
       m_set_index_function;  // Hash, linear, or custom set index function
 
   friend class tag_array;
+  friend class velma_tag_array;
   friend class baseline_cache;
   friend class read_only_cache;
   friend class tex_cache;
@@ -1056,6 +1057,107 @@ class tag_array {
   typedef tr1_hash_map<new_addr_type, unsigned> line_table;
   line_table pending_lines;
 
+
+
+};
+
+
+class velma_tag_array : public tag_array {
+ public:
+  friend class velma_scheduler;
+  
+/*
+  velma_tag_array(cache_config &config, int core_id, int type_id)
+    : m_config(config) {
+  // assert( m_config.m_write_policy == READ_ONLY ); Old assert
+  unsigned cache_lines_num = config.get_max_num_lines();
+  m_lines = new cache_block_t *[cache_lines_num];
+  if (config.m_cache_type == NORMAL) {
+    for (unsigned i = 0; i < cache_lines_num; ++i)
+      m_lines[i] = new line_cache_block();
+  } else if (config.m_cache_type == SECTOR) {
+    for (unsigned i = 0; i < cache_lines_num; ++i)
+      m_lines[i] = new sector_cache_block();
+  } else
+    assert(0);
+
+  init(core_id, type_id);
+}*/
+
+
+  velma_tag_array(cache_config& config, int core_id, int type_id);
+    //}
+
+  ~velma_tag_array();
+
+  enum cache_request_status probe(new_addr_type addr, unsigned &idx,
+                                  mem_fetch *mf, bool is_write,
+                                  bool probe_mode = false) const;
+  enum cache_request_status probe(new_addr_type addr, unsigned &idx,
+                                  mem_access_sector_mask_t mask, bool is_write,
+                                  bool probe_mode = false,
+                                  mem_fetch *mf = NULL) const;
+  enum cache_request_status access(new_addr_type addr, unsigned time,
+                                   unsigned &idx, mem_fetch *mf);
+  enum cache_request_status access(new_addr_type addr, unsigned time,
+                                   unsigned &idx, bool &wb,
+                                   evicted_block_info &evicted, mem_fetch *mf);
+
+  void fill(new_addr_type addr, unsigned time, mem_fetch *mf, bool is_write);
+  void fill(unsigned idx, unsigned time, mem_fetch *mf);
+  void fill(new_addr_type addr, unsigned time, mem_access_sector_mask_t mask,
+            mem_access_byte_mask_t byte_mask, bool is_write);
+
+  unsigned size() const { return m_config.get_num_lines(); }
+  cache_block_t *get_block(unsigned idx) { return m_lines[idx]; }
+
+  void flush();       // flush all written entries
+  void invalidate();  // invalidate all entries
+  void new_window();
+
+  void print(FILE *stream, unsigned &total_access,
+             unsigned &total_misses) const;
+  float windowed_miss_rate() const;
+  void get_stats(unsigned &total_access, unsigned &total_misses,
+                 unsigned &total_hit_res, unsigned &total_res_fail) const;
+
+  void update_cache_parameters(cache_config &config);
+  void add_pending_line(mem_fetch *mf);
+  void remove_pending_line(mem_fetch *mf);
+  void inc_dirty() { m_dirty++; }
+
+ protected:
+  
+  cache_config &m_config;
+  void init(int core_id, int type_id);
+  line_table pending_lines;
+
+  cache_block_t **m_lines; /* nbanks x nset x assoc lines in total */
+
+  unsigned m_access;
+  unsigned m_miss;
+  unsigned m_pending_hit;  // number of cache miss that hit a line that is
+                           // allocated but not filled
+  unsigned m_res_fail;
+  unsigned m_sector_miss;
+  unsigned m_dirty;
+
+  // performance counters for calculating the amount of misses within a time
+  // window
+  unsigned m_prev_snapshot_access;
+  unsigned m_prev_snapshot_miss;
+  unsigned m_prev_snapshot_pending_hit;
+
+  int m_core_id;  // which shader core is using this
+  int m_type_id;  // what kind of cache is this (normal, texture, constant)
+
+  bool is_used;  // a flag if the whole cache has ever been accessed before
+
+  typedef tr1_hash_map<new_addr_type, unsigned> line_table;
+
+
+
+
  public:
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1070,6 +1172,8 @@ class tag_array {
 
 
   //////////////////////    VELMA METHODS /////////////////////////////////////
+  unsigned clear_expired_velma_ids();
+
   unsigned clear_expired_velma_ids(std::set<velma_id_t> expired){
     unsigned released = 0;
     for (int idx = 0; idx < size(); idx++){
@@ -1081,6 +1185,7 @@ class tag_array {
         released++;
       }
     }
+
     return released; 
   }
 
@@ -1138,6 +1243,9 @@ class tag_array {
 
 
 };
+
+
+
 
 class mshr_table {
  public:
@@ -2028,4 +2136,4 @@ class tex_cache : public cache_t {
   extra_mf_fields_lookup m_extra_mf_fields;
 };
 
-//#endif
+#endif

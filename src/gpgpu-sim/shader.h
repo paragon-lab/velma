@@ -78,6 +78,9 @@ using velma_warp_pc_pair_t = std::pair<warp_id_t, velma_pc_t>;
    if req_size variable) - so up to 2^14 = 16384 mshr total
  */
 
+extern std::set<velma_id_t> expiring_velma_ids; 
+
+
 #define READ_PACKET_SIZE 8
 
 // WRITE_PACKET_SIZE: bytes: 6 address, 2 miscelaneous.
@@ -86,6 +89,7 @@ using velma_warp_pc_pair_t = std::pair<warp_id_t, velma_pc_t>;
 #define WRITE_MASK_SIZE 8
 
 class gpgpu_context;
+
 
 enum exec_unit_type_t {
   NONE = 0,
@@ -699,12 +703,12 @@ template <class T>
   }
 
 
-  std::vector<velma_id_t> decr_pc_killtimers(){
-    std::vector<velma_id_t> expired_velma_ids;
+  std::set<velma_id_t> decr_pc_killtimers(){
+    std::set<velma_id_t> expired_velma_ids;
     for (auto& pct : velma_ids_killtimers){
       //is the killtimer 0? 
       if (pct.second == 0){ //yes? record the vid as expired.
-        expired_velma_ids.push_back(pct.first);
+        expired_velma_ids.insert(pct.first);
       }
       else{ //no? decrement the timer. 
         pct.second--; 
@@ -720,11 +724,12 @@ template <class T>
       record_velma_access(wid, wid_pc.second);
     }
     //decrement our pc killtimers. Dead timers yield bodies!
-    std::vector<velma_id_t> expired_velma_ids = decr_pc_killtimers();
+    std::set<velma_id_t> expired_velma_ids = decr_pc_killtimers();
     //erase the velma entries corresponding to those velma_ids. 
     for (velma_id_t exvid : expired_velma_ids){
       clear_velma_entry(exvid); 
     }
+    expiring_velma_ids = expired_velma_ids; 
   }
   
 

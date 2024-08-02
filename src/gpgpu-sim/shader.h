@@ -61,7 +61,16 @@
 #define NO_OP_FLAG 0xFF
 #define MAX_VELMA_PCS 1024
 #define VELMA_WARPCLUSTER_SIZE 4
+//result from old histogramming. 
+#define VELMA_KILLTIMER_START 256
 
+/* Some Velma types for clarity in 
+ * nested std::container declarations
+ */ 
+using velma_id_t = int16_t; 
+using warp_id_t = unsigned; 
+using velma_pc_t = unsigned; 
+//using wid_vpc_pair = std::pair<warp_id_t, velma_pc_t>;
 
 /* READ_PACKET_SIZE:
    bytes: 6 address (flit can specify chanel so this gives up to ~2GB/channel,
@@ -519,6 +528,34 @@ class velma_scheduler : public scheduler_unit {
   //the scheduling of certain warps 
   std::map<unsigned, unsigned> velma_pc_killtimers;
   //
+  
+  /* We need to map velma ids to warp clusters and vice versa. 
+   * One velma id will correspond to one and only one warpcluster id/pc combo. 
+   * A warpcluster id can correspond to 0 or more velma_ids. 
+   */
+  
+  //std::map<velma_id_t, warp_vid_t> velma_ids_warpclusters;
+  //std::map<velma_id_t, std::pair<warp_vid_t, velma_pc_t>> velma_ids_wids_vpcs; 
+  //std::map<warp_vid_t, velma_id_t> velma_warpclusters_ids; 
+  //std::map<warp_vid_t, std::set<velma_pc_t>> velma_warpclusters_pcs;
+  //std::map<velma_pc_t, std::map<warp_id_t, velma_id_t>> velma_pcs_clusters_ids;
+  //the same velma id is naturally the same warpcluster. 
+  //std::map<warp_id_t, std::vector<velma_pc_t>> velma_wids_pcs; 
+  //
+  using wid_vpc_pair_t = std::pair<warp_id_t, velma_pc_t>;
+  std::map<velma_id_t, wid_vpc_pair_t> velma_ids_pairs;
+  std::map<wid_vpc_pair_t, velma_id_t> velma_pairs_ids; 
+  std::map<velma_id_t, unsigned> velma_id_killtimers; 
+  int velma_id_ctr; 
+
+  //std::map<velma_id_t, velma_pc_t> velma_vids_pcs;
+  //std::map<velma_id_t, warp_id_t> velma_vids_wids;
+  //std::map<warp_id_t, velma_id_t> velma_wids_vids; 
+  //std::map<
+
+  
+  
+
 
   velma_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
                 Scoreboard *scoreboard, simt_stack **simt,
@@ -528,8 +565,11 @@ class velma_scheduler : public scheduler_unit {
                 std::vector<register_set *> &spec_cores_out,
                 register_set *mem_out, int id)
       : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out,
-                       sfu_out, int_out, tensor_core_out, spec_cores_out,
-                       mem_out, id) {}
+                       sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
+  { 
+    //code for the velma constructor 
+    velma_id_ctr = 0; 
+  }
   virtual ~velma_scheduler() {}
   virtual void order_warps();
   virtual void done_adding_supervised_warps() {
@@ -542,11 +582,83 @@ template <class T>
     const typename std::vector<T>::const_iterator &just_issued,
     unsigned num_warps_to_add);
 
-  bool insert_new_vpc(unsigned vpc){
-    auto insres = velma_pc_killtimers.insert({vpc, 0});
-    bool succ = insres.second; 
-    return succ; 
+  velma_id_t get_velma_id(velma_pc_t vpc, warp_id_t wid){
+    //make wid a warpcluster id 
+    wid -= wid % VELMA_WARPCLUSTER_SIZE; 
+    velma_id_t ret_vid = -1;
+    auto vpc_itr = velma_pcs_clusters_ids.find(vpc);
+    //is this vpc present? if so, let's get the map from it. 
+    if (vpc_itr  != velma_pcs_clusters_ids.end()){
+      //capture our warp_id to velma_id map for this PC. 
+      std::map<warp_id_t, velma_id_t>& wids_vids = vpc_itr->second; 
+      auto wid_itr = wids_vids.find(wid);
+      // check for the warp. if it's present, record the velma_id! 
+      if (wid_itr != wids_vids.end()){
+        ret_vid = wid_itr->second; 
+      } 
+    }
+    return ret_vid;
   }
+
+  /*
+  //method to add new entries to the mapping. 
+  //this assumes we have already checked for presence. 
+  bool add_velma_entry(velma_pc_t vpc, warp_id_t wid){
+    bool added = false; 
+    wid -= wid % VELMA_WARPCLUSTER_SIZE;
+    //check the table for the pc 
+    auto vpc_itr = velma_pcs_clusters_ids.find(vpc);
+    if (vpc_itr != velma_pcs_clusters_ids.end()){
+       * Not the end, so this pc is in the table. 
+       * If it's in the table and we're still calling this function, 
+       * then we know it's gonna be a new warpcluster. 
+       *
+      std::map<warp_id_t, velma_id_t>& warp_map = vpc_itr->second;
+      warp_map.insert({wid, velma_id_ctr});
+      //increment the counter! need a new velma id. 
+      added = true;
+    } 
+    else{
+      std::map<warp_id_t, velma_id_t> new_pc_entry;
+      new_pc_entry.insert({wid, velma_id_ctr});
+      velma_pcs_clusters_ids.insert({vpc, new_pc_entry});
+      added = true;
+    }
+    velma_id_ctr += added; 
+    return added; 
+  }*/ 
+
+/*
+  //assumes the table has already been checked and that the entry is novel.
+  bool add_new_velma_entry(velma_pc_t vpc, warp_id_t wid){
+    //get warpcluster id 
+    wid -= wid % VELMA_WARPCLUSTER_SIZE;
+    // record the pc, warpid, and velma id. 
+    velma_vids_pcs.insert({velma_id_ctr, vpc});
+    velma_vids_wids.insert({velma_id_ctr, wid});
+    velma_wids_vids.insert({wid, velma_id_ctr);
+    velma_id_killtimers.insert({velma_id_ctr, VELMA_KILLTIMER_START});
+    velma_id_ctr++; 
+    return true; 
+  }
+*/  
+
+  bool add_new_velma_entry(warp_id_t wid, velma_pc_t vpc){
+    //get warpcluster id 
+    wid -= wid % VELMA_WARPCLUSTER_SIZE;
+    //make our warpid/pc pair 
+    wid_vpc_pair_t wid_pc = {wid, vpc};
+    //attempt wid-pc insertion.
+    auto wid_pc_insertion = velma_pairs_ids.insert({wid_pc, velma_id_ctr});
+    bool inserted = wid_pc_insertion.second; 
+    if (inserted){
+      velma_ids_pairs.insert({velma_id_ctr, wid_pc});
+    }
+    velma_id_ctr += inserted; 
+    return inserted; 
+  }
+
+
 
   void reset_pc_killtimer(unsigned vpc){
     auto findres = velma_pc_killtimers.find(vpc);

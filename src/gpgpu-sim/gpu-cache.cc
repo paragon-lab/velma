@@ -384,6 +384,7 @@ enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
   unsigned fetch_pc = mf->get_pc();
   unsigned velma_pc_here = 0;
 
+  clear_expired_velma_ids(expiring_velma_ids); 
 
   m_access++;
   is_used = true;

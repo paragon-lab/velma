@@ -543,8 +543,6 @@ struct sector_cache_block : public cache_block_t {
     return SECTOR_CHUNCK_SIZE;  // error
   }
 
- public: 
-  bool velma_line = false; 
 };
 
 enum replacement_policy_t { LRU, FIFO, VELRU};
@@ -1072,7 +1070,20 @@ class tag_array {
 
 
   //////////////////////    VELMA METHODS /////////////////////////////////////
-   
+  unsigned clear_expired_velma_ids(std::set<velma_id_t> expired){
+    unsigned released = 0;
+    for (int idx = 0; idx < size(); idx++){
+      velma_id_t vid = m_lines[idx]->get_velma_id();
+      //see if the velma id is expired 
+      auto vid_find = expired.find(vid);
+      if (vid_find != expired.end() and vid != -1){ //expired! clear it.
+        m_lines[idx]->clear_velma_id();
+        released++;
+      }
+    }
+    return released; 
+  }
+
   //returns count of relinquished lines 
   unsigned release_velma_id_lines(int16_t expired_velma_id){
     //traverse multimap, clearing the velma_ids that correspond to the expired one. 
@@ -1124,8 +1135,6 @@ class tag_array {
     }
     return num_labeled; 
   }
-
-  
 
 
 };

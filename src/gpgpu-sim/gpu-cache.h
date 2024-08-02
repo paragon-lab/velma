@@ -29,8 +29,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef GPU_CACHE_H
-#define GPU_CACHE_H
+//#ifndef GPU_CACHE_H
+//#define GPU_CACHE_H
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,6 +47,12 @@
 #define MAX_DEFAULT_CACHE_SIZE_MULTIBLIER 4
 #define VELMA_WARPCLUSTER_SIZE 4
 #define VELMA_MAX_ENTRIES 1024 
+
+//forward declaration to shader.
+class velma_scheduler;
+using velma_id_t = int16_t; 
+
+extern std::set<velma_id_t> expiring_velma_ids; 
 
 enum cache_block_state { INVALID = 0, RESERVED, VALID, MODIFIED };
 
@@ -974,6 +981,8 @@ class l2_cache_config : public cache_config {
 
 class tag_array {
  public:
+  friend class velma_scheduler;
+
   // Use this constructor
   tag_array(cache_config &config, int core_id, int type_id);
   ~tag_array();
@@ -1080,10 +1089,12 @@ class tag_array {
 
   //returns count of relinquished lines 
   unsigned release_velma_id_lines_grug(int16_t expired_velma_id){
+    int released = 0;
     //for now, this is going to be naive and slow. 
     for (int idx = 0; idx < size(); idx++){
       if (m_lines[idx]->get_velma_id() == expired_velma_id){
           m_lines[idx]->clear_velma_id();
+          released++;
       }
     }
   }
@@ -2008,4 +2019,4 @@ class tex_cache : public cache_t {
   extra_mf_fields_lookup m_extra_mf_fields;
 };
 
-#endif
+//#endif

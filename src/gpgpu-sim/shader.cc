@@ -1213,6 +1213,10 @@ void velma_scheduler::order_warps() {
             m_last_supervised_issued, m_supervised_warps.size());
 }
 
+
+//TODO: TODO: TODO: TODO: TODO; deal with the problem of counting our velma warps. 
+
+
 template <class T>
 void velma_scheduler::order_velma_lrr(std::vector<T> &reordered, 
                                       const typename std::vector<T> &warps,
@@ -1226,12 +1230,12 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
   reordered.clear();
 
   /* First we traverse the ring, pushing the velma warps first to the reordered list.
-   * We set a flag to indicate we've hit all the velma warps, and then push as normal. 
+   * We set a flag to indicate we've hit all the velma warps, avd then push as normal. 
    *  
    * if this is super slow, can reduce from 2N to N by making two vectors and pushing 
    * those at the end, with the velma ones first.*/ 
   auto itr = (just_issued == warps.end()) ? warps.begin() : just_issued + 1; // at end? loop. 
-  unsigned num_velma_warps = velma_warpids.size(); 
+  unsigned num_velma_warps = velma_wids_vid_cts.size(); 
   unsigned velma_warps_seen = 0; 
   for (unsigned warps_added = 0; warps_added < num_warps_to_add; ++itr) {
     //rr bounds check 
@@ -1240,10 +1244,10 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
     }
     //velma check. 
     unsigned wid = (*itr)->get_warp_id();
-    bool is_velma_warp = velma_warpids.find(wid) != velma_warpids.end();
+    bool is_velma_warp = velma_find_wid(wid);
     //TODO: NOTE: this is currently too simplistic. we need to not prioritize velma warps that 
     //have already reached the point of interest. i.e. the leader doesn't need to be prioritized 
-    //if it's way ahead of everyone else in the cluster 
+    //if it's way ahead of everyone else in the cluster. fix this once things are working.  
     if (is_velma_warp and velma_warps_seen < num_velma_warps){
       reordered.push_back(*itr); 
       velma_warps_seen++; 
@@ -1626,6 +1630,8 @@ void velma_scheduler::cycle(){
                              // waiting for pending register writes
   bool issued_inst = false;  // of these we issued one
 
+  std::set<velma_warp_pc_pair_t> velma_wids_pcs; 
+
   order_warps();
   for (std::vector<shd_warp_t *>::const_iterator iter =
            m_next_cycle_prioritized_warps.begin();
@@ -1634,6 +1640,7 @@ void velma_scheduler::cycle(){
     if ((*iter) == NULL || (*iter)->done_exit()) {
       continue;
     }
+
     SCHED_DPRINTF("Testing (warp_id %u, dynamic_warp_id %u)\n",
                   (*iter)->get_warp_id(), (*iter)->get_dynamic_warp_id());
     unsigned warp_id = (*iter)->get_warp_id();
@@ -1648,39 +1655,25 @@ void velma_scheduler::cycle(){
                                                  // units (as in Maxwell and
                                                  // Pascal)
 
-    if (warp(warp_id).ibuffer_empty())
+    if (warp(warp_id).ibuffer_empty()){
       SCHED_DPRINTF(
           "Warp (warp_id %u, dynamic_warp_id %u) fails as ibuffer_empty\n",
           (*iter)->get_warp_id(), (*iter)->get_dynamic_warp_id());
+    }
 
-    if (warp(warp_id).waiting())
+    if (warp(warp_id).waiting()){
       SCHED_DPRINTF(
           "Warp (warp_id %u, dynamic_warp_id %u) fails as waiting for "
           "barrier\n",
           (*iter)->get_warp_id(), (*iter)->get_dynamic_warp_id());
+    }
 
     while (!warp(warp_id).waiting() && !warp(warp_id).ibuffer_empty() &&
            (checked < max_issue) && (checked <= issued) &&
-           (issued < max_issue)) {
-      
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-///////TODO: THIS IS WHERE WE CHECK IF THE INSTRUCTION GOES WITH VELMA! //////////////////// 
-//////////////////////////////////////////////////////////////////////////////
-
-      /* If it does happen to, the shceduler has velma data structures that need updating. 
-       */
-      //get the next instruction for this warp 
+           (issued < max_issue)) 
+    { //get the next instruction for this warp 
       const warp_inst_t *pI = warp(warp_id).ibuffer_next_inst();
-      //mutable copy because get_pc is not a const function but pI is 
-      warp_inst_t pI_mutable = *pI; 
-      unsigned velma_pc = pI_mutable.get_pc(); 
-      //check if this PC is already being tracked by VELMA. 
-      auto vpcfind = velma_pc_killtimers.find(velma_pc);
-      if (vpcfind != velma_pc_killtimers.end()){
-        //tracking this pc! add the warp id. 
-        velma_warpids.insert(pI->warp_id());
-      }
+      
       // Jin: handle cdp latency;
       if (pI && pI->m_is_cdp && warp(warp_id).m_cdp_latency > 0) {
         assert(warp(warp_id).m_cdp_dummy);
@@ -1695,11 +1688,12 @@ void velma_scheduler::cycle(){
       SCHED_DPRINTF(
           "Warp (warp_id %u, dynamic_warp_id %u) has valid instruction (%s)\n",
           (*iter)->get_warp_id(), (*iter)->get_dynamic_warp_id(),
-          m_shader->m_config->gpgpu_ctx->func_sim->ptx_get_insn_str(pc)
-              .c_str());
+          m_shader->m_config->gpgpu_ctx->func_sim->ptx_get_insn_str(pc).c_str());
+
       if (pI) {
         assert(valid);
-        if (pc != pI->pc) {
+        if (pc != pI->pc) 
+        {
           SCHED_DPRINTF(
               "Warp (warp_id %u, dynamic_warp_id %u) control hazard "
               "instruction flush\n",
@@ -1707,7 +1701,9 @@ void velma_scheduler::cycle(){
           // control hazard
           warp(warp_id).set_next_pc(pc);
           warp(warp_id).ibuffer_flush();
-        } else {
+        } 
+        else 
+        {
           valid_inst = true;
           if (!m_scoreboard->checkCollision(warp_id, pI)) {
             SCHED_DPRINTF(
@@ -1731,15 +1727,13 @@ void velma_scheduler::cycle(){
                 issued_inst = true;
                 warp_inst_issued = true;
                 previous_issued_inst_exec_type = exec_unit_type_t::MEM;
-                //TODO: NOTE velma stuff here 
-                //check if this PC is already being tracked by VELMA. 
-                auto vpcfind = velma_pc_killtimers.find(pc);
-                if (vpcfind != velma_pc_killtimers.end()){
-                  //tracking this pc! add the warp id. 
-                  velma_warpids.insert(warp_id);
-                }
+                ///////////////////////////////// some velma stuff ///////////////////////////////////// 
+                // this is where we add the new warp_id/pc pair
+                velma_wids_pcs.insert({warp_id, pc});
               }
-            } else {
+            } 
+            else 
+            {
               // This code need to be refactored
               if (pI->op != TENSOR_CORE_OP && pI->op != SFU_OP &&
                   pI->op != DP_OP && !(pI->op >= SPEC_UNIT_START_ID)) {
@@ -1887,9 +1881,9 @@ void velma_scheduler::cycle(){
                       exec_unit_type_t::SPECIALIZED;
                 }
               }
-
             }  // end of else
-          } else {
+          } 
+          else {
             SCHED_DPRINTF(
                 "Warp (warp_id %u, dynamic_warp_id %u) fails scoreboard\n",
                 (*iter)->get_warp_id(), (*iter)->get_dynamic_warp_id());
@@ -1912,7 +1906,14 @@ void velma_scheduler::cycle(){
       }
       checked++;
     }
+
     if (issued) {
+      //////////////////////////some velma stuff //////////////////////// 
+      //need to iterate across the std::set of velma warpid/pc pairs
+
+
+
+      /////////// not velma stuff 
       // This might be a bit inefficient, but we need to maintain
       // two ordered list for proper scheduler execution.
       // We could remove the need for this loop by associating a

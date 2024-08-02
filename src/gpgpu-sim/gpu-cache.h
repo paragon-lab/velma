@@ -636,6 +636,8 @@ class cache_config {
       case 'F':
         m_replacement_policy = FIFO;
         break;
+      case 'V':
+        m_replacement_policy = VELRU; 
       default:
         exit_parse_error();
     }

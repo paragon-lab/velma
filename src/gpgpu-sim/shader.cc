@@ -1910,7 +1910,7 @@ void velma_scheduler::cycle(){
     if (issued) {
       //////////////////////////some velma stuff //////////////////////// 
       //need to iterate across the std::set of velma warpid/pc pairs
-
+      velma_cycle(velma_wids_pcs);
 
 
       /////////// not velma stuff 
@@ -3018,7 +3018,8 @@ ldst_unit::ldst_unit(mem_fetch_interface *icnt,
   if (!m_config->m_L1D_config.disabled()) {
     char L1D_name[STRSIZE];
     snprintf(L1D_name, STRSIZE, "L1D_%03d", m_sid);
-    m_L1D = new l1_cache(L1D_name, m_config->m_L1D_config, m_sid,
+    //TODO: :TODO: VELMA  need to change that L1D config a touch. 
+    m_L1D = new velma_cache(L1D_name, m_config->m_L1D_config, m_sid,
                          get_shader_normal_cache_id(), m_icnt, m_mf_allocator,
                          IN_L1D_MISS_QUEUE, core->get_gpu());
 

@@ -1865,7 +1865,12 @@ class shader_core_config : public core_config {
   mutable cache_config m_L1I_config;
   mutable cache_config m_L1T_config;
   mutable cache_config m_L1C_config;
+  //VELMA TODO: NOTE: 
+  //  modify the cache_config class or the l1d_cache_config class
+  //  to include a use_velma flag, which determines the behaviour 
+  //  of the tag array.
   mutable l1d_cache_config m_L1D_config;
+  mutable l1d_cache_config m_vel1d_config;
 
   bool gpgpu_dwf_reg_bankconflict;
 

@@ -414,7 +414,7 @@ enum cache_request_status velma_tag_array::probe(new_addr_type addr, unsigned &i
             valid_timestamp = line->get_alloc_time();
             valid_line = index;
           }
-        } else if (m_config.m_replacement_policy == VELRU){
+        } else if (m_config.m_replacement_policy == VELRR){
           //don't evict velma lines!!!!
           if (line->get_last_access_time() < valid_timestamp && not line->is_velma_line()){
             valid_timestamp = line->get_last_access_time();
@@ -429,7 +429,7 @@ enum cache_request_status velma_tag_array::probe(new_addr_type addr, unsigned &i
 //only handling the replacement component. we only care here about cache blocks which are 
 //not reserved and are velma blocks. 
   bool velma_victim = false;
-  if (all_nonres_velma && m_config.m_replacement_policy == VELRU){
+  if (all_nonres_velma && m_config.m_replacement_policy == VELRR){
     for (unsigned way = 0; way < m_config.m_assoc; way++) {
       unsigned index = set_index * m_config.m_assoc + way;
       cache_block_t *line = m_lines[index];
@@ -1316,6 +1316,8 @@ void baseline_cache::send_read_request(new_addr_type addr,
   new_addr_type mshr_addr = m_config.mshr_addr(mf->get_addr());
   bool mshr_hit = m_mshrs.probe(mshr_addr);
   bool mshr_avail = !m_mshrs.full(mshr_addr);
+
+  //TODO: VELMA NOTE This is where we call the m_tag_array velma_access function. 
   if (mshr_hit && mshr_avail) {
     if (read_only)
       m_tag_array->access(block_addr, time, cache_index, mf);

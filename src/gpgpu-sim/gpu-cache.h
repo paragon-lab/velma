@@ -545,7 +545,7 @@ struct sector_cache_block : public cache_block_t {
 
 };
 
-enum replacement_policy_t { LRU, FIFO, VELRU};
+enum replacement_policy_t { LRU, FIFO, VELRR};
 
 enum write_policy_t {
   READ_ONLY,
@@ -637,7 +637,7 @@ class cache_config {
         m_replacement_policy = FIFO;
         break;
       case 'V':
-        m_replacement_policy = VELRU; 
+        m_replacement_policy = VELRR; 
       default:
         exit_parse_error();
     }
@@ -1067,25 +1067,6 @@ class tag_array {
 class velma_tag_array : public tag_array {
  public:
   friend class velma_scheduler;
-  
-/*
-  velma_tag_array(cache_config &config, int core_id, int type_id)
-    : m_config(config) {
-  // assert( m_config.m_write_policy == READ_ONLY ); Old assert
-  unsigned cache_lines_num = config.get_max_num_lines();
-  m_lines = new cache_block_t *[cache_lines_num];
-  if (config.m_cache_type == NORMAL) {
-    for (unsigned i = 0; i < cache_lines_num; ++i)
-      m_lines[i] = new line_cache_block();
-  } else if (config.m_cache_type == SECTOR) {
-    for (unsigned i = 0; i < cache_lines_num; ++i)
-      m_lines[i] = new sector_cache_block();
-  } else
-    assert(0);
-
-  init(core_id, type_id);
-}*/
-
 
   velma_tag_array(cache_config& config, int core_id, int type_id);
     //}
@@ -1888,6 +1869,7 @@ class data_cache : public baseline_cache {
   enum cache_request_status (data_cache::*m_rd_miss)(
       new_addr_type addr, unsigned cache_index, mem_fetch *mf, unsigned time,
       std::list<cache_event> &events, enum cache_request_status status);
+
   enum cache_request_status rd_miss_base(new_addr_type addr,
                                          unsigned cache_index, mem_fetch *mf,
                                          unsigned time,
@@ -1896,6 +1878,8 @@ class data_cache : public baseline_cache {
 };
 
 //i like star wars 
+//
+////i like star wars 
 
 /// This is meant to model the first level data cache in Fermi.
 /// It is write-evict (global) or write-back (local) at

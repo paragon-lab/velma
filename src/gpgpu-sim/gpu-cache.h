@@ -637,7 +637,8 @@ class cache_config {
         m_replacement_policy = FIFO;
         break;
       case 'V':
-        m_replacement_policy = VELRR; 
+        m_replacement_policy = VELRR;
+        m_use_velma_tag_array = true; 
       default:
         exit_parse_error();
     }
@@ -883,6 +884,10 @@ class cache_config {
   }
   write_policy_t get_write_policy() { return m_write_policy; }
 
+
+  ////////////////// VELMA STUFF ///////////////////////////// 
+  bool m_use_velma_tag_array = false;
+
  protected:
   void exit_parse_error() {
     printf("GPGPU-Sim uArch: cache configuration parsing error (%s)\n",
@@ -984,6 +989,12 @@ class tag_array {
  public:
   friend class velma_scheduler;
 
+  bool is_velma_tag_array = false; 
+
+  //WE CALL THIS CONSTRUCTOR TO BUILD A TAG ARRAY.
+  //IT TAKES AS AN ARGUMENT A CACHE_CONFIG. 
+  //BY ALTERING THE CACHE_CONFIG, WE CAN HAVE THE TAG ARRAY CONFIGURED 
+  //WITH VELMA FUNCTIONALITY 
   // Use this constructor
   tag_array(cache_config &config, int core_id, int type_id);
   ~tag_array();
@@ -1059,6 +1070,89 @@ class tag_array {
   typedef tr1_hash_map<new_addr_type, unsigned> line_table;
   line_table pending_lines;
 
+
+ public:
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////     VELMA STUFF      //////////////////////////////// 
+/////////////////////////////////////////////////////////////////////
+
+  ///////////////////////   VELMA MEMBERS  /////////////////////////////////////    
+
+  /*we don't yet pre-populate this in the constructor with N velma ids because
+  . the value of N depends on simulation results */
+  std::multimap<int16_t, cache_block_t&> velma_ids_linerefs;
+
+
+  //////////////////////    VELMA METHODS /////////////////////////////////////
+  unsigned clear_expired_velma_ids();
+
+  unsigned clear_expired_velma_ids(std::set<velma_id_t> expired){
+    unsigned released = 0;
+    for (int idx = 0; idx < size(); idx++){
+      velma_id_t vid = m_lines[idx]->get_velma_id();
+      //see if the velma id is expired 
+      auto vid_find = expired.find(vid);
+      if (vid_find != expired.end() and vid != -1){ //expired! clear it.
+        m_lines[idx]->clear_velma_id();
+        released++;
+      }
+    }
+
+    return released; 
+  }
+
+  //returns count of relinquished lines 
+  unsigned release_velma_id_lines(int16_t expired_velma_id){
+    //traverse multimap, clearing the velma_ids that correspond to the expired one. 
+    for (auto v_id_lineref : velma_ids_linerefs){
+      if (v_id_lineref.first == expired_velma_id){ 
+        v_id_lineref.second.clear_velma_id(); 
+      }
+    }
+    //now we get rid of that velma_id in our multimap. 
+    unsigned num_lines_released = velma_ids_linerefs.erase(expired_velma_id);
+    return num_lines_released; 
+  }
+
+
+  //returns count of relinquished lines 
+  unsigned release_velma_id_lines_grug(int16_t expired_velma_id){
+    int released = 0;
+    //for now, this is going to be naive and slow. 
+    for (int idx = 0; idx < size(); idx++){
+      if (m_lines[idx]->get_velma_id() == expired_velma_id){
+          m_lines[idx]->clear_velma_id();
+          released++;
+      }
+    }
+  }
+      
+  /* The scheduler figures out the mapping between velma_ids, PCs, and warp clusters, then  
+   * calls this to label the appropriate line with the velma_id in question. 
+   */
+  bool label_velma_line(int16_t velma_id, new_addr_type lineaddr){
+    bool labeled = false;
+    for (int idx = 0; idx < size(); idx++){
+      cache_block_t* line = m_lines[idx];  
+      if (line->get_block_address() == lineaddr){
+        line->set_velma_id(velma_id);
+        labeled = true;
+        break;
+      }
+    }
+    return labeled; 
+  }
+
+  /*The scheduler will call this if it needs to label more than one cache line 
+    with the same velma_id at one time. */
+  unsigned label_velma_lines(int16_t velma_id, std::vector<new_addr_type> lineaddrs){
+    unsigned num_labeled = 0;
+    for (auto addr : lineaddrs){
+      num_labeled += label_velma_line(velma_id, addr);
+    }
+    return num_labeled; 
+  }
 
 
 };

@@ -3019,7 +3019,12 @@ ldst_unit::ldst_unit(mem_fetch_interface *icnt,
     char L1D_name[STRSIZE];
     snprintf(L1D_name, STRSIZE, "L1D_%03d", m_sid);
     //TODO: :TODO: VELMA  need to change that L1D config a touch. 
-    m_L1D = new velma_cache(L1D_name, m_config->m_L1D_config, m_sid,
+    //What we really want to do here is alter the m_config such that,
+    //for nonvelma, our replacement polcy is... whatever. For velma L1, 
+    //we configure the cache replacement policy to be VELRR. 
+    //The schedulers use polymorphism and thus do not need this kind 
+    //of convoluted configuration 
+    m_L1D = new l1_cache(L1D_name, m_config->m_L1D_config, m_sid,
                          get_shader_normal_cache_id(), m_icnt, m_mf_allocator,
                          IN_L1D_MISS_QUEUE, core->get_gpu());
 

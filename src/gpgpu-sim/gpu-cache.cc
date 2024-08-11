@@ -184,6 +184,12 @@ void tag_array::update_cache_parameters(cache_config &config) {
   m_config = config;
 }
 
+//TODO: VELMA: 8/11 1600 -- configuration should be capable internally of 
+//  setting the tag_array to do velma things. now we need to actually splice
+//  all the functionality from the velma_tag_array class into the tag_array class,
+//  implement behavior switching, and delete the velma_tag_array stuff. From there,
+//  we verify scheduler/tag_array coordination and then figure out how to write the 
+//  top-level configuration. from there, we can theoretically start simming. 
 tag_array::tag_array(class cache_config &config, int core_id, int type_id)
     : m_config(config) {
   // assert( m_config.m_write_policy == READ_ONLY ); Old assert
@@ -197,6 +203,10 @@ tag_array::tag_array(class cache_config &config, int core_id, int type_id)
       m_lines[i] = new sector_cache_block();
   } else
     assert(0);
+  
+  if (config.m_replacement_policy == VELRR){
+    is_velma_tag_array = true; 
+  }
 
   init(core_id, type_id);
 }
@@ -249,105 +259,14 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
 }
 
 
-
-
-enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
-                                           mem_access_sector_mask_t mask,
-                                           bool is_write, bool probe_mode,
-                                           mem_fetch *mf) const {
-  // assert( m_config.m_write_policy == READ_ONLY );
-  unsigned set_index = m_config.set_index(addr);
-  new_addr_type tag = m_config.tag(addr);
-
-  unsigned invalid_line = (unsigned)-1;
-  unsigned valid_line = (unsigned)-1;
-  unsigned long long valid_timestamp = (unsigned)-1;
-
-  bool all_reserved = true;
-  // check for hit or pending hit
-  for (unsigned way = 0; way < m_config.m_assoc; way++) {
-    unsigned index = set_index * m_config.m_assoc + way;
-    cache_block_t *line = m_lines[index];
-    if (line->m_tag == tag) {
-      if (line->get_status(mask) == RESERVED) {
-        idx = index;
-        return HIT_RESERVED;
-      } else if (line->get_status(mask) == VALID) {
-        idx = index;
-        return HIT;
-      } else if (line->get_status(mask) == MODIFIED) {
-        if ((!is_write && line->is_readable(mask)) || is_write) {
-          idx = index;
-          return HIT;
-        } else {
-          idx = index;
-          return SECTOR_MISS;
-        }
-
-      } else if (line->is_valid_line() && line->get_status(mask) == INVALID) {
-        idx = index;
-        return SECTOR_MISS;
-      } else {
-        assert(line->get_status(mask) == INVALID);
-      }
-    }
-    if (!line->is_reserved_line()) {
-      // percentage of dirty lines in the cache
-      // number of dirty lines / total lines in the cache
-      float dirty_line_percentage =
-          ((float)m_dirty / (m_config.m_nset * m_config.m_assoc)) * 100;
-      // If the cacheline is from a load op (not modified),
-      // or the total dirty cacheline is above a specific value,
-      // Then this cacheline is eligible to be considered for replacement
-      // candidate i.e. Only evict clean cachelines until total dirty cachelines
-      // reach the limit.
-      if (!line->is_modified_line() ||
-          dirty_line_percentage >= m_config.m_wr_percent) {
-        all_reserved = false;
-        if (line->is_invalid_line()) {
-          invalid_line = index;
-        } else {
-          // valid line : keep track of most appropriate replacement candidate
-          if (m_config.m_replacement_policy == LRU) {
-            if (line->get_last_access_time() < valid_timestamp) {
-              valid_timestamp = line->get_last_access_time();
-              valid_line = index;
-            }
-          } else if (m_config.m_replacement_policy == FIFO) {
-            if (line->get_alloc_time() < valid_timestamp) {
-              valid_timestamp = line->get_alloc_time();
-              valid_line = index;
-            }
-          }
-        }
-      }
-    }
-  }
-  if (all_reserved) {
-    assert(m_config.m_alloc_policy == ON_MISS);
-    return RESERVATION_FAIL;  // miss and not enough space in cache to allocate
-                              // on miss
-  }
-
-  if (invalid_line != (unsigned)-1) {
-    idx = invalid_line;
-  } else if (valid_line != (unsigned)-1) {
-    idx = valid_line;
-  } else
-    abort();  // if an unreserved block exists, it is either invalid or
-              // replaceable
-
-  return MISS;
-}
-
-unsigned velma_tag_array::clear_expired_velma_ids(){
+unsigned tag_array::clear_expired_velma_ids(){
     clear_expired_velma_ids(expiring_velma_ids); 
   }
 
 
 
 //probe just checks the status of a $line without actually affecting LRU behavior
-enum cache_request_status velma_tag_array::probe(new_addr_type addr, unsigned &idx,
+enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
                                            mem_access_sector_mask_t mask,
                                            bool is_write, 
                                            bool probe_mode,
@@ -486,7 +405,7 @@ enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
 }
 
 
-enum cache_request_status velma_tag_array::access(new_addr_type addr, unsigned time,
+enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
                                             unsigned &idx, bool &wb,
                                             evicted_block_info &evicted,
                                             mem_fetch *mf) {

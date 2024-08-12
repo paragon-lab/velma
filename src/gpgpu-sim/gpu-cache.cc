@@ -206,16 +206,12 @@ tag_array::tag_array(class cache_config &config, int core_id, int type_id)
   
   if (config.m_replacement_policy == VELRR){
     is_velma_tag_array = true; 
+    expiring_velma_ids.insert(-1);
   }
 
   init(core_id, type_id);
 }
 
-velma_tag_array::velma_tag_array(class cache_config &config, int core_id, int type_id)
-    : m_config(config), tag_array(config, core_id, type_id) {
-  expiring_velma_ids.insert(-1);
-  init(core_id, type_id);
-}
 
 void tag_array::init(int core_id, int type_id) {
   m_access = 0;
@@ -348,7 +344,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
 //only handling the replacement component. we only care here about cache blocks which are 
 //not reserved and are velma blocks. 
   bool velma_victim = false;
-  if (all_nonres_velma && m_config.m_replacement_policy == VELRR){
+  if (all_nonres_velma && is_velma_tag_array){
     for (unsigned way = 0; way < m_config.m_assoc; way++) {
       unsigned index = set_index * m_config.m_assoc + way;
       cache_block_t *line = m_lines[index];
@@ -369,7 +365,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
   }
   
   
-  if (all_reserved && !velma_victim) {
+  if (all_reserved && !velma_victim && is_velma_tag_array) {
     assert(m_config.m_alloc_policy == ON_MISS);
     return RESERVATION_FAIL;
   }

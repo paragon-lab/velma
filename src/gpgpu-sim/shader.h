@@ -78,7 +78,7 @@ using velma_warp_pc_pair_t = std::pair<warp_id_t, velma_pc_t>;
    if req_size variable) - so up to 2^14 = 16384 mshr total
  */
 
-//extern std::set<velma_id_t> expiring_velma_ids; 
+extern std::set<velma_id_t> expiring_velma_ids; 
 
 
 #define READ_PACKET_SIZE 8

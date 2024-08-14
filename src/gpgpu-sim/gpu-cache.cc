@@ -206,7 +206,7 @@ tag_array::tag_array(class cache_config &config, int core_id, int type_id)
   
   std::set<velma_id_t> dummy_ids; 
   dummy_ids.insert(-1);
-  expiring_velma_ids = dummy_ids;
+  std::set<velma_id_t> expiring_velma_ids = dummy_ids;
   if (config.m_replacement_policy == VELRR){
     is_velma_tag_array = true; 
   }

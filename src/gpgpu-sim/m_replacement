@@ -1,0 +1,842 @@
+shader.h:    shader_cycles = (unsigned long long *)calloc(config->num_shader(),
+shader.h:    m_num_sim_insn = (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (float *)calloc(config->num_shader(), sizeof(float));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:    m_num_tex_inst = (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:    m_num_ialu_acesses = (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:    m_num_fp_acesses = (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:    m_num_imul_acesses = (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:        (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:        (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:        (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:    m_num_idiv_acesses = (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:        (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:    m_num_dp_acesses = (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:        (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:        (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:    m_num_sp_acesses = (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:    m_num_sfu_acesses = (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:        (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:        (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:    m_num_tex_acesses = (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:    m_num_sqrt_acesses = (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:    m_num_log_acesses = (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:    m_num_sin_acesses = (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:    m_num_exp_acesses = (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:    m_num_mem_acesses = (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:    m_num_tlb_hits = (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:    m_active_exu_warps = (double *)calloc(config->num_shader(), sizeof(double));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:    m_n_diverge = (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->warp_size + 3, sizeof(unsigned));
+shader.h:        (unsigned *)calloc(m_config->warp_size + 3, sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->gpgpu_num_sched_per_core, sizeof(unsigned));
+shader.h:        (unsigned *)calloc(config->gpgpu_num_sched_per_core, sizeof(unsigned));
+shader.h:    n_simt_to_mem = (long *)calloc(config->num_shader(), sizeof(long));
+shader.h:    n_mem_to_simt = (long *)calloc(config->num_shader(), sizeof(long));
+shader.h:        (unsigned *)calloc(config->num_shader(), sizeof(unsigned));
+shader.h:    m_shader_dynamic_warp_issue_distro.resize(config->num_shader());
+shader.h:    m_shader_warp_slot_issue_distro.resize(config->num_shader());
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    if (m_config->gpgpu_clock_gated_lanes == false) {
+shader.h:    return (m_response_fifo.size() >= m_config->n_simt_ejection_buffer_size);
+visualizer.cc:  for (unsigned i = 0; i < m_memory_config->m_n_mem; i++)
+power_interface.cc:        shdr_config->gpgpu_clock_gated_lanes, stat_sample_freq,
+power_interface.cc:    float num_cores = shdr_config->num_shader();
+power_interface.cc:        shdr_config->gpgpu_clock_gated_lanes,
+power_interface.cc:        shdr_config->gpgpu_clock_gated_lanes,
+power_interface.cc:  float num_cores = shdr_config->num_shader();
+power_interface.cc:        (power_stats->get_sp_active_lanes() * shdr_config->num_shader() *
+power_interface.cc:         shdr_config->gpgpu_num_sp_units);
+power_interface.cc:        (power_stats->get_sfu_active_lanes() * shdr_config->num_shader() *
+power_interface.cc:         shdr_config->gpgpu_num_sp_units);
+power_interface.cc:        (power_stats->sp_active_lanes_execution) / shdr_config->num_shader() /
+power_interface.cc:        shdr_config->gpgpu_num_sp_units / stat_sample_freq;
+power_interface.cc:        (power_stats->sfu_active_lanes_execution) / shdr_config->num_shader() /
+power_interface.cc:        shdr_config->gpgpu_num_sp_units / stat_sample_freq;
+mem_fetch.cc:  config->m_address_mapping.addrdec_tlx(access.get_addr(), &m_raw_addr);
+mem_fetch.cc:      config->m_address_mapping.partition_address(access.get_addr());
+mem_fetch.cc:  icnt_flit_size = config->icnt_flit_size;
+dram.cc:  bkgrp = (bankgrp_t **)calloc(sizeof(bankgrp_t *), m_config->nbkgrp);
+dram.cc:  bkgrp[0] = (bankgrp_t *)calloc(sizeof(bank_t), m_config->nbkgrp);
+dram.cc:  for (unsigned i = 1; i < m_config->nbkgrp; i++) {
+dram.cc:  for (unsigned i = 0; i < m_config->nbkgrp; i++) {
+dram.cc:  bk = (bank_t **)calloc(sizeof(bank_t *), m_config->nbk);
+dram.cc:  bk[0] = (bank_t *)calloc(sizeof(bank_t), m_config->nbk);
+dram.cc:  for (unsigned i = 1; i < m_config->nbk; i++) bk[i] = bk[0] + i;
+dram.cc:  for (unsigned i = 0; i < m_config->nbk; i++) {
+dram.cc:    bk[i]->bkgrpindex = i / (m_config->nbk / m_config->nbkgrp);
+dram.cc:  rwq = new fifo_pipeline<dram_req_t>("rwq", m_config->CL, m_config->CL + 1);
+dram.cc:      m_config->gpgpu_dram_return_queue_size == 0
+dram.cc:          : m_config->gpgpu_dram_return_queue_size);
+dram.cc:  if (m_config->scheduler_type == DRAM_FRFCFS)
+dram.cc:  if (m_config->scheduler_type == DRAM_FRFCFS) {
+dram.cc:    if (m_config->gpgpu_frfcfs_dram_sched_queue_size == 0) return false;
+dram.cc:    if (m_config->seperate_write_queue_enabled) {
+dram.cc:               m_config->gpgpu_frfcfs_dram_write_queue_size;
+dram.cc:               m_config->gpgpu_frfcfs_dram_sched_queue_size;
+dram.cc:             m_config->gpgpu_frfcfs_dram_sched_queue_size;
+dram.cc:  if (m_config->scheduler_type == DRAM_FRFCFS) {
+dram.cc:  return m_config->gpgpu_frfcfs_dram_sched_queue_size;
+dram.cc:      new dram_req_t(data, m_config->nbk, m_config->dram_bnk_indexing_policy,
+dram.cc:  if (m_config->scheduler_type == DRAM_FRFCFS) {
+dram.cc:      cmd->dqbytes += m_config->dram_atom_size;
+dram.cc:  switch (m_config->scheduler_type) {
+dram.cc:  if (m_config->scheduler_type == DRAM_FRFCFS) {
+dram.cc:  unsigned k = m_config->nbk;
+dram.cc:  for (unsigned i = 0; i < m_config->nbk; i++) {
+dram.cc:  for (unsigned j = 0; j < m_config->nbk; j++) {
+dram.cc:  for (unsigned j = 0; j < m_config->nbk; j++) {
+dram.cc:  if (m_config->dual_bus_interface) {
+dram.cc:    for (unsigned i = 0; i < m_config->nbk; i++) {
+dram.cc:      unsigned j = (i + prio) % m_config->nbk;
+dram.cc:    for (unsigned i = 0; i < m_config->nbk; i++) {
+dram.cc:      unsigned j = (i + prio) % m_config->nbk;
+dram.cc:    for (unsigned i = 0; i < m_config->nbk; i++) {
+dram.cc:      unsigned j = (i + prio) % m_config->nbk;
+dram.cc:    for (unsigned i = 0; i < m_config->nbk; i++) {
+dram.cc:      unsigned j = (i + prio) % m_config->nbk;
+dram.cc:  for (unsigned i = 0; i < m_config->nbk; i++) {
+dram.cc:  for (unsigned j = 0; j < m_config->nbk; j++) {
+dram.cc:    for (unsigned j = 0; j < m_config->nbk; j++) {
+dram.cc:  for (unsigned j = 0; j < m_config->nbk; j++) {
+dram.cc:  for (unsigned j = 0; j < m_config->nbkgrp; j++) {
+dram.cc:        rwq->set_min_length(m_config->CL);
+dram.cc:      bk[j]->mrq->txbytes += m_config->dram_atom_size;
+dram.cc:      CCDc = m_config->tCCD;
+dram.cc:      bkgrp[grp]->CCDLc = m_config->tCCDL;
+dram.cc:      RTWc = m_config->tRTW;
+dram.cc:      bk[j]->RTPc = m_config->BL / m_config->data_command_freq_ratio;
+dram.cc:      bkgrp[grp]->RTPLc = m_config->tRTPL;
+dram.cc:      bwutil += m_config->BL / m_config->data_command_freq_ratio;
+dram.cc:      bwutil_partial += m_config->BL / m_config->data_command_freq_ratio;
+dram.cc:             bk[j]->mrq->col + bk[j]->mrq->txbytes - m_config->dram_atom_size);
+dram.cc:          rwq->set_min_length(m_config->WL);
+dram.cc:        bk[j]->mrq->txbytes += m_config->dram_atom_size;
+dram.cc:        CCDc = m_config->tCCD;
+dram.cc:        bkgrp[grp]->CCDLc = m_config->tCCDL;
+dram.cc:        WTRc = m_config->tWTR;
+dram.cc:        bk[j]->WTPc = m_config->tWTP;
+dram.cc:        bwutil += m_config->BL / m_config->data_command_freq_ratio;
+dram.cc:        bwutil_partial += m_config->BL / m_config->data_command_freq_ratio;
+dram.cc:            bk[j]->mrq->col + bk[j]->mrq->txbytes - m_config->dram_atom_size);
+dram.cc:      RRDc = m_config->tRRD;
+dram.cc:      bk[j]->RCDc = m_config->tRCD;
+dram.cc:      bk[j]->RCDWRc = m_config->tRCDWR;
+dram.cc:      bk[j]->RASc = m_config->tRAS;
+dram.cc:      bk[j]->RCc = m_config->tRC;
+dram.cc:      prio = (j + 1) % m_config->nbk;
+dram.cc:        bk[j]->RPc = m_config->tRP;
+dram.cc:        prio = (j + 1) % m_config->nbk;
+dram.cc:  fprintf(simFile, "DRAM[%d]: %d bks, busW=%d BL=%d CL=%d, ", id, m_config->nbk,
+dram.cc:          m_config->busW, m_config->BL, m_config->CL);
+dram.cc:          m_config->tRRD, m_config->tCCD, m_config->tRCD, m_config->tRAS,
+dram.cc:          m_config->tRP, m_config->tRC);
+dram.cc:  for (i = 0; i < m_config->nbk; i++) {
+dram.cc:  if (m_config->scheduler_type == DRAM_FRFCFS)
+dram.cc:  for (unsigned i = 0; i < m_config->nbk; i++) {
+dram.cc:  for (unsigned j = 0; j < m_config->nbk; j++) {
+dram.cc:  if (m_config->dram_bnkgrp_indexing_policy == HIGHER_BITS) {  // higher bits
+dram.cc:    return i >> m_config->bk_tag_length;
+dram.cc:  } else if (m_config->dram_bnkgrp_indexing_policy ==
+dram.cc:    return i & ((m_config->nbkgrp - 1));
+shader.cc:  mem_access_t access(type, addr, size, wr, m_memory_config->gpgpu_ctx);
+shader.cc:                      m_memory_config->gpgpu_ctx);
+shader.cc:  m_warp.resize(m_config->max_warps_per_shader);
+shader.cc:  for (unsigned k = 0; k < m_config->max_warps_per_shader; ++k) {
+shader.cc:    m_warp[k] = new shd_warp_t(this, m_config->warp_size);
+shader.cc:      N_PIPELINE_STAGES + m_config->m_specialized_unit.size() * 2;
+shader.cc:        register_set(m_config->pipe_widths[j], pipeline_stage_name_decode[j]));
+shader.cc:  for (unsigned j = 0; j < m_config->m_specialized_unit.size(); j++) {
+shader.cc:        register_set(m_config->m_specialized_unit[j].id_oc_spec_reg_width,
+shader.cc:                     m_config->m_specialized_unit[j].name));
+shader.cc:    m_config->m_specialized_unit[j].ID_OC_SPEC_ID = m_pipeline_reg.size() - 1;
+shader.cc:  for (unsigned j = 0; j < m_config->m_specialized_unit.size(); j++) {
+shader.cc:        register_set(m_config->m_specialized_unit[j].oc_ex_spec_reg_width,
+shader.cc:                     m_config->m_specialized_unit[j].name));
+shader.cc:    m_config->m_specialized_unit[j].OC_EX_SPEC_ID = m_pipeline_reg.size() - 1;
+shader.cc:  if (m_config->sub_core_model) {
+shader.cc:    assert(m_config->gpgpu_num_sched_per_core ==
+shader.cc:    assert(m_config->gpgpu_num_sched_per_core ==
+shader.cc:    assert(m_config->gpgpu_num_sched_per_core ==
+shader.cc:    if (m_config->gpgpu_tensor_core_avail)
+shader.cc:      assert(m_config->gpgpu_num_sched_per_core ==
+shader.cc:    if (m_config->gpgpu_num_dp_units > 0)
+shader.cc:      assert(m_config->gpgpu_num_sched_per_core ==
+shader.cc:    if (m_config->gpgpu_num_int_units > 0)
+shader.cc:      assert(m_config->gpgpu_num_sched_per_core ==
+shader.cc:    for (unsigned j = 0; j < m_config->m_specialized_unit.size(); j++) {
+shader.cc:      if (m_config->m_specialized_unit[j].num_units > 0)
+shader.cc:        assert(m_config->gpgpu_num_sched_per_core ==
+shader.cc:               m_config->m_specialized_unit[j].id_oc_spec_reg_width);
+shader.cc:                                         m_config->n_thread_per_shader);
+shader.cc:  for (unsigned i = 0; i < m_config->n_thread_per_shader; i++) {
+shader.cc:  if (m_config->gpgpu_perfect_mem) {
+shader.cc:  m_L1I = new read_only_cache(name, m_config->m_L1I_config, m_sid,
+shader.cc:  m_scoreboard = new Scoreboard(m_sid, m_config->max_warps_per_shader, m_gpu);
+shader.cc:  std::string sched_config = m_config->gpgpu_scheduler_string;
+shader.cc:  for (unsigned i = 0; i < m_config->gpgpu_num_sched_per_core; i++) {
+shader.cc:            &m_pipeline_reg[ID_OC_MEM], i, m_config->gpgpu_scheduler_string));
+shader.cc:            &m_pipeline_reg[ID_OC_MEM], i, m_config->gpgpu_scheduler_string));
+shader.cc:    schedulers[i % m_config->gpgpu_num_sched_per_core]->add_supervised_warp_id(
+shader.cc:  for (unsigned i = 0; i < m_config->gpgpu_num_sched_per_core; ++i) {
+shader.cc:      GEN_CUS, m_config->gpgpu_operand_collector_num_units_gen,
+shader.cc:      m_config->gpgpu_operand_collector_num_out_ports_gen);
+shader.cc:  for (unsigned i = 0; i < m_config->gpgpu_operand_collector_num_in_ports_gen;
+shader.cc:    if (m_config->gpgpu_tensor_core_avail) {
+shader.cc:    if (m_config->gpgpu_num_dp_units > 0) {
+shader.cc:    if (m_config->gpgpu_num_int_units > 0) {
+shader.cc:    if (m_config->m_specialized_unit.size() > 0) {
+shader.cc:      for (unsigned j = 0; j < m_config->m_specialized_unit.size(); ++j) {
+shader.cc:            &m_pipeline_reg[m_config->m_specialized_unit[j].ID_OC_SPEC_ID]);
+shader.cc:            &m_pipeline_reg[m_config->m_specialized_unit[j].OC_EX_SPEC_ID]);
+shader.cc:  if (m_config->enable_specialized_operand_collector) {
+shader.cc:        SP_CUS, m_config->gpgpu_operand_collector_num_units_sp,
+shader.cc:        m_config->gpgpu_operand_collector_num_out_ports_sp);
+shader.cc:        DP_CUS, m_config->gpgpu_operand_collector_num_units_dp,
+shader.cc:        m_config->gpgpu_operand_collector_num_out_ports_dp);
+shader.cc:        m_config->gpgpu_operand_collector_num_units_tensor_core,
+shader.cc:        m_config->gpgpu_operand_collector_num_out_ports_tensor_core);
+shader.cc:        SFU_CUS, m_config->gpgpu_operand_collector_num_units_sfu,
+shader.cc:        m_config->gpgpu_operand_collector_num_out_ports_sfu);
+shader.cc:        MEM_CUS, m_config->gpgpu_operand_collector_num_units_mem,
+shader.cc:        m_config->gpgpu_operand_collector_num_out_ports_mem);
+shader.cc:        INT_CUS, m_config->gpgpu_operand_collector_num_units_int,
+shader.cc:        m_config->gpgpu_operand_collector_num_out_ports_int);
+shader.cc:    for (unsigned i = 0; i < m_config->gpgpu_operand_collector_num_in_ports_sp;
+shader.cc:    for (unsigned i = 0; i < m_config->gpgpu_operand_collector_num_in_ports_dp;
+shader.cc:    for (unsigned i = 0; i < m_config->gpgpu_operand_collector_num_in_ports_sfu;
+shader.cc:         i < m_config->gpgpu_operand_collector_num_in_ports_tensor_core; i++) {
+shader.cc:    for (unsigned i = 0; i < m_config->gpgpu_operand_collector_num_in_ports_mem;
+shader.cc:    for (unsigned i = 0; i < m_config->gpgpu_operand_collector_num_in_ports_int;
+shader.cc:  m_operand_collector.init(m_config->gpgpu_num_reg_banks, this);
+shader.cc:      m_config->gpgpu_num_sp_units + m_config->gpgpu_num_dp_units +
+shader.cc:      m_config->gpgpu_num_sfu_units + m_config->gpgpu_num_tensor_core_units +
+shader.cc:      m_config->gpgpu_num_int_units + m_config->m_specialized_unit_num +
+shader.cc:  for (unsigned k = 0; k < m_config->gpgpu_num_sp_units; k++) {
+shader.cc:  for (unsigned k = 0; k < m_config->gpgpu_num_dp_units; k++) {
+shader.cc:  for (unsigned k = 0; k < m_config->gpgpu_num_int_units; k++) {
+shader.cc:  for (unsigned k = 0; k < m_config->gpgpu_num_sfu_units; k++) {
+shader.cc:  for (unsigned k = 0; k < m_config->gpgpu_num_tensor_core_units; k++) {
+shader.cc:  for (unsigned j = 0; j < m_config->m_specialized_unit.size(); j++) {
+shader.cc:    for (unsigned k = 0; k < m_config->m_specialized_unit[j].num_units; k++) {
+shader.cc:          m_config->m_specialized_unit[j].name,
+shader.cc:          m_config->m_specialized_unit[j].latency, k));
+shader.cc:      m_dispatch_port.push_back(m_config->m_specialized_unit[j].ID_OC_SPEC_ID);
+shader.cc:      m_issue_port.push_back(m_config->m_specialized_unit[j].OC_EX_SPEC_ID);
+shader.cc:  num_result_bus = m_config->pipe_widths[EX_WB];
+shader.cc:    : core_t(gpu, NULL, config->warp_size, config->n_thread_per_shader),
+shader.cc:      m_barriers(this, config->max_warps_per_shader, config->max_cta_per_core,
+shader.cc:                 config->max_barriers_per_cta, config->warp_size),
+shader.cc:  // unsigned warp_size = config->warp_size;
+shader.cc:  for (unsigned i = start_thread / m_config->warp_size;
+shader.cc:       i < end_thread / m_config->warp_size; ++i) {
+shader.cc:  if (m_config->model == POST_DOMINATOR) {
+shader.cc:    unsigned start_warp = start_thread / m_config->warp_size;
+shader.cc:    unsigned warp_per_cta = cta_size / m_config->warp_size;
+shader.cc:    unsigned end_warp = end_thread / m_config->warp_size +
+shader.cc:                        ((end_thread % m_config->warp_size) ? 1 : 0);
+shader.cc:      for (unsigned t = 0; t < m_config->warp_size; t++) {
+shader.cc:        unsigned hwtid = i * m_config->warp_size + t;
+shader.cc:        for (unsigned t = 0; t < m_config->warp_size; t++) {
+shader.cc:            m_thread[i * m_config->warp_size + t]->set_npc(pc);
+shader.cc:            m_thread[i * m_config->warp_size + t]->update_pc();
+shader.cc:  unsigned cluster_id = m_shader_config->sid_to_cluster(sid);
+shader.cc:  unsigned warp_id = tid / m_config->warp_size;
+shader.cc:  for (unsigned i = 0; i < m_config->num_shader(); i++) {
+shader.cc:  for (unsigned i = 3; i < m_config->warp_size + 3; i++)
+shader.cc:  for (unsigned i = 0; i < m_config->gpgpu_num_sched_per_core; i++)
+shader.cc:  for (unsigned i = 0; i < m_config->gpgpu_num_sched_per_core; i++)
+shader.cc:  assert(warp_id <= m_config->max_warps_per_shader);
+shader.cc:      (m_config->gpgpu_warpdistro_shader == -1) ? m_config->num_shader() : 1;
+shader.cc:  for (unsigned i = 0; i < m_config->warp_size + 3; i++) {
+shader.cc:      if (((i - 3) % (m_config->warp_size / 8)) ==
+shader.cc:          ((m_config->warp_size / 8) - 1)) {
+shader.cc:  unsigned sid = m_config->gpgpu_warp_issue_shader;
+shader.cc:  for (unsigned i = 0; i < m_config->num_shader(); i++)
+shader.cc:  for (unsigned i = 0; i < m_config->num_shader(); i++)
+shader.cc:  for (unsigned i = 0; i < m_config->num_shader(); i++)
+shader.cc:      for (unsigned i = 0; i < m_config->max_warps_per_shader; i++) {
+shader.cc:            (m_last_warp_fetched + 1 + i) % m_config->max_warps_per_shader;
+shader.cc:          for (unsigned t = 0; t < m_config->warp_size; t++) {
+shader.cc:            unsigned tid = warp_id * m_config->warp_size + t;
+shader.cc:              pc & (m_config->m_L1I_config.get_line_sz() - 1);
+shader.cc:          if ((offset_in_block + nbytes) > m_config->m_L1I_config.get_line_sz())
+shader.cc:            nbytes = (m_config->m_L1I_config.get_line_sz() - offset_in_block);
+shader.cc:          if (m_config->perfect_inst_const_cache) {
+shader.cc:      pipe_reg_set.get_free(m_config->sub_core_model, sch_id);
+shader.cc:    unsigned max_issue = m_shader->m_config->gpgpu_max_insn_issue_per_warp;
+shader.cc:          m_shader->m_config->gpgpu_ctx->func_sim->ptx_get_insn_str(pc)
+shader.cc:              if (m_mem_out->has_free(m_shader->m_config->sub_core_model,
+shader.cc:                    (m_shader->m_config->gpgpu_num_sp_units > 0) &&
+shader.cc:                    m_sp_out->has_free(m_shader->m_config->sub_core_model,
+shader.cc:                    (m_shader->m_config->gpgpu_num_int_units > 0) &&
+shader.cc:                    m_int_out->has_free(m_shader->m_config->sub_core_model,
+shader.cc:                if (m_shader->m_config->gpgpu_num_int_units > 0 &&
+shader.cc:                         (m_shader->m_config->gpgpu_num_int_units == 0 ||
+shader.cc:                          (m_shader->m_config->gpgpu_num_int_units > 0 &&
+shader.cc:                          m_shader->m_config->gpgpu_ctx->func_sim
+shader.cc:                          m_shader->m_config->gpgpu_ctx->func_sim
+shader.cc:                          m_shader->m_config->gpgpu_ctx->func_sim
+shader.cc:              } else if ((m_shader->m_config->gpgpu_num_dp_units > 0) &&
+shader.cc:                    (m_shader->m_config->gpgpu_num_dp_units > 0) &&
+shader.cc:                    m_dp_out->has_free(m_shader->m_config->sub_core_model,
+shader.cc:              else if (((m_shader->m_config->gpgpu_num_dp_units == 0 &&
+shader.cc:                    (m_shader->m_config->gpgpu_num_sfu_units > 0) &&
+shader.cc:                    m_sfu_out->has_free(m_shader->m_config->sub_core_model,
+shader.cc:                    (m_shader->m_config->gpgpu_num_tensor_core_units > 0) &&
+shader.cc:                        m_shader->m_config->sub_core_model, m_id);
+shader.cc:                assert(spec_id < m_shader->m_config->m_specialized_unit.size());
+shader.cc:                    (m_shader->m_config->m_specialized_unit[spec_id].num_units >
+shader.cc:                    spec_reg_set->has_free(m_shader->m_config->sub_core_model,
+shader.cc:    unsigned max_issue = m_shader->m_config->gpgpu_max_insn_issue_per_warp;
+shader.cc:          m_shader->m_config->gpgpu_ctx->func_sim->ptx_get_insn_str(pc).c_str());
+shader.cc:              if (m_mem_out->has_free(m_shader->m_config->sub_core_model, m_id) and
+shader.cc:                    (m_shader->m_config->gpgpu_num_sp_units > 0) &&
+shader.cc:                    m_sp_out->has_free(m_shader->m_config->sub_core_model,
+shader.cc:                    (m_shader->m_config->gpgpu_num_int_units > 0) &&
+shader.cc:                    m_int_out->has_free(m_shader->m_config->sub_core_model,
+shader.cc:                if (m_shader->m_config->gpgpu_num_int_units > 0 &&
+shader.cc:                         (m_shader->m_config->gpgpu_num_int_units == 0 ||
+shader.cc:                          (m_shader->m_config->gpgpu_num_int_units > 0 &&
+shader.cc:                          m_shader->m_config->gpgpu_ctx->func_sim
+shader.cc:                          m_shader->m_config->gpgpu_ctx->func_sim
+shader.cc:                          m_shader->m_config->gpgpu_ctx->func_sim
+shader.cc:              } else if ((m_shader->m_config->gpgpu_num_dp_units > 0) &&
+shader.cc:                    (m_shader->m_config->gpgpu_num_dp_units > 0) &&
+shader.cc:                    m_dp_out->has_free(m_shader->m_config->sub_core_model,
+shader.cc:              else if (((m_shader->m_config->gpgpu_num_dp_units == 0 &&
+shader.cc:                    (m_shader->m_config->gpgpu_num_sfu_units > 0) &&
+shader.cc:                    m_sfu_out->has_free(m_shader->m_config->sub_core_model,
+shader.cc:                    (m_shader->m_config->gpgpu_num_tensor_core_units > 0) &&
+shader.cc:                        m_shader->m_config->sub_core_model, m_id);
+shader.cc:                assert(spec_id < m_shader->m_config->m_specialized_unit.size());
+shader.cc:                    (m_shader->m_config->m_specialized_unit[spec_id].num_units >
+shader.cc:                    spec_reg_set->has_free(m_shader->m_config->sub_core_model,
+shader.cc:  for (unsigned int i = 0; i < m_config->reg_file_port_throughput; ++i)
+shader.cc:  if (m_config->gpgpu_local_mem_map) {
+shader.cc:    thread_base = 4 * (m_config->n_thread_per_shader * m_sid + tid);
+shader.cc:    max_concurrent_threads = num_shader * m_config->n_thread_per_shader;
+shader.cc:        m_config->sub_core_model && m_fu[n]->is_issue_partitioned();
+shader.cc:  if (m_config->gpgpu_clock_gated_lanes == false)
+shader.cc:    m_stats->m_num_sim_insn[m_sid] += m_config->warp_size;
+shader.cc:      m_config->warp_size *
+shader.cc:      (m_config->pipe_widths[EX_WB]);  // from the functional units
+shader.cc:    unsigned inc_ack = (m_config->m_L1D_config.get_mshr_type() == SECTOR_ASSOC)
+shader.cc:  if (m_config->m_L1D_config.l1_latency > 0) {
+shader.cc:    for (unsigned int j = 0; j < m_config->m_L1D_config.l1_banks;
+shader.cc:      unsigned bank_id = m_config->m_L1D_config.set_bank(mf->get_addr());
+shader.cc:      assert(bank_id < m_config->m_L1D_config.l1_banks);
+shader.cc:      if ((l1_latency_queue[bank_id][m_config->m_L1D_config.l1_latency - 1]) ==
+shader.cc:        l1_latency_queue[bank_id][m_config->m_L1D_config.l1_latency - 1] = mf;
+shader.cc:              (m_config->m_L1D_config.get_mshr_type() == SECTOR_ASSOC)
+shader.cc:  for (unsigned int j = 0; j < m_config->m_L1D_config.l1_banks; j++) {
+shader.cc:              (m_config->m_L1D_config.get_mshr_type() == SECTOR_ASSOC)
+shader.cc:        if (m_config->m_L1D_config.get_write_policy() != WRITE_THROUGH &&
+shader.cc:            (m_config->m_L1D_config.get_write_allocate_policy() ==
+shader.cc:             m_config->m_L1D_config.get_write_allocate_policy() ==
+shader.cc:              (m_config->m_L1D_config.get_mshr_type() == SECTOR_ASSOC)
+shader.cc:    for (unsigned stage = 0; stage < m_config->m_L1D_config.l1_latency - 1;
+shader.cc:  if (m_config->perfect_inst_const_cache) {
+shader.cc:  return m_response_fifo.size() >= m_config->ldst_unit_response_queue_size;
+shader.cc:      m_config->sub_core_model && this->is_issue_partitioned();
+shader.cc:    : pipelined_simd_unit(result_port, config, config->max_sfu_latency, core,
+shader.cc:    : pipelined_simd_unit(result_port, config, config->max_tensor_core_latency,
+shader.cc:      source_reg.get_ready(m_config->sub_core_model, m_issue_reg_id);
+shader.cc:      source_reg.get_ready(m_config->sub_core_model, m_issue_reg_id);
+shader.cc:    : pipelined_simd_unit(result_port, config, config->max_sp_latency, core,
+shader.cc:    : pipelined_simd_unit(result_port, config, config->max_dp_latency, core,
+shader.cc:    : pipelined_simd_unit(result_port, config, config->max_int_latency, core,
+shader.cc:      source_reg.get_ready(m_config->sub_core_model, m_issue_reg_id);
+shader.cc:      source_reg.get_ready(m_config->sub_core_model, m_issue_reg_id);
+shader.cc:      source_reg.get_ready(m_config->sub_core_model, m_issue_reg_id);
+shader.cc:      source_reg.get_ready(m_config->sub_core_model, m_issue_reg_id);
+shader.cc:      m_config->sub_core_model && this->is_issue_partitioned();
+shader.cc:  m_L1T = new tex_cache(L1T_name, m_config->m_L1T_config, m_sid,
+shader.cc:  m_L1C = new read_only_cache(L1C_name, m_config->m_L1C_config, m_sid,
+shader.cc:    : pipelined_simd_unit(NULL, config, config->smem_latency, core, 0),
+shader.cc:  assert(config->smem_latency > 1);
+shader.cc:  if (!m_config->m_L1D_config.disabled()) {
+shader.cc:    m_L1D = new velma_cache(L1D_name, m_config->m_L1D_config, m_sid,
+shader.cc:    l1_latency_queue.resize(m_config->m_L1D_config.l1_banks);
+shader.cc:    assert(m_config->m_L1D_config.l1_latency > 0);
+shader.cc:    for (unsigned j = 0; j < m_config->m_L1D_config.l1_banks; j++)
+shader.cc:      l1_latency_queue[j].resize(m_config->m_L1D_config.l1_latency,
+shader.cc:  if (m_config->mem_unit_ports)
+shader.cc:    return m_config->mem_unit_ports;
+shader.cc:    return m_config->mem_warp_parts;
+shader.cc:          (m_config->gpgpu_perfect_mem && mf->get_is_write())) {
+shader.cc:    if (m_config->m_L1D_config.l1_latency > 0) L1_latency_queue_cycle();
+shader.cc:        if (m_pipeline_reg[m_config->smem_latency - 1]->empty()) {
+shader.cc:          move_warp(m_pipeline_reg[m_config->smem_latency - 1], m_dispatch_reg);
+shader.cc: for (unsigned i=0; i<m_shader_config->n_thread_per_shader; i++)
+shader.cc:      m_shader_config->gpgpu_warp_issue_shader;
+shader.cc:  if (!m_shader_config->m_L1I_config.disabled()) {
+shader.cc:    for (unsigned i = 0; i < m_shader_config->n_simt_clusters; ++i) {
+shader.cc:  if (!m_shader_config->m_L1D_config.disabled()) {
+shader.cc:    for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++) {
+shader.cc:  if (!m_shader_config->m_L1C_config.disabled()) {
+shader.cc:    for (unsigned i = 0; i < m_shader_config->n_simt_clusters; ++i) {
+shader.cc:  if (!m_shader_config->m_L1T_config.disabled()) {
+shader.cc:    for (unsigned i = 0; i < m_shader_config->n_simt_clusters; ++i) {
+shader.cc:  for (unsigned i = 0; i < m_shader_config->n_simt_clusters; ++i) {
+shader.cc:  for (unsigned i=0; i<m_shader_config->n_thread_per_shader; i++)
+shader.cc:  for (unsigned i=0; i<m_shader_config->n_thread_per_shader; i++)
+shader.cc:  for (unsigned i=0; i<m_shader_config->n_thread_per_shader; i++)
+shader.cc:  i<m_shader_config->n_thread_per_shader; i++) fprintf(fout, "%d ",
+shader.cc:  for (unsigned i=0; i<m_shader_config->n_thread_per_shader; i++) {
+shader.cc:     if (i%m_shader_config->warp_size ==
+shader.cc:  (unsigned)(m_shader_config->warp_size-1)) { fprintf(fout, "%d ", temp); temp =
+shader.cc:  for (unsigned i=0; i<m_shader_config->n_thread_per_shader; i++) {
+shader.cc:  m_sc[0]->get_thread_n_l1_mrghit_ac(i) ); if (i%m_shader_config->warp_size ==
+shader.cc:  (unsigned)(m_shader_config->warp_size-1)) { fprintf(fout, "%d ", temp); temp =
+shader.cc:  for (unsigned i=0; i<m_shader_config->n_thread_per_shader; i++) {
+shader.cc:     if (i%m_shader_config->warp_size ==
+shader.cc:  (unsigned)(m_shader_config->warp_size-1)) { fprintf(fout, "%d ", temp); temp =
+shader.cc:  for (unsigned j = 0; j < m_config->warp_size; j++)
+shader.cc:  m_config->gpgpu_ctx->func_sim->ptx_print_insn(pc, fout);
+shader.cc:  if ((mask & 4) && m_config->model == POST_DOMINATOR) {
+shader.cc:    unsigned n = m_config->n_thread_per_shader / m_config->warp_size;
+shader.cc:      for (unsigned j = 0; j < m_config->warp_size; j++) {
+shader.cc:        unsigned tid = i * m_config->warp_size + j;
+shader.cc:  if (!m_config->m_L1D_config.disabled()) m_L1D->display_state(fout);
+shader.cc:  for (unsigned i = 0; i < m_config->max_warps_per_shader; i++) {
+shader.cc:  if (m_active_threads.count() <= 2 * m_config->warp_size) {
+shader.cc:      unsigned warp_id = tid / m_config->warp_size;
+shader.cc:  for (unsigned int i = 0; i < m_config->inst_fetch_throughput; ++i) {
+shader.cc:  kernel_max_cta_per_shader = m_config->max_cta(kernel);
+shader.cc:      (gpu_cta_size % m_config->warp_size)
+shader.cc:          ? m_config->warp_size * ((gpu_cta_size / m_config->warp_size) + 1)
+shader.cc:  for (unsigned i = 0; i < m_config->max_warps_per_shader; i++) {
+shader.cc:         (m_config->gpgpu_perfect_mem && mf->get_is_write()));
+shader.cc:  m_core = new shader_core_ctx *[m_config->n_simt_cores_per_cluster];
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; i++) {
+shader.cc:    unsigned sid = m_config->cid_to_sid(i, m_cluster_id);
+shader.cc:  m_cta_issue_next_core = m_config->n_simt_cores_per_cluster -
+shader.cc:  if (m_config->simt_core_sim_order == 1) {
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; i++)
+shader.cc:    m_core[i]->reinit(0, m_config->n_thread_per_shader, true);
+shader.cc:  return m_config->n_simt_cores_per_cluster * m_config->max_cta(kernel);
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; i++)
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; i++) {
+shader.cc:    unsigned sid = m_config->cid_to_sid(i, m_cluster_id);
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; i++) {
+shader.cc:  return aggregate / m_config->n_simt_cores_per_cluster;
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; i++)
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; i++)
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; i++) {
+shader.cc:        (i + m_cta_issue_next_core + 1) % m_config->n_simt_cores_per_cluster;
+shader.cc:    if (m_config->gpgpu_concurrent_kernel_sm) {  // concurrent kernel on sm
+shader.cc:        //            m_config->max_cta(*kernel)) ) {
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; i++)
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; i++)
+shader.cc:    ::icnt_push(m_cluster_id, m_config->mem2device(destination), (void *)mf,
+shader.cc:    ::icnt_push(m_cluster_id, m_config->mem2device(destination), (void *)mf,
+shader.cc:    unsigned cid = m_config->sid_to_cid(mf->get_sid());
+shader.cc:  if (m_response_fifo.size() < m_config->n_simt_ejection_buffer_size) {
+shader.cc:    // m_memory_stats->memlatstat_read_done(mf,m_shader_config->max_warps_per_shader);
+shader.cc:  unsigned cid = m_config->sid_to_cid(sid);
+shader.cc:  m_core[m_config->sid_to_cid(sid)]->display_pipeline(fout, print_mem, mask);
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; ++i) {
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; ++i) {
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; ++i) {
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; ++i) {
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; ++i) {
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; ++i) {
+shader.cc:  for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; ++i) {
+shader.cc:        m_config->n_simt_clusters * m_config->n_simt_cores_per_cluster,
+shader.cc:  for (unsigned t = 0; t < m_config->warp_size; t++) {
+shader.cc:      int tid = warp_id * m_config->warp_size + t;
+gpu-sim.cc:  if (cta_size > m_shader_config->n_thread_per_shader) {
+gpu-sim.cc:           cta_size, m_shader_config->n_thread_per_shader);
+gpu-sim.cc:  m_cluster = new simt_core_cluster *[m_shader_config->n_simt_clusters];
+gpu-sim.cc:  for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
+gpu-sim.cc:      new memory_partition_unit *[m_memory_config->m_n_mem];
+gpu-sim.cc:      new memory_sub_partition *[m_memory_config->m_n_mem_sub_partition];
+gpu-sim.cc:  for (unsigned i = 0; i < m_memory_config->m_n_mem; i++) {
+gpu-sim.cc:         p < m_memory_config->m_n_sub_partition_per_memory_channel; p++) {
+gpu-sim.cc:          i * m_memory_config->m_n_sub_partition_per_memory_channel + p;
+gpu-sim.cc:  icnt_create(m_shader_config->n_simt_clusters,
+gpu-sim.cc:              m_memory_config->m_n_mem_sub_partition);
+gpu-sim.cc:  m_last_cluster_issue = m_shader_config->n_simt_clusters -
+gpu-sim.cc:  return m_shader_config->gpgpu_shmem_size;
+gpu-sim.cc:  return m_shader_config->gpgpu_shmem_per_block;
+gpu-sim.cc:  return m_shader_config->gpgpu_shader_registers;
+gpu-sim.cc:  return m_shader_config->gpgpu_registers_per_block;
+gpu-sim.cc:int gpgpu_sim::wrp_size() const { return m_shader_config->warp_size; }
+gpu-sim.cc:  return m_shader_config->max_cta_per_core;
+gpu-sim.cc:  return m_shader_config->max_cta(k);
+gpu-sim.cc:  return m_shader_config->model;
+gpu-sim.cc:  for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
+gpu-sim.cc:  for (unsigned i = 0; i < m_memory_config->m_n_mem; i++)
+gpu-sim.cc:  for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
+gpu-sim.cc:                           m_shader_config->n_thread_per_shader, 0,
+gpu-sim.cc:    insn_warp_occ_create(m_config.num_shader(), m_shader_config->warp_size);
+gpu-sim.cc:    shader_warp_occ_create(m_config.num_shader(), m_shader_config->warp_size,
+gpu-sim.cc:    shader_mem_acc_create(m_config.num_shader(), m_memory_config->m_n_mem, 4,
+gpu-sim.cc:    for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++) {
+gpu-sim.cc:        num_cores += m_shader_config->n_simt_cores_per_cluster;
+gpu-sim.cc:    for (unsigned i = 0; i < m_memory_config->m_n_mem; i++) {
+gpu-sim.cc:  if (cache_config != m_shader_config->m_L1D_config.get_cache_status()) {
+gpu-sim.cc:    for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++) {
+gpu-sim.cc:      m_shader_config->m_L1D_config.init(
+gpu-sim.cc:          m_shader_config->m_L1D_config.m_config_string, FuncCachePreferNone);
+gpu-sim.cc:      m_shader_config->gpgpu_shmem_size =
+gpu-sim.cc:          m_shader_config->gpgpu_shmem_sizeDefault;
+gpu-sim.cc:      if ((m_shader_config->m_L1D_config.m_config_stringPrefL1 == NULL) ||
+gpu-sim.cc:          (m_shader_config->gpgpu_shmem_sizePrefL1 == (unsigned)-1)) {
+gpu-sim.cc:        m_shader_config->m_L1D_config.init(
+gpu-sim.cc:            m_shader_config->m_L1D_config.m_config_string, FuncCachePreferNone);
+gpu-sim.cc:        m_shader_config->gpgpu_shmem_size =
+gpu-sim.cc:            m_shader_config->gpgpu_shmem_sizeDefault;
+gpu-sim.cc:        m_shader_config->m_L1D_config.init(
+gpu-sim.cc:            m_shader_config->m_L1D_config.m_config_stringPrefL1,
+gpu-sim.cc:        m_shader_config->gpgpu_shmem_size =
+gpu-sim.cc:            m_shader_config->gpgpu_shmem_sizePrefL1;
+gpu-sim.cc:      if ((m_shader_config->m_L1D_config.m_config_stringPrefShared == NULL) ||
+gpu-sim.cc:          (m_shader_config->gpgpu_shmem_sizePrefShared == (unsigned)-1)) {
+gpu-sim.cc:        m_shader_config->m_L1D_config.init(
+gpu-sim.cc:            m_shader_config->m_L1D_config.m_config_string, FuncCachePreferNone);
+gpu-sim.cc:        m_shader_config->gpgpu_shmem_size =
+gpu-sim.cc:            m_shader_config->gpgpu_shmem_sizeDefault;
+gpu-sim.cc:        m_shader_config->m_L1D_config.init(
+gpu-sim.cc:            m_shader_config->m_L1D_config.m_config_stringPrefShared,
+gpu-sim.cc:        m_shader_config->gpgpu_shmem_size =
+gpu-sim.cc:            m_shader_config->gpgpu_shmem_sizePrefShared;
+gpu-sim.cc:  m_memory_stats->memlatstat_print(m_memory_config->m_n_mem,
+gpu-sim.cc:                                   m_memory_config->nbk);
+gpu-sim.cc:  for (unsigned i = 0; i < m_memory_config->m_n_mem; i++)
+gpu-sim.cc:  if (!m_memory_config->m_L2_config.disabled()) {
+gpu-sim.cc:    for (unsigned i = 0; i < m_memory_config->m_n_mem_sub_partition; i++) {
+gpu-sim.cc:    if (!m_memory_config->m_L2_config.disabled() &&
+gpu-sim.cc:        m_memory_config->m_L2_config.get_num_lines()) {
+gpu-sim.cc:  return m_shader_config->n_thread_per_shader;
+gpu-sim.cc:  if (m_config->gpgpu_concurrent_kernel_sm) {
+gpu-sim.cc:    if (m_config->max_cta(kernel) < 1) return false;
+gpu-sim.cc:    return (get_n_active_cta() < m_config->max_cta(kernel));
+gpu-sim.cc:  for (step = 0; step < m_config->n_thread_per_shader; step += cta_size) {
+gpu-sim.cc:  if (step >= m_config->n_thread_per_shader)  // didn't find
+gpu-sim.cc:  unsigned int warp_size = m_config->warp_size;
+gpu-sim.cc:  if (m_occupied_n_threads + padded_cta_size > m_config->n_thread_per_shader)
+gpu-sim.cc:  if (m_occupied_shmem + kernel_info->smem > m_config->gpgpu_shmem_size)
+gpu-sim.cc:  if (m_occupied_regs + used_regs > m_config->gpgpu_shader_registers)
+gpu-sim.cc:  if (m_occupied_ctas + 1 > m_config->max_cta_per_core) return false;
+gpu-sim.cc:  if (m_config->gpgpu_concurrent_kernel_sm) {
+gpu-sim.cc:    unsigned int warp_size = m_config->warp_size;
+gpu-sim.cc:  if (!m_config->gpgpu_concurrent_kernel_sm)
+gpu-sim.cc:  if (!m_config->gpgpu_concurrent_kernel_sm)
+gpu-sim.cc:    max_cta_per_core = m_config->max_cta_per_core;
+gpu-sim.cc:  if (cta_size % m_config->warp_size)
+gpu-sim.cc:        ((cta_size / m_config->warp_size) + 1) * (m_config->warp_size);
+gpu-sim.cc:  if (!m_config->gpgpu_concurrent_kernel_sm) {
+gpu-sim.cc:    unsigned warp_id = i / m_config->warp_size;
+gpu-sim.cc:        m_config->n_thread_per_shader, this, free_cta_hw_id, warp_id,
+gpu-sim.cc:             m_config->n_thread_per_shader);  // should be at least one, but
+gpu-sim.cc:  for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++) {
+gpu-sim.cc:    unsigned idx = (i + last_issued + 1) % m_shader_config->n_simt_clusters;
+gpu-sim.cc:    for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
+gpu-sim.cc:    for (unsigned i = 0; i < m_memory_config->m_n_mem_sub_partition; i++) {
+gpu-sim.cc:        if (::icnt_has_buffer(m_shader_config->mem2device(i), response_size)) {
+gpu-sim.cc:          ::icnt_push(m_shader_config->mem2device(i), mf->get_tpc(), mf,
+gpu-sim.cc:    for (unsigned i = 0; i < m_memory_config->m_n_mem; i++) {
+gpu-sim.cc:      if (m_memory_config->simple_dram_model)
+gpu-sim.cc:    for (unsigned i = 0; i < m_memory_config->m_n_mem_sub_partition; i++) {
+gpu-sim.cc:        mem_fetch *mf = (mem_fetch *)icnt_pop(m_shader_config->mem2device(i));
+gpu-sim.cc:    for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++) {
+gpu-sim.cc:    for (unsigned i = 0; i < m_shader_config->num_shader(); i++) {
+gpu-sim.cc:    temp = temp / m_shader_config->num_shader();
+gpu-sim.cc:      for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++) {
+gpu-sim.cc:        for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++) {
+gpu-sim.cc:      if (all_threads_complete && !m_memory_config->m_L2_config.disabled()) {
+gpu-sim.cc:        if (m_memory_config->m_L2_config.get_num_lines()) {
+gpu-sim.cc:          for (unsigned i = 0; i < m_memory_config->m_n_mem; i++) {
+gpu-sim.cc:        for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++) {
+gpu-sim.cc:          for (unsigned i = 0; i < m_memory_config->m_n_mem; i++)
+gpu-sim.cc:  for (unsigned w = 0; w < m_config->max_warps_per_shader; w++)
+gpu-sim.cc:  if (m_memory_config->m_perf_sim_memcpy) {
+gpu-sim.cc:      m_memory_config->m_address_mapping.addrdec_tlx(wr_addr, &raw_addr);
+gpu-sim.cc:          m_memory_config->m_n_sub_partition_per_memory_channel;
+gpu-sim.cc:  for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++) {
+gpu-sim.cc:      m_cluster[m_shader_config->sid_to_cluster(i)]->display_pipeline(
+gpu-sim.cc:    for (unsigned i = 0; i < m_memory_config->m_n_mem; i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    return (total_inst / m_config->num_shader()) / m_config->gpgpu_num_sp_units;
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    return (total_inst / m_config->num_shader()) /
+power_stat.h:           m_config->gpgpu_num_sfu_units;
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.h:    for (unsigned i = 0; i < m_mem_config->m_n_mem; ++i) {
+power_stat.h:    for (unsigned i = 0; i < m_mem_config->m_n_mem; ++i) {
+power_stat.h:    for (unsigned i = 0; i < m_mem_config->m_n_mem; ++i) {
+power_stat.h:    for (unsigned i = 0; i < m_mem_config->m_n_mem; ++i) {
+power_stat.h:    for (unsigned i = 0; i < m_mem_config->m_n_mem; ++i) {
+power_stat.h:    for (unsigned i = 0; i < m_mem_config->m_n_mem; ++i) {
+power_stat.h:    for (unsigned i = 0; i < m_mem_config->m_n_mem; ++i) {
+power_stat.h:    for (unsigned i = 0; i < m_mem_config->m_n_mem; ++i) {
+power_stat.h:    for (unsigned i = 0; i < m_config->n_simt_clusters; ++i) {
+power_stat.h:    for (unsigned i = 0; i < m_config->n_simt_clusters; ++i) {
+mem_latency_stat.cc:  assert(mem_config->m_valid);
+mem_latency_stat.cc:  assert(shader_config->m_valid);
+mem_latency_stat.cc:      (unsigned int **)calloc(mem_config->m_n_mem, sizeof(unsigned int *));
+mem_latency_stat.cc:      (unsigned int **)calloc(mem_config->m_n_mem, sizeof(unsigned int *));
+mem_latency_stat.cc:      (unsigned int **)calloc(mem_config->m_n_mem, sizeof(unsigned int *));
+mem_latency_stat.cc:      (unsigned int **)calloc(mem_config->m_n_mem, sizeof(unsigned int *));
+mem_latency_stat.cc:      (unsigned int **)calloc(mem_config->m_n_mem, sizeof(unsigned int *));
+mem_latency_stat.cc:  for (unsigned i = 0; i < mem_config->m_n_mem; i++) {
+mem_latency_stat.cc:        (unsigned int *)calloc(mem_config->nbk, sizeof(unsigned int));
+mem_latency_stat.cc:        (unsigned int *)calloc(mem_config->nbk, sizeof(unsigned int));
+mem_latency_stat.cc:        (unsigned int *)calloc(mem_config->nbk, sizeof(unsigned int));
+mem_latency_stat.cc:        (unsigned int *)calloc(mem_config->nbk, sizeof(unsigned int));
+mem_latency_stat.cc:        (unsigned int *)calloc(mem_config->nbk, sizeof(unsigned int));
+mem_latency_stat.cc:      (shader_config->n_thread_per_shader / shader_config->warp_size + 1);
+mem_latency_stat.cc:      (unsigned int **)calloc(mem_config->m_n_mem, sizeof(unsigned int *));
+mem_latency_stat.cc:      (unsigned int **)calloc(mem_config->m_n_mem, sizeof(unsigned int *));
+mem_latency_stat.cc:      (unsigned int **)calloc(mem_config->m_n_mem, sizeof(unsigned int *));
+mem_latency_stat.cc:      mem_config->m_n_mem, sizeof(unsigned long long *));
+mem_latency_stat.cc:      (unsigned **)calloc(mem_config->m_n_mem, sizeof(unsigned *));
+mem_latency_stat.cc:      mem_config->m_n_mem * mem_config->nbk, sizeof(unsigned int));
+mem_latency_stat.cc:  if (mem_config->gpgpu_frfcfs_dram_sched_queue_size) {
+mem_latency_stat.cc:        mem_config->gpgpu_frfcfs_dram_sched_queue_size, sizeof(unsigned int));
+mem_latency_stat.cc:        (unsigned int **)calloc(mem_config->m_n_mem, sizeof(unsigned int *));
+mem_latency_stat.cc:        (unsigned int **)calloc(mem_config->m_n_mem, sizeof(unsigned int *));
+mem_latency_stat.cc:    for (j = 0; j < mem_config->m_n_mem; j++) {
+mem_latency_stat.cc:          (unsigned int *)calloc(mem_config->nbk, sizeof(unsigned int));
+mem_latency_stat.cc:          (unsigned int *)calloc(mem_config->nbk, sizeof(unsigned int));
+mem_latency_stat.cc:  for (i = 0; i < mem_config->m_n_mem; i++) {
+mem_latency_stat.cc:        (unsigned int *)calloc(mem_config->nbk, sizeof(unsigned int));
+mem_latency_stat.cc:        (unsigned int *)calloc(mem_config->nbk, sizeof(unsigned int));
+mem_latency_stat.cc:        (unsigned int *)calloc(mem_config->nbk, sizeof(unsigned int));
+mem_latency_stat.cc:        mem_config->nbk, sizeof(unsigned long long int));
+mem_latency_stat.cc:    mf_max_lat_table[i] = (unsigned *)calloc(mem_config->nbk, sizeof(unsigned));
+mem_latency_stat.cc:        (unsigned **)calloc(mem_config->m_n_mem, sizeof(unsigned *));
+mem_latency_stat.cc:    for (j = 0; (unsigned)j < mem_config->m_n_mem; j++) {
+mem_latency_stat.cc:          (unsigned *)calloc((mem_config->nbk + 1), sizeof(unsigned *));
+mem_latency_stat.cc:      (unsigned int *)calloc(mem_config->m_n_mem, sizeof(unsigned int));
+mem_latency_stat.cc:      (unsigned int *)calloc(mem_config->m_n_mem, sizeof(unsigned int));
+mem_latency_stat.cc:      (unsigned int *)calloc(mem_config->m_n_mem, sizeof(unsigned int));
+mem_latency_stat.cc:      (unsigned int *)calloc(mem_config->m_n_mem, sizeof(unsigned int));
+mem_latency_stat.cc:      (unsigned int *)calloc(mem_config->m_n_mem, sizeof(unsigned int));
+mem_latency_stat.cc:      (unsigned int *)calloc(mem_config->m_n_mem, sizeof(unsigned int));
+mem_latency_stat.cc:  if (m_memory_config->gpgpu_memlatency_stat) {
+mem_latency_stat.cc:  if (m_memory_config->gpgpu_memlatency_stat) {
+mem_latency_stat.cc:          ceil(mf->get_data_size() / m_memory_config->dram_atom_size);
+mem_latency_stat.cc:          ceil(mf->get_data_size() / m_memory_config->dram_atom_size);
+mem_latency_stat.cc:        ceil(mf->get_data_size() / m_memory_config->dram_atom_size);
+mem_latency_stat.cc:  if (m_memory_config->gpgpu_memlatency_stat) {
+mem_latency_stat.cc:  if (mf_num_lat_pw && m_memory_config->gpgpu_memlatency_stat) {
+mem_latency_stat.cc:  if (m_memory_config->gpgpu_memlatency_stat) {
+mem_latency_stat.cc:  if (m_memory_config->gpgpu_memlatency_stat & GPU_MEMLATSTAT_MC) {
+mem_latency_stat.cc:    if (!m_memory_config->gpgpu_frfcfs_dram_sched_queue_size)
+mem_latency_stat.cc:      j = m_memory_config->gpgpu_frfcfs_dram_sched_queue_size;
+power_stat.cc:  assert(mem_config->m_valid);
+power_stat.cc:    for (unsigned j = 0; j < m_config->num_shader(); ++j) {
+power_stat.cc:    for (unsigned j = 0; j < m_mem_config->m_n_mem; ++j) {
+power_stat.cc:      (unsigned *)calloc(m_core_config->num_shader(), sizeof(unsigned));
+power_stat.cc:    n_cmd[i] = (unsigned *)calloc(m_config->m_n_mem, sizeof(unsigned));
+power_stat.cc:    n_activity[i] = (unsigned *)calloc(m_config->m_n_mem, sizeof(unsigned));
+power_stat.cc:    n_nop[i] = (unsigned *)calloc(m_config->m_n_mem, sizeof(unsigned));
+power_stat.cc:    n_act[i] = (unsigned *)calloc(m_config->m_n_mem, sizeof(unsigned));
+power_stat.cc:    n_pre[i] = (unsigned *)calloc(m_config->m_n_mem, sizeof(unsigned));
+power_stat.cc:    n_rd[i] = (unsigned *)calloc(m_config->m_n_mem, sizeof(unsigned));
+power_stat.cc:    n_wr[i] = (unsigned *)calloc(m_config->m_n_mem, sizeof(unsigned));
+power_stat.cc:    n_wr_WB[i] = (unsigned *)calloc(m_config->m_n_mem, sizeof(unsigned));
+power_stat.cc:    n_req[i] = (unsigned *)calloc(m_config->m_n_mem, sizeof(unsigned));
+power_stat.cc:    n_mem_to_simt[i] = (long *)calloc(m_core_config->n_simt_clusters,
+power_stat.cc:    n_simt_to_mem[i] = (long *)calloc(m_core_config->n_simt_clusters,
+power_stat.cc:  for (unsigned i = 0; i < m_core_config->num_shader(); ++i) {
+power_stat.cc:  for (unsigned i = 0; i < m_config->m_n_mem; ++i) {
+power_stat.cc:  for (unsigned i = 0; i < m_core_config->n_simt_clusters; i++) {
+power_stat.cc:  for (unsigned i = 0; i < m_config->m_n_mem; ++i) {
+power_stat.cc:  assert(shader_config->m_valid);
+power_stat.cc:  for (unsigned i = 0; i < m_config->num_shader(); i++) {
+power_stat.cc:      (float *)calloc(m_config->num_shader(), sizeof(float));
+power_stat.cc:      (unsigned *)calloc(m_config->num_shader(), sizeof(unsigned));
+power_stat.cc:      (unsigned *)calloc(m_config->num_shader(), sizeof(unsigned));
+power_stat.cc:      (unsigned *)calloc(m_config->num_shader(), sizeof(unsigned));
+power_stat.cc:      (unsigned *)calloc(m_config->num_shader(), sizeof(unsigned));
+power_stat.cc:      (unsigned *)calloc(m_config->num_shader(), sizeof(unsigned));
+power_stat.cc:      (unsigned *)calloc(m_config->num_shader(), sizeof(unsigned));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (unsigned *)calloc(m_config->num_shader(), sizeof(unsigned));
+power_stat.cc:      (unsigned *)calloc(m_config->num_shader(), sizeof(unsigned));
+power_stat.cc:      (unsigned *)calloc(m_config->num_shader(), sizeof(unsigned));
+power_stat.cc:      (unsigned *)calloc(m_config->num_shader(), sizeof(unsigned));
+power_stat.cc:      (unsigned *)calloc(m_config->num_shader(), sizeof(unsigned));
+power_stat.cc:      (unsigned *)calloc(m_config->num_shader(), sizeof(unsigned));
+power_stat.cc:      (unsigned *)calloc(m_config->num_shader(), sizeof(unsigned));
+power_stat.cc:      (unsigned *)calloc(m_config->num_shader(), sizeof(unsigned));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:      (double *)calloc(m_config->num_shader(), sizeof(double));
+power_stat.cc:  for (unsigned i = 0; i < m_config->num_shader(); ++i) {
+power_stat.cc:  assert(shader_config->m_valid);
+power_stat.cc:  assert(mem_config->m_valid);
+dram_sched.cc:  m_queue = new std::list<dram_req_t *>[m_config->nbk];
+dram_sched.cc:      unsigned, std::list<std::list<dram_req_t *>::iterator> >[m_config->nbk];
+dram_sched.cc:      new std::list<std::list<dram_req_t *>::iterator> *[m_config->nbk];
+dram_sched.cc:  curr_row_service_time = new unsigned[m_config->nbk];
+dram_sched.cc:  row_service_timestamp = new unsigned[m_config->nbk];
+dram_sched.cc:  for (unsigned i = 0; i < m_config->nbk; i++) {
+dram_sched.cc:  if (m_config->seperate_write_queue_enabled) {
+dram_sched.cc:    m_write_queue = new std::list<dram_req_t *>[m_config->nbk];
+dram_sched.cc:        unsigned, std::list<std::list<dram_req_t *>::iterator> >[m_config->nbk];
+dram_sched.cc:        new std::list<std::list<dram_req_t *>::iterator> *[m_config->nbk];
+dram_sched.cc:    for (unsigned i = 0; i < m_config->nbk; i++) {
+dram_sched.cc:  if (m_config->seperate_write_queue_enabled && req->data->is_write()) {
+dram_sched.cc:    assert(m_num_write_pending < m_config->gpgpu_frfcfs_dram_write_queue_size);
+dram_sched.cc:    assert(m_num_pending < m_config->gpgpu_frfcfs_dram_sched_queue_size);
+dram_sched.cc:  if (m_config->seperate_write_queue_enabled) {
+dram_sched.cc:        ((m_num_write_pending >= m_config->write_high_watermark)
+dram_sched.cc:               ((m_num_write_pending < m_config->write_low_watermark)
+dram_sched.cc:  if (m_config->seperate_write_queue_enabled && req->data->is_write()) {
+dram_sched.cc:  for (unsigned b = 0; b < m_config->nbk; b++) {
+dram_sched.cc:  for (i = 0; i < m_config->nbk; i++) {
+dram_sched.cc:    unsigned b = (i + prio) % m_config->nbk;
+dram_sched.cc:        prio = (prio + 1) % m_config->nbk;
+dram_sched.cc:        if (m_config->gpgpu_memlatency_stat) {
+l2cache.cc:  mem_access_t access(type, addr, size, wr, m_memory_config->gpgpu_ctx);
+l2cache.cc:                      m_memory_config->gpgpu_ctx);
+l2cache.cc:      *[m_config->m_n_sub_partition_per_memory_channel];
+l2cache.cc:  for (unsigned p = 0; p < m_config->m_n_sub_partition_per_memory_channel;
+l2cache.cc:        m_id * m_config->m_n_sub_partition_per_memory_channel + p;
+l2cache.cc:  for (unsigned p = 0; p < m_config->m_n_sub_partition_per_memory_channel;
+l2cache.cc:    : m_last_borrower(config->m_n_sub_partition_per_memory_channel - 1),
+l2cache.cc:      m_private_credit(config->m_n_sub_partition_per_memory_channel, 0),
+l2cache.cc:  m_shared_credit_limit = config->gpgpu_frfcfs_dram_sched_queue_size +
+l2cache.cc:                          config->gpgpu_dram_return_queue_size -
+l2cache.cc:                          (config->m_n_sub_partition_per_memory_channel - 1);
+l2cache.cc:  if (config->seperate_write_queue_enabled)
+l2cache.cc:    m_shared_credit_limit += config->gpgpu_frfcfs_dram_write_queue_size;
+l2cache.cc:  if (config->gpgpu_frfcfs_dram_sched_queue_size == 0 or
+l2cache.cc:      config->gpgpu_dram_return_queue_size == 0) {
+l2cache.cc:  for (unsigned p = 0; p < m_config->m_n_sub_partition_per_memory_channel;
+l2cache.cc:  for (unsigned p = 0; p < m_config->m_n_sub_partition_per_memory_channel;
+l2cache.cc:  for (unsigned p = 0; p < m_config->m_n_sub_partition_per_memory_channel;
+l2cache.cc:          m_id * m_config->m_n_sub_partition_per_memory_channel);
+l2cache.cc:  for (unsigned p = 0; p < m_config->m_n_sub_partition_per_memory_channel;
+l2cache.cc:               m_config->m_n_sub_partition_per_memory_channel;
+l2cache.cc:                      m_config->dram_latency;
+l2cache.cc:  for (unsigned p = 0; p < m_config->m_n_sub_partition_per_memory_channel;
+l2cache.cc:               m_config->m_n_sub_partition_per_memory_channel;
+l2cache.cc:                      m_config->dram_latency;
+l2cache.cc:  for (unsigned p = 0; p < m_config->m_n_sub_partition_per_memory_channel;
+l2cache.cc:  assert(m_id < m_config->m_n_mem_sub_partition);
+l2cache.cc:  if (!m_config->m_L2_config.disabled())
+l2cache.cc:        new l2_cache(L2c_name, m_config->m_L2_config, -1, -1, m_L2interface,
+l2cache.cc:  sscanf(m_config->gpgpu_L2_queue_config, "%u:%u:%u:%u", &icnt_L2, &L2_dram,
+l2cache.cc:  if (!m_config->m_L2_config.disabled()) {
+l2cache.cc:        if (m_config->m_L2_config.m_write_alloc_policy == FETCH_ON_WRITE) {
+l2cache.cc:    if (!m_config->m_L2_config.disabled() && m_L2cache->waiting_for_fill(mf)) {
+l2cache.cc:  if (!m_config->m_L2_config.disabled()) m_L2cache->cycle();
+l2cache.cc:    if (!m_config->m_L2_config.disabled() &&
+l2cache.cc:        ((m_config->m_L2_texure_only && mf->istexture()) ||
+l2cache.cc:         (!m_config->m_L2_texure_only))) {
+l2cache.cc:              (m_config->m_L2_config.m_write_alloc_policy == FETCH_ON_WRITE ||
+l2cache.cc:               m_config->m_L2_config.m_write_alloc_policy ==
+l2cache.cc:            } else if (m_config->m_L2_config.get_write_policy() == WRITE_BACK) {
+l2cache.cc:  if (!m_config->m_L2_config.disabled()) m_L2cache->print(fp, accesses, misses);
+l2cache.cc:  if (!m_config->m_L2_config.disabled()) m_L2cache->display_state(fp);
+l2cache.cc:  for (unsigned i = 0; i < m_memory_config->m_n_mem; i++) {
+l2cache.cc:  if (!m_config->m_L2_config.disabled()) {
+l2cache.cc:  if (!m_config->m_L2_config.disabled()) {
+l2cache.cc:    if (m_config->m_L2_config.m_cache_type == SECTOR)
+l2cache.cc:        r.ready_cycle = cycle + m_config->rop_latency;
+l2cache.cc:  if (!m_config->m_L2_config.disabled()) {
+l2cache.cc:  if (!m_config->m_L2_config.disabled()) {
+l2cache.cc:  if (!m_config->m_L2_config.disabled()) {
+l2cache.cc:  if (!m_config->m_L2_config.disabled()) {

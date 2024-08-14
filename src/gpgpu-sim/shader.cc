@@ -193,16 +193,23 @@ void shader_core_ctx::create_schedulers() {
           ? CONCRETE_SCHEDULER_TWO_LEVEL_ACTIVE
       : sched_config.find("gto") != std::string::npos ? CONCRETE_SCHEDULER_GTO
       : sched_config.find("rrr") != std::string::npos ? CONCRETE_SCHEDULER_RRR
-      : sched_config.find("old") != std::string::npos
-          ? CONCRETE_SCHEDULER_OLDEST_FIRST
-      : sched_config.find("warp_limiting") != std::string::npos
-          ? CONCRETE_SCHEDULER_WARP_LIMITING
+      : sched_config.find("old") != std::string::npos ? CONCRETE_SCHEDULER_OLDEST_FIRST
+      : sched_config.find("velrr") != std::string::npos ? CONCRETE_SCHEDULER_VELRR
+      : sched_config.find("warp_limiting") != std::string::npos ? CONCRETE_SCHEDULER_WARP_LIMITING
           : NUM_CONCRETE_SCHEDULERS;
   assert(scheduler != NUM_CONCRETE_SCHEDULERS);
 
   for (unsigned i = 0; i < m_config->gpgpu_num_sched_per_core; i++) {
     switch (scheduler) {
       case CONCRETE_SCHEDULER_LRR:
+        schedulers.push_back(new lrr_scheduler(
+            m_stats, this, m_scoreboard, m_simt_stack, &m_warp,
+            &m_pipeline_reg[ID_OC_SP], &m_pipeline_reg[ID_OC_DP],
+            &m_pipeline_reg[ID_OC_SFU], &m_pipeline_reg[ID_OC_INT],
+            &m_pipeline_reg[ID_OC_TENSOR_CORE], m_specilized_dispatch_reg,
+            &m_pipeline_reg[ID_OC_MEM], i));
+        break; 
+      case CONCRETE_SCHEDULER_VELRR:
         schedulers.push_back(new lrr_scheduler(
             m_stats, this, m_scoreboard, m_simt_stack, &m_warp,
             &m_pipeline_reg[ID_OC_SP], &m_pipeline_reg[ID_OC_DP],
@@ -2731,6 +2738,9 @@ void ldst_unit::invalidate() {
   m_L1D->invalidate();
 }
 
+//TODO: VELMA: modify shader_core_config's M_L1D cache_config?
+//either that or add a new config and figure out how to use it instead
+//REMEMBER DAWG ALL U GOTTA DO IS CHANGE THE REPLACEMENT POLICY TO VELRR
 simd_function_unit::simd_function_unit(const shader_core_config *config) {
   m_config = config;
   m_dispatch_reg = new warp_inst_t(config);

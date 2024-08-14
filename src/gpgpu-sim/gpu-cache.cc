@@ -184,7 +184,7 @@ void tag_array::update_cache_parameters(cache_config &config) {
   m_config = config;
 }
 
-//TODO: VELMA: 8/11 1600 -- configuration should be capable internally of 
+//VELMA NOTE: 8/11 1600 -- configuration should be capable internally of 
 //  setting the tag_array to do velma things. now we need to actually splice
 //  all the functionality from the velma_tag_array class into the tag_array class,
 //  implement behavior switching, and delete the velma_tag_array stuff. From there,

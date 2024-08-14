@@ -38,6 +38,9 @@
 // used to allocate memory that is large enough to adapt the changes in cache
 // size across kernels
 
+std::set<velma_id_t> expiring_velma_ids = {-1};
+
+
 const char *cache_request_status_str(enum cache_request_status status) {
   static const char *static_cache_request_status_str[] = {
       "HIT",         "HIT_RESERVED", "MISS", "RESERVATION_FAIL",
@@ -204,9 +207,6 @@ tag_array::tag_array(class cache_config &config, int core_id, int type_id)
   } else
     assert(0);
   
-  std::set<velma_id_t> dummy_ids; 
-  dummy_ids.insert(-1);
-  std::set<velma_id_t> expiring_velma_ids = dummy_ids;
   if (config.m_replacement_policy == VELRR){
     is_velma_tag_array = true; 
   }

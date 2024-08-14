@@ -639,6 +639,7 @@ class cache_config {
       case 'V':
         m_replacement_policy = VELRR;
         m_use_velma_tag_array = true; 
+        break;
       default:
         exit_parse_error();
     }

@@ -258,6 +258,9 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
 
 
 unsigned tag_array::clear_expired_velma_ids(){
+    for (auto id : expiring_velma_ids){
+      std::cout << "velma_ID: " << id << "\n";
+    }
     clear_expired_velma_ids(expiring_velma_ids); 
   }
 

@@ -210,7 +210,8 @@ void shader_core_ctx::create_schedulers() {
             &m_pipeline_reg[ID_OC_MEM], i));
         break; 
       case CONCRETE_SCHEDULER_VELRR:
-        schedulers.push_back(new lrr_scheduler(
+        std::cout << "Velma!!!\n";
+        schedulers.push_back(new velma_scheduler(
             m_stats, this, m_scoreboard, m_simt_stack, &m_warp,
             &m_pipeline_reg[ID_OC_SP], &m_pipeline_reg[ID_OC_DP],
             &m_pipeline_reg[ID_OC_SFU], &m_pipeline_reg[ID_OC_INT],
@@ -1232,9 +1233,9 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
                                       unsigned num_warps_to_add) 
 {
   //sanity check
-  assert(num_warps_to_add <= warps.size());
+  //assert(num_warps_to_add <= warps.size());
   //no garbage here
-  reordered.clear();
+  //reordered.clear();
 
   /* First we traverse the ring, pushing the velma warps first to the reordered list.
    * We set a flag to indicate we've hit all the velma warps, avd then push as normal. 

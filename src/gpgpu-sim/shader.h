@@ -67,7 +67,7 @@
 
 
 /* Some Velma types for clarity in nested std::container declarations */ 
-using velma_id_t = int16_t; 
+using velma_id_t = int64_t; 
 using warp_id_t = unsigned; 
 using velma_pc_t = unsigned; 
 using velma_warp_pc_pair_t = std::pair<warp_id_t, velma_pc_t>;

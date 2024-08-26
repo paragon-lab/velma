@@ -207,9 +207,6 @@ tag_array::tag_array(class cache_config &config, int core_id, int type_id)
   } else
     assert(0);
   
-  if (config.m_replacement_policy == VELRR){
-    is_velma_tag_array = true; 
-  }
 
   init(core_id, type_id);
 }
@@ -258,11 +255,14 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
 
 
 unsigned tag_array::clear_expired_velma_ids(){
-    for (auto id : expiring_velma_ids){
-      std::cout << "velma_ID: " << id << "\n";
-    }
+
+    //for (auto id : expiring_velma_ids){
+    //  std::cout << "velma_ID: " << id << "\n";
+    //}
     clear_expired_velma_ids(expiring_velma_ids); 
   }
+
+
 
 
 
@@ -293,22 +293,26 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
       if (line->get_status(mask) == RESERVED) {
         idx = index;
         return HIT_RESERVED;
-      } else if (line->get_status(mask) == VALID) {
+      } 
+      else if (line->get_status(mask) == VALID) {
         idx = index;
         return HIT;
-      } else if (line->get_status(mask) == MODIFIED) {
+      } 
+      else if (line->get_status(mask) == MODIFIED) {
         if (line->is_readable(mask)) {
           idx = index;
           return HIT;
-        } else {
+        } 
+        else {
           idx = index;
           return SECTOR_MISS;
         }
-
-      } else if (line->is_valid_line() && line->get_status(mask) == INVALID) {
+      } 
+      else if (line->is_valid_line() && line->get_status(mask) == INVALID) {
         idx = index;
         return SECTOR_MISS;
-      } else {
+      } 
+      else {
         assert(line->get_status(mask) == INVALID);
       }
     }
@@ -317,12 +321,10 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
     if (not line->is_reserved_line()) {
       all_reserved = false;
       
-      if (not line->is_velma_line()){
-        all_nonres_velma = false; 
-      }
       //invalid line? doesn't matter if it's velma. 
       if (line->is_invalid_line()) {
         invalid_line = index;
+        line->clear_velma_id();
       } else {
         if (m_config.m_replacement_policy == LRU) {
           if (line->get_last_access_time() < valid_timestamp) {
@@ -337,6 +339,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
         } else if (m_config.m_replacement_policy == VELRR){
           //don't evict velma lines!!!!
           if (line->get_last_access_time() < valid_timestamp && not line->is_velma_line()){
+            all_nonres_velma = false; 
             valid_timestamp = line->get_last_access_time();
             valid_line = index;
           }
@@ -349,7 +352,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
 //only handling the replacement component. we only care here about cache blocks which are 
 //not reserved and are velma blocks. 
   bool velma_victim = false;
-  if (all_nonres_velma && is_velma_tag_array){
+  if (all_nonres_velma && m_config.m_replacement_policy == VELRR){
     for (unsigned way = 0; way < m_config.m_assoc; way++) {
       unsigned index = set_index * m_config.m_assoc + way;
       cache_block_t *line = m_lines[index];
@@ -359,18 +362,16 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
           invalid_line = index;
         }
         else {
-          if (line->get_last_access_time() < valid_timestamp){
-            valid_timestamp = line->get_last_access_time();
-            valid_line = index;
-            velma_victim = true;
-          }
+          valid_line = index;
+          velma_victim = true;
+          line->clear_velma_id();
         }
       } 
     }
   }
   
   
-  if (all_reserved && !velma_victim && is_velma_tag_array) {
+  if (all_reserved && !velma_victim && m_config.m_replacement_policy == VELRR) {
     assert(m_config.m_alloc_policy == ON_MISS);
     return RESERVATION_FAIL;
   }
@@ -384,8 +385,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
               // replaceable
 
   if (probe_mode && m_config.is_streaming()) {
-    line_table::const_iterator i =
-        pending_lines.find(m_config.block_addr(addr));
+    line_table::const_iterator i = pending_lines.find(m_config.block_addr(addr));
     assert(mf);
     if (!mf->is_write() && i != pending_lines.end()) {
       if (i->second != mf->get_inst().get_uid()) return SECTOR_MISS;

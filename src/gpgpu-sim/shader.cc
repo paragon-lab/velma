@@ -1221,6 +1221,43 @@ void velma_scheduler::order_warps() {
             m_last_supervised_issued, m_supervised_warps.size());
 }
 
+void velma_scheduler::velma_cycle()
+{
+    //decrement our pc killtimers. Dead timers yield bodies!
+    std::set<velma_id_t> expiring_velma_ids = decr_pc_killtimers();
+    //erase the velma entries corresponding to those velma_ids. 
+    for (velma_id_t exvid : expiring_velma_ids){
+      clear_velma_entry(exvid); 
+    }
+    just_expired_velma_ids = expiring_velma_ids; 
+}
+
+velma_id_t velma_scheduler::record_velma_access(warp_id_t wid, velma_pc_t pc, velma_addr_t addr){
+    //primary conversion to warpcluster size 
+    warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;  
+    //get our velma id. 
+    velma_id_t vid = get_velma_id(wcid,pc);
+    if (vid != -1) {
+      //if we found this velma id, reset its killtimer. 
+      reset_vid_killtimer(vid);
+    }      
+    else 
+    { //not tracking it? let's do that! 
+      add_new_velma_entry(wcid, pc, velma_id_ctr);
+      vid = velma_id_ctr;
+      velma_id_ctr++;
+    }
+
+    //Need to label the $line with velma ID!.
+    //First, though, we need access to the tag array. 
+    class shader_core_ctx* tshader = this->m_shader;
+    class ldst_unit* ldstu = tshader->m_ldst_unit;
+    l1_cache* mL1D = ldstu->m_L1D;
+    tag_array* tagarr = mL1D->m_tag_array;
+    //Have the cache label some lines 
+    tagarr->label_velma_line(vid,addr);
+    return vid;
+  }
 
 
 
@@ -1231,40 +1268,36 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
                                                         ::const_iterator &just_issued,
                                       unsigned num_warps_to_add) 
 {
-  //sanity check
-  //assert(num_warps_to_add <= warps.size());
-  //no garbage here
-  //reordered.clear();
-
-  /* First we traverse the ring, pushing the velma warps first to the reordered list.
-   * We set a flag to indicate we've hit all the velma warps, avd then push as normal. 
-   *  
-   * if this is super slow, can reduce from 2N to N by making two vectors and pushing 
-   * those at the end, with the velma ones first.*/ 
-  auto itr = (just_issued == warps.end()) ? warps.begin() : just_issued + 1; // at end? loop. 
-  unsigned num_velma_warps = velma_wids_vid_cts.size(); 
-  unsigned velma_warps_seen = 0; 
-  for (unsigned warps_added = 0; warps_added < num_warps_to_add; ++itr) {
-    //rr bounds check 
-    if (itr == warps.end()) {
-      itr = warps.begin();
+  reordered.clear();
+  
+  //first pass: push the velma warps, looking at [num_warps_to_add] elements.
+  auto v_itr = just_issued + 1; //iterator for vector of shd_warp_t* objects. 
+  for (int warps_seen = 0; warps_seen < num_warps_to_add; warps_seen++, ++v_itr){
+    //check our bounds!
+    if (v_itr == warps.end()){
+      v_itr = warps.begin();
+      if (v_itr == warps.end()) break; 
     }
     //velma check. 
-    unsigned wid = (*itr)->get_warp_id();
-    bool is_velma_warp = velma_find_wid(wid);
-    //TODO: NOTE: this is currently too simplistic. we need to not prioritize velma warps that 
-    //have already reached the point of interest. i.e. the leader doesn't need to be prioritized 
-    //if it's way ahead of everyone else in the cluster. fix this once things are working.  
-    if (is_velma_warp and velma_warps_seen < num_velma_warps){
-      reordered.push_back(*itr); 
-      velma_warps_seen++; 
-      warps_added++;
+    unsigned wid = (*v_itr)->get_warp_id();
+    if (is_velma_wid(wid)){
+      reordered.push_back(*v_itr);
     }
-    else if (!is_velma_warp and velma_warps_seen >= num_velma_warps){
-      reordered.push_back(*itr);
-      warps_added++;
-    }
+  }
 
+  //second pass: push the non_velma warps, looking at the same set of elements. 
+  auto nv_itr = just_issued + 1; 
+  for (int warps_seen = 0; warps_seen < num_warps_to_add; warps_seen++, ++nv_itr) 
+  { //check our bounds! if we hit the end, loop. 
+    if (nv_itr == warps.end()){
+      nv_itr = warps.begin();
+      if (nv_itr == warps.end()) break;
+    }
+    //velma check. 
+    unsigned wid = (*nv_itr)->get_warp_id();
+    if (!is_velma_wid(wid)){
+      reordered.push_back(*v_itr);
+    }
   }
 }
 
@@ -1626,8 +1659,6 @@ void scheduler_unit::cycle() {
 
 
 
-//TODO: WHEN WE ISSUE A VELMA PC warp_inst_t, WHEREVER THAT IS, WE NEED TO ENSURE THAT THE WARP ID 
-//AND PC ARE ADDED TO THE WARP->VELMAID AND WARP->PC MAPS 
 void velma_scheduler::cycle(){
   SCHED_DPRINTF("scheduler_unit::cycle()\n");
   bool valid_inst =
@@ -1636,8 +1667,6 @@ void velma_scheduler::cycle(){
   bool ready_inst = false;   // of the valid instructions, there was one not
                              // waiting for pending register writes
   bool issued_inst = false;  // of these we issued one
-
-  std::set<velma_warp_pc_pair_t> velma_wids_pcs; 
 
   order_warps();
   for (std::vector<shd_warp_t *>::const_iterator iter =
@@ -1734,9 +1763,22 @@ void velma_scheduler::cycle(){
                 issued_inst = true;
                 warp_inst_issued = true;
                 previous_issued_inst_exec_type = exec_unit_type_t::MEM;
-                ///////////////////////////////// some velma stuff ///////////////////////////////////// 
+                ///////////////////////////////// some velma stuff //////////////////////////// 
                 // this is where we add the new warp_id/pc pair
-                velma_wids_pcs.insert({warp_id, pc});
+                //RECORD VELMA ACCESS HERE!
+                //velma_addr_t vaddr = dynamic_cast<warp_inst_t*>(pI)->get_addr();
+                warp_inst_t nc_pI = *pI;  //not const 
+                //Get a list of addresses, record the entries.
+                std::set<new_addr_type> pI_lineaddrs = nc_pI.get_lineaddrs();
+                std::set<velma_addr_t> vaddrs;
+                for (new_addr_type lineaddr : pI_lineaddrs){
+                  velma_addr_t tvaddr = static_cast<velma_addr_t>(lineaddr);
+                  vaddrs.insert(tvaddr);
+                }
+                                                
+                for (velma_addr_t vaddr : vaddrs){  
+                record_velma_access(warp_id, pc, vaddr);
+                }
               }
             } 
             else 
@@ -1915,12 +1957,7 @@ void velma_scheduler::cycle(){
     }
 
     if (issued) {
-      //////////////////////////some velma stuff //////////////////////// 
-      //need to iterate across the std::set of velma warpid/pc pairs
-      velma_cycle(velma_wids_pcs);
 
-
-      /////////// not velma stuff 
       // This might be a bit inefficient, but we need to maintain
       // two ordered list for proper scheduler execution.
       // We could remove the need for this loop by associating a
@@ -1946,6 +1983,10 @@ void velma_scheduler::cycle(){
     }
   }
 
+  ////////////////////////// velma stuff //////////////////////// 
+  // just a cycle. decrement the pc killtimers and clear entries as needed. 
+  velma_cycle();
+  
   // issue stall statistics:
   if (!valid_inst)
     m_stats->shader_cycle_distro[0]++;  // idle or control hazard
@@ -1968,9 +2009,6 @@ void scheduler_unit::do_on_warp_issued(
   warp(warp_id).ibuffer_step();
 }
 
-//TODO: NOTE:   shd_warp_t has a  warp id. let's add a velma warp label of some kind, 
-//              maybe some sort of index into a structure that maps dynamic_warp_id to 
-//              velma ID. 
 bool scheduler_unit::sort_warps_by_oldest_dynamic_id(shd_warp_t *lhs,
                                                      shd_warp_t *rhs) {
   if (rhs && lhs) {

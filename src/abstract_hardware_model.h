@@ -37,6 +37,7 @@ class gpgpu_sim;
 class kernel_info_t;
 class gpgpu_context;
 
+
 // Set a hard limit of 32 CTAs per shader [cuda only has 8]
 #define MAX_CTA_PER_SHADER 32
 #define MAX_BARRIERS_PER_CTA 16
@@ -1210,6 +1211,20 @@ class warp_inst_t : public inst_t {
   new_addr_type get_addr(unsigned n) const {
     assert(m_per_scalar_thread_valid);
     return m_per_scalar_thread[n].memreqaddr[0];
+  }
+
+  std::set<new_addr_type> get_lineaddrs(){
+    std::set<new_addr_type> lineaddrs;
+    active_mask_t tmask = m_warp_active_mask; //this is a std::bitset
+    int tctr = 0; 
+    for (auto pst : m_per_scalar_thread){
+      if (tmask[tctr] == 1){
+        new_addr_type lineaddr = pst.memreqaddr[0] & ~0x7FUL;
+        lineaddrs.insert(lineaddr);
+      }
+      tctr++;
+    }
+    return lineaddrs;
   }
 
   bool isatomic() const { return m_isatomic; }

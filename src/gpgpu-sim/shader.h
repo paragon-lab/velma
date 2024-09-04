@@ -66,11 +66,12 @@
 #define VELMA_KILLTIMER_START 256
 
 
-/* Some Velma types for clarity in nested std::container declarations */ 
+/* Some Velma types, for clarity in nested std::container declarations */ 
 using velma_id_t = int64_t; 
 using warp_id_t = unsigned; 
 using velma_pc_t = unsigned; 
 using velma_warp_pc_pair_t = std::pair<warp_id_t, velma_pc_t>;
+using velma_addr_t = uint64_t; 
 
 /* READ_PACKET_SIZE:
    bytes: 6 address (flit can specify chanel so this gives up to ~2GB/channel,
@@ -78,7 +79,7 @@ using velma_warp_pc_pair_t = std::pair<warp_id_t, velma_pc_t>;
    if req_size variable) - so up to 2^14 = 16384 mshr total
  */
 
-extern std::set<velma_id_t> expiring_velma_ids; 
+extern std::set<velma_id_t> just_expired_velma_ids; 
 
 
 #define READ_PACKET_SIZE 8
@@ -532,7 +533,7 @@ class velma_scheduler : public scheduler_unit {
   std::map<velma_id_t, velma_warp_pc_pair_t> velma_ids_pairs;
   std::map<velma_warp_pc_pair_t, velma_id_t> velma_pairs_ids; 
   std::map<velma_id_t, unsigned> velma_ids_killtimers; 
-  std::map<warp_id_t, unsigned> velma_wids_vid_cts;
+  std::map<warp_id_t, unsigned> velma_wcids_vid_cts;
   int velma_id_ctr; 
   
   velma_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
@@ -561,180 +562,120 @@ template <class T>
     const typename std::vector<T>::const_iterator &just_issued,
     unsigned num_warps_to_add);
 
- velma_id_t get_velma_id_safe(warp_id_t wid, velma_pc_t vpc){
-    //make wid a warpcluster id 
-    wid -= wid % VELMA_WARPCLUSTER_SIZE;
-    velma_warp_pc_pair_t wid_vpc = {wid, vpc};
-    auto id_find = velma_pairs_ids.find(wid_vpc);
-    if (id_find == velma_pairs_ids.end()){
-      return -1;
-    }
-    else {
-      return id_find->second;
-    }
-  }
-
   
 
- bool velma_find_wid(warp_id_t wid){
-    wid -= wid % VELMA_WARPCLUSTER_SIZE;
-    return velma_wids_vid_cts.find(wid) != velma_wids_vid_cts.end(); 
+ bool is_velma_wid(warp_id_t wid){
+   warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;
+   bool is_v_wcid = velma_wcids_vid_cts.find(wcid) != velma_wcids_vid_cts.end();
+   if (is_v_wcid and velma_wcids_vid_cts[wcid] != -1) return true;
+   else return false;  
  }
 
- velma_id_t get_velma_id(warp_id_t wid, velma_pc_t vpc){
-    //make wid a warpcluster id 
-    wid -= wid % VELMA_WARPCLUSTER_SIZE;
-    velma_warp_pc_pair_t wid_vpc = {wid, vpc};
-    return velma_pairs_ids[wid_vpc];
+ velma_id_t get_velma_id(warp_id_t wcid, velma_pc_t vpc){
+   //make our pair for map indexing 
+  velma_warp_pc_pair_t wcid_vpc = {wcid, vpc};
+  //if we aren't tracking this velma id, just return 0.
+  return (velma_pairs_ids.find(wcid_vpc) != velma_pairs_ids.end()) ? 
+          velma_pairs_ids[wcid_vpc] : -1; 
   }
 
-  bool is_entry(warp_id_t wid, velma_pc_t vpc){
-    //get warpcluster id 
-    wid -= wid % VELMA_WARPCLUSTER_SIZE;
-    velma_warp_pc_pair_t wid_pc = {wid, vpc};
-    auto vid_itr = velma_pairs_ids.find(wid_pc);
-    return vid_itr != velma_pairs_ids.end();
-  } 
-
-  bool is_entry(velma_id_t vid){
-    auto warp_pc_itr = velma_ids_pairs.find(vid);
-    return warp_pc_itr != velma_ids_pairs.end();
-  }
-
-  bool add_new_velma_entry(warp_id_t wid, velma_pc_t vpc, velma_id_t vid){
-    //get warpcluster id 
-    wid -= wid % VELMA_WARPCLUSTER_SIZE;
+  bool add_new_velma_entry(warp_id_t wcid, velma_pc_t vpc, velma_id_t vid){
     //make our warpid/pc pair 
-    velma_warp_pc_pair_t wid_pc = {wid, vpc};
-    //attempt wid-pc insertion.
-    auto wid_pc_insertion = velma_pairs_ids.insert({wid_pc, vid});
-    bool inserted = wid_pc_insertion.second; 
+    velma_warp_pc_pair_t wcid_pc = {wcid, vpc};
+    //attempt wcid-pc insertion.
+    auto wcid_pc_insertion = velma_pairs_ids.insert({wcid_pc, vid});
+    bool inserted = wcid_pc_insertion.second; 
     //insertion successful, so we populate the inverse map and the killtimer. 
     if (inserted){
-      velma_ids_pairs.insert({vid, wid_pc});
+      velma_ids_pairs.insert({vid, wcid_pc});
       velma_ids_killtimers.insert({vid, VELMA_KILLTIMER_START});
     }
+
+    /* Processing the changes to our warpcluster_id->velma_id_ct map
+     * isn't the simplest thing. A new vid does not necessarily mean 
+     * a new warp, but the converse inverse applies*/ 
+    auto widct_find = velma_wcids_vid_cts.find(wcid);
+    //if this wcid isn't present, create a row for it. 
+    if (widct_find == velma_wcids_vid_cts.end()){
+      velma_wcids_vid_cts.insert({wcid, 0});
+    }
+    //either way, now we increment the count. 
+    velma_wcids_vid_cts[wcid]++;
     return inserted; 
   }
 
-  bool clear_velma_entry(warp_id_t wid, velma_pc_t vpc){
-    //make it a cluster id 
-    wid -= wid % VELMA_WARPCLUSTER_SIZE;
-    //get the velma id 
-    velma_id_t vid = get_velma_id(wid, vpc);
-    //make our warp/pc pair 
-    velma_warp_pc_pair_t wid_pc = {wid, vpc};
-    //attempt to erase the backward-id-mapped entry corresponding to the pair. 
-    size_t num_pairs_erased = velma_pairs_ids.erase(wid_pc);
-    //if we didn't erase the pair, return false. if we crash, we crash 🤷
-    if (num_pairs_erased == 0){
-      return false;
-    }
-    else {
-      //reduce the wid's velma id count. 
-      velma_wids_vid_cts[wid]--;
-      //if it's zero, remove it from the table.
-      velma_wids_vid_cts.erase(wid);
-      //erase pertinent entries in velma_ids_pairs
-      velma_ids_pairs.erase(vid);
-      //erase pertinent entries in velma_id_killtimers
-      velma_ids_killtimers.erase(vid);
-      //could check the erases if buggy. 
-      
-      //NOW WE NEED TO DO THIS IN THE TAG_ARRAY!
-      
-      return true;
-    }
-  }
     
   bool clear_velma_entry(velma_id_t vid){
-    //should check if this vid is valid. si moriar? moriar. 
-    //get the warp_pc paid 
-    velma_warp_pc_pair_t wid_pc = velma_ids_pairs[vid]; 
-    //With warp/pc pair created, attempt to erase its entry in velma_pairs_ids;
-    size_t num_pairs_erased = velma_pairs_ids.erase(wid_pc);
-    //if we didn't erase the pair, return false. if we crash, we crash 🤷
-    if (num_pairs_erased == 0){
-      return false;
-    }
+    velma_warp_pc_pair_t wcid_pc = {0,0};
+    bool vid_was_cleared = true;
+    //erase pertinent entries in velma_ids_pairs
+    if (velma_ids_pairs.find(vid) != velma_ids_pairs.end()){
+      wcid_pc = velma_ids_pairs[vid]; 
+      //With warp/pc pair created, attempt to erase the vid from ids_pairs;
+      size_t num_pairs_erased = velma_ids_pairs.erase(vid);
+    } 
     else {
-      //erase pertinent entries in velma_ids_pairs
-      velma_ids_pairs.erase(vid);
-      //erase pertinent entries in velma_id_killtimers
-      velma_ids_killtimers.erase(vid);
-      //done. 
-      return true;
+      vid_was_cleared = false;
     }
+
+    //erase pertinent entries in velma_pairs_ids
+    velma_pairs_ids.erase(wcid_pc);
+
+    //erase pertinent entries in velma_ids_killtimers 
+    velma_ids_killtimers.erase(vid);
+    
+    unsigned wcid = wcid_pc.first; 
+    if (velma_wcids_vid_cts.find(wcid) != velma_wcids_vid_cts.end()){
+      //does this warpid still correspond to any velma ids? 
+      if (velma_wcids_vid_cts[wcid] <= 1){  
+        //no? stop counting it. 
+        velma_wcids_vid_cts.erase(wcid);
+      }
+      else {
+        //yes? decrement it. 
+        velma_wcids_vid_cts[wcid]--;
+      }
+    }
+
+      return vid_was_cleared;
   }
+  
   
   void reset_vid_killtimer(velma_id_t vid){
     auto findres = velma_ids_killtimers.find(vid);
     if (findres != velma_ids_killtimers.end()){
       velma_ids_killtimers[vid] = VELMA_KILLTIMER_START; 
     }
+    else { //i don't think this branch will ever be taken.
+      velma_ids_killtimers.insert({vid,VELMA_KILLTIMER_START});
+    }
   }
 
   /* Big stuff here. This is how we will process ld/st instructions isssued.
-   * First: check if velma already knows this warp and pc. 
+   * First: Calculate the warpcluster id from the warp id. 
+   * Second: check if velma already knows this warpcluster and pc. 
    * If so, great! Use the velma ID to reset the appropriate killtimer. 
    * If not, we create a new velma entry. This function is also where we 
    * arbitrate the generation and distribution of velma_ids. 
    */
-  velma_id_t record_velma_access(warp_id_t wid, velma_pc_t pc){
-    wid -= wid % VELMA_WARPCLUSTER_SIZE; 
-    velma_id_t vid = -1; 
-    if (is_entry(wid, pc)){ //already tracking this? reset the timer!
-      vid = get_velma_id(wid,pc);
-      reset_vid_killtimer(vid);      
-    }
-    else { //not tracking it? let's do that! 
-      add_new_velma_entry(wid, pc, velma_id_ctr);
-      //need to update cluster velma_id counts. 
-      auto widct_find = velma_wids_vid_cts.find(wid);
-      //it's here! increment it. 
-      if (widct_find != velma_wids_vid_cts.end()){
-        velma_wids_vid_cts[wid]++;
-      }
-      else{//it's not here. add it! 
-        velma_wids_vid_cts.insert({wid, 1});
-        vid = velma_id_ctr; 
-        velma_id_ctr++;
-      }
-    }
-    return vid;
-  }
+  velma_id_t record_velma_access(warp_id_t wid, velma_pc_t pc, velma_addr_t addr);
 
 
   std::set<velma_id_t> decr_pc_killtimers(){
-    std::set<velma_id_t> expired_velma_ids;
+    std::set<velma_id_t> expiring;
     for (auto& pct : velma_ids_killtimers){
       //is the killtimer 0? 
       if (pct.second == 0){ //yes? record the vid as expired.
-        expired_velma_ids.insert(pct.first);
+        expiring.insert(pct.first);
       }
       else{ //no? decrement the timer. 
         pct.second--; 
       }
     }
-    return expired_velma_ids; 
+    return expiring; 
   }
 
-  void velma_cycle(std::set<velma_warp_pc_pair_t> wids_pcs){
-    for (auto wid_pc : wids_pcs){ 
-      warp_id_t wid = wid_pc.first;
-      wid -= wid % VELMA_WARPCLUSTER_SIZE; 
-      record_velma_access(wid, wid_pc.second);
-    }
-    //decrement our pc killtimers. Dead timers yield bodies!
-    std::set<velma_id_t> expired_velma_ids = decr_pc_killtimers();
-    //erase the velma entries corresponding to those velma_ids. 
-    for (velma_id_t exvid : expired_velma_ids){
-      clear_velma_entry(exvid); 
-    }
-    expiring_velma_ids = expired_velma_ids; 
-  }
-  
-
+  void velma_cycle();  
   void cycle();
 };
 
@@ -1637,6 +1578,8 @@ class ldst_unit : public pipelined_simd_unit {
   void get_L1D_sub_stats(struct cache_sub_stats &css) const;
   void get_L1C_sub_stats(struct cache_sub_stats &css) const;
   void get_L1T_sub_stats(struct cache_sub_stats &css) const;
+  //public for velma 
+  l1_cache *m_L1D;         // data cache
 
  protected:
   ldst_unit(mem_fetch_interface *icnt,
@@ -1680,7 +1623,6 @@ class ldst_unit : public pipelined_simd_unit {
 
   tex_cache *m_L1T;        // texture cache
   read_only_cache *m_L1C;  // constant cache
-  l1_cache *m_L1D;         // data cache
   std::map<unsigned /*warp_id*/,
            std::map<unsigned /*regnum*/, unsigned /*count*/>>
       m_pending_writes;
@@ -2779,7 +2721,6 @@ class shader_core_ctx : public core_t {
   std::vector<unsigned> m_issue_port;
   std::vector<simd_function_unit *>
       m_fu;  // stallable pipelines should be last in this array
-  ldst_unit *m_ldst_unit;
   static const unsigned MAX_ALU_LATENCY = 512;
   unsigned num_result_bus;
   std::vector<std::bitset<MAX_ALU_LATENCY> *> m_result_bus;
@@ -2795,6 +2736,7 @@ class shader_core_ctx : public core_t {
 
   // Jin: concurrent kernels on a sm
  public:
+  ldst_unit *m_ldst_unit;
   bool can_issue_1block(kernel_info_t &kernel);
   bool occupy_shader_resource_1block(kernel_info_t &kernel, bool occupy);
   void release_shader_resource_1block(unsigned hw_ctaid, kernel_info_t &kernel);

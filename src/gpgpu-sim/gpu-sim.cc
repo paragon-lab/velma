@@ -1205,7 +1205,9 @@ void gpgpu_sim::deadlock_check() {
         (unsigned)(gpu_sim_cycle - gpu_sim_insn_last_update));
     unsigned num_cores = 0;
     for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++) {
-      unsigned not_completed = m_cluster[i]->get_not_completed();
+      unsigned not_completed = m_cluster[i]->get_not_completed(); 
+      //TODO:: LOOK THROUGH THESE!!!!!
+      // Can a
       if (not_completed) {
         if (!num_cores) {
           printf(

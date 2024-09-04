@@ -50,10 +50,9 @@
 
 //forward declaration to shader.
 class velma_scheduler;
-//forward declaration of cache_config 
 using velma_id_t = int64_t; 
 
-extern std::set<velma_id_t> expiring_velma_ids; 
+extern std::set<velma_id_t> just_expired_velma_ids; 
 
 enum cache_block_state { INVALID = 0, RESERVED, VALID, MODIFIED };
 
@@ -176,10 +175,13 @@ struct cache_block_t {
 
 
  public:
-  int64_t velma_id = -1;
+  velma_id_t velma_id = -1;
+  
   virtual bool is_velma_line() { return velma_id != -1; }
-  virtual int get_velma_id() {return velma_id;} 
-  virtual void set_velma_id(int64_t new_vid){
+  
+  virtual velma_id_t get_velma_id() {return velma_id;} 
+
+  virtual void set_velma_id(velma_id_t new_vid){
     velma_id = new_vid; 
   }
 
@@ -309,7 +311,7 @@ struct line_cache_block : public cache_block_t {
   mem_access_byte_mask_t m_dirty_byte_mask;
  
  public:
-  int64_t velma_id = -1;
+  velma_id_t velma_id = -1;
 };
 
 struct sector_cache_block : public cache_block_t {
@@ -988,7 +990,6 @@ class tag_array {
  public:
   friend class velma_scheduler;
 
-
   //WE CALL THIS CONSTRUCTOR TO BUILD A TAG ARRAY.
   //IT TAKES AS AN ARGUMENT A CACHE_CONFIG. 
   //BY ALTERING THE CACHE_CONFIG, WE CAN HAVE THE TAG ARRAY CONFIGURED 
@@ -1087,23 +1088,17 @@ class tag_array {
 
   unsigned clear_expired_velma_ids(std::set<velma_id_t> expired){
     unsigned released = 0;
-    for (int idx = 0; idx < size(); idx++){
-      velma_id_t vid = m_lines[idx]->get_velma_id();
-      //see if the velma id is expired 
-      auto vid_find = expired.find(vid);
-      if (vid_find != expired.end() and vid != -1){ //expired! clear it.
-        m_lines[idx]->clear_velma_id();
-        released++;
-      }
+    velma_ids_linerefs.erase(-1); 
+    for (velma_id_t exp : expired){
+      released += release_velma_id_lines(exp);
     }
-
     return released; 
   }
 
   //returns count of relinquished lines 
-  unsigned release_velma_id_lines(int64_t expired_velma_id){
+  unsigned release_velma_id_lines(velma_id_t expired_velma_id){
     //traverse multimap, clearing the velma_ids that correspond to the expired one. 
-    for (auto v_id_lineref : velma_ids_linerefs){
+    for (auto& v_id_lineref : velma_ids_linerefs){
       if (v_id_lineref.first == expired_velma_id){ 
         v_id_lineref.second.clear_velma_id(); 
       }
@@ -1113,9 +1108,9 @@ class tag_array {
     return num_lines_released; 
   }
 
-
+/*
   //returns count of relinquished lines 
-  unsigned release_velma_id_lines_grug(int64_t expired_velma_id){
+  unsigned release_velma_id_lines(velma_id_t expired_velma_id){
     int released = 0;
     //for now, this is going to be naive and slow. 
     for (int idx = 0; idx < size(); idx++){
@@ -1124,12 +1119,14 @@ class tag_array {
           released++;
       }
     }
-  }
+    velma_ids_linerefs.erase(-1);
+    return released; 
+  }*/ 
       
   /* The scheduler figures out the mapping between velma_ids, PCs, and warp clusters, then  
    * calls this to label the appropriate line with the velma_id in question. 
    */
-  bool label_velma_line(int64_t velma_id, new_addr_type lineaddr){
+  bool label_velma_line(velma_id_t velma_id, new_addr_type lineaddr){
     bool labeled = false;
     for (int idx = 0; idx < size(); idx++){
       cache_block_t* line = m_lines[idx];  
@@ -1144,7 +1141,7 @@ class tag_array {
 
   /*The scheduler will call this if it needs to label more than one cache line 
     with the same velma_id at one time. */
-  unsigned label_velma_lines(int64_t velma_id, std::vector<new_addr_type> lineaddrs){
+  unsigned label_velma_lines(velma_id_t velma_id, std::vector<new_addr_type> lineaddrs){
     unsigned num_labeled = 0;
     for (auto addr : lineaddrs){
       num_labeled += label_velma_line(velma_id, addr);
@@ -1407,6 +1404,8 @@ bool was_writeallocate_sent(const std::list<cache_event> &events);
 /// Each subclass implements its own 'access' function
 class baseline_cache : public cache_t {
  public:
+  //public for velma 
+  tag_array *m_tag_array;
   baseline_cache(const char *name, cache_config &config, int core_id,
                  int type_id, mem_fetch_interface *memport,
                  enum mem_fetch_status status)
@@ -1507,7 +1506,6 @@ class baseline_cache : public cache_t {
  protected:
   std::string m_name;
   cache_config &m_config;
-  tag_array *m_tag_array;
   mshr_table m_mshrs;
   std::list<mem_fetch *> m_miss_queue;
   enum mem_fetch_status m_miss_queue_status;

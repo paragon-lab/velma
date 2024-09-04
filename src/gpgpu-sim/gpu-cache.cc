@@ -38,7 +38,7 @@
 // used to allocate memory that is large enough to adapt the changes in cache
 // size across kernels
 
-std::set<velma_id_t> expiring_velma_ids = {-1};
+std::set<velma_id_t> just_expired_velma_ids = {};
 
 
 const char *cache_request_status_str(enum cache_request_status status) {
@@ -255,11 +255,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
 
 
 unsigned tag_array::clear_expired_velma_ids(){
-
-    //for (auto id : expiring_velma_ids){
-    //  std::cout << "velma_ID: " << id << "\n";
-    //}
-    clear_expired_velma_ids(expiring_velma_ids); 
+    clear_expired_velma_ids(just_expired_velma_ids); 
   }
 
 
@@ -413,9 +409,8 @@ enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
   ///////////////// VELMA checking /////////////////////////  
   /// basically: is this fetch for a velma pc? 
   unsigned fetch_pc = mf->get_pc();
-  
 
-  clear_expired_velma_ids(expiring_velma_ids); 
+  clear_expired_velma_ids(just_expired_velma_ids); 
 
   m_access++;
   is_used = true;
@@ -518,7 +513,6 @@ void tag_array::fill(unsigned index, unsigned time, mem_fetch *mf) {
     m_dirty++;
   }
 }
-
 // TODO: we need write back the flushed data to the upper level
 void tag_array::flush() {
   if (!is_used) return;

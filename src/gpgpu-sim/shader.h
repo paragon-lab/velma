@@ -64,6 +64,7 @@
 #define VELMA_WARPCLUSTER_SIZE 4
 //result from old histogramming. 
 #define VELMA_KILLTIMER_START 256
+#define MAX_VELMA_IDS 64 
 
 
 /* Some Velma types, for clarity in nested std::container declarations */ 
@@ -534,6 +535,15 @@ class velma_scheduler : public scheduler_unit {
   std::map<velma_warp_pc_pair_t, velma_id_t> velma_pairs_ids; 
   std::map<velma_id_t, unsigned> velma_ids_killtimers; 
   std::map<warp_id_t, unsigned> velma_wcids_vid_cts;
+  /* We need to limit the number of velma ids we allow. 
+   * To do so, we create a pool of ids, each of which is 
+   * associated with a flag indicating whether or not 
+   * the velma id is currently in use. False indicates that
+   * the velma_id is unoccupied!
+   */
+  using vid_flag_pair_t = std::pair<velma_id_t, bool>;
+  std::vector<vid_flag_pair_t>  velma_id_pool;
+ 
   int velma_id_ctr; 
   
   velma_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
@@ -546,10 +556,13 @@ class velma_scheduler : public scheduler_unit {
       : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out,
                        sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
   { 
-    //code for the velma constructor 
-    velma_id_ctr = 0; 
-    //TODO: CLEAR STD::CONTAINERS! 
+    //Create our pool of velma ids!  
+    for (int i = 0; i < MAX_VELMA_IDS; i++){
+      vid_flag_pair_t vid_pool_entry = {i, false};
+      velma_id_pool.push_back(vid_pool_entry);
+    }
   }
+
   virtual ~velma_scheduler() {}
   virtual void order_warps();
   virtual void done_adding_supervised_warps() {
@@ -579,7 +592,30 @@ class velma_scheduler : public scheduler_unit {
           velma_pairs_ids[wcid_vpc] : -1; 
   }
 
-  bool add_new_velma_entry(warp_id_t wcid, velma_pc_t vpc, velma_id_t vid){
+ velma_id_t get_free_velma_id(){
+    velma_id_t vid = -1; 
+    for (auto vfp : velma_id_pool){
+      if (vfp.second == false){
+        vid = vfp.first;
+        vfp.second = true;
+      }
+    }
+ }
+
+ //lots of room for optimization in velma_id_pool, but whatever.
+ //keep it simple right now.
+ void free_velma_id(velma_id_t vid){
+    if (vid < velma_id_pool.size() and vid >= 0){
+      //can just index using the vid. 
+      velma_id_pool[vid].second = false;
+    }
+ }
+
+ velma_id_t add_new_velma_entry(warp_id_t wcid, velma_pc_t vpc){
+    //first thing's first: get our new vid! 
+    velma_id_t vid = get_free_velma_id();
+    if (vid == -1) return vid; 
+
     //make our warpid/pc pair 
     velma_warp_pc_pair_t wcid_pc = {wcid, vpc};
     //attempt wcid-pc insertion.
@@ -636,7 +672,10 @@ class velma_scheduler : public scheduler_unit {
         velma_wcids_vid_cts[wcid]--;
       }
     }
-      return vid_was_cleared;
+
+    //free the velma_id in the velma_id_pool
+    free_velma_id(vid);
+    return vid_was_cleared;
   }
   
   

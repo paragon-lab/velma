@@ -1239,19 +1239,22 @@ velma_id_t velma_scheduler::record_velma_access(warp_id_t wid, velma_pc_t pc, ve
     velma_id_t vid = get_velma_id(wcid,pc);
     if (vid == -1) 
     { //not tracking it? let's do that! 
-      add_new_velma_entry(wcid, pc, velma_id_ctr);
-      vid = velma_id_ctr; //move inside ^ for better sw engineering
-      velma_id_ctr++;
+      vid = add_new_velma_entry(wcid, pc);
     }
 
-    //Need to label the $line with velma ID!.
-    //First, though, we need access to the tag array. 
+    /* Need to label the $line with velma ID!. We do so 
+     * by informing L1 of the new entry. Then, L1 will 
+     * mark the appropriate cache line. 
+     * First, though, we need access to the tag array.
+     */
     class shader_core_ctx* tshader = this->m_shader;
     class ldst_unit* ldstu = tshader->m_ldst_unit;
     l1_cache* mL1D = ldstu->m_L1D;
     tag_array* tagarr = mL1D->m_tag_array;
-    //Have the cache label a line 
-    tagarr->label_velma_line(vid,addr);
+    //Have the cache label the line! 
+    if (vid != -1){
+      tagarr->label_velma_line(vid,addr);
+    }
     return vid;
   }
 
@@ -1267,7 +1270,7 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
                      
   std::vector<T> non_velma_warps;
   if (num_warps_to_add > warps.size()){
-    frintf(stderr, 
+    fprintf(stderr, 
           "Number of warps to add: %d Number of warps available: %d\n", 
           num_warps_to_add, 
           warps.size());
@@ -1275,6 +1278,7 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
   }
 
   //push the velma warps directly to reordered.
+  //push the non_velma warps to a side list and append. 
   auto warps_itr = (just_issued != warps.end()) ? just_issued + 1 : warps.begin();  
   for (int warps_seen = 0; warps_seen < num_warps_to_add; warps_seen++, ++warps_itr){
     warps_itr = (warps_itr != warps.end()) ? warps_itr : warps.begin(); 
@@ -1757,7 +1761,6 @@ void velma_scheduler::cycle(){
                 ///////////////////////////////// some velma stuff //////////////////////////// 
                 // this is where we add the new warp_id/pc pair
                 //RECORD VELMA ACCESS HERE!
-                //velma_addr_t vaddr = dynamic_cast<warp_inst_t*>(pI)->get_addr();
                 warp_inst_t nc_pI = *pI;  //not const 
                 //Get a list of addresses, record the entries.
                 std::set<new_addr_type> pI_lineaddrs = nc_pI.get_lineaddrs();

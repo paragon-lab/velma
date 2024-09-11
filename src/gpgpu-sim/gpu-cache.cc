@@ -405,9 +405,6 @@ enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
                                             unsigned &idx, bool &wb,
                                             evicted_block_info &evicted,
                                             mem_fetch *mf) {
-  ///////////////// VELMA checking /////////////////////////  
-  /// basically: is this fetch for a velma pc? 
-  unsigned fetch_pc = mf->get_pc();
 
   clear_expired_velma_ids(just_expired_velma_ids); 
 

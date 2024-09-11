@@ -556,7 +556,7 @@ class velma_scheduler : public scheduler_unit {
     m_last_supervised_issued = m_supervised_warps.end();
   }
 
-template <class T>
+ template <class T>
  void order_velma_lrr(
     std::vector<T> &reordered, const typename std::vector<T> &warps,
     const typename std::vector<T>::const_iterator &just_issued,
@@ -567,7 +567,7 @@ template <class T>
  bool is_velma_wid(warp_id_t wid){
    warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;
    bool is_v_wcid = velma_wcids_vid_cts.find(wcid) != velma_wcids_vid_cts.end();
-   if (is_v_wcid and velma_wcids_vid_cts[wcid] != -1) return true;
+   if (is_v_wcid) return true;
    else return false;  
  }
 
@@ -593,7 +593,7 @@ template <class T>
 
     /* Processing the changes to our warpcluster_id->velma_id_ct map
      * isn't the simplest thing. A new vid does not necessarily mean 
-     * a new warp, but the converse inverse applies*/ 
+     * a new warp, but the contrapositive applies*/ 
     auto widct_find = velma_wcids_vid_cts.find(wcid);
     //if this wcid isn't present, create a row for it. 
     if (widct_find == velma_wcids_vid_cts.end()){
@@ -636,7 +636,6 @@ template <class T>
         velma_wcids_vid_cts[wcid]--;
       }
     }
-
       return vid_was_cleared;
   }
   

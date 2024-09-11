@@ -259,9 +259,6 @@ unsigned tag_array::clear_expired_velma_ids(){
   }
 
 
-
-
-
 //probe just checks the status of a $line without actually affecting LRU behavior
 enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
                                            mem_access_sector_mask_t mask,
@@ -283,7 +280,6 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
   for (unsigned way = 0; way < m_config.m_assoc; way++) {
     unsigned index = set_index * m_config.m_assoc + way;
     cache_block_t *line = m_lines[index];
-
 
     if (line->m_tag == tag) {
       if (line->get_status(mask) == RESERVED) {
@@ -311,7 +307,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
       else {
         assert(line->get_status(mask) == INVALID);
       }
-    }
+    }//end of if-else chain 
 
 
     if (not line->is_reserved_line()) {
@@ -320,19 +316,22 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
       //invalid line? doesn't matter if it's velma. 
       if (line->is_invalid_line()) {
         invalid_line = index;
-        line->clear_velma_id();
-      } else {
+        line->clear_velma_id(); //TODO: does any other state need clearing here?
+      } 
+      else {
         if (m_config.m_replacement_policy == LRU) {
           if (line->get_last_access_time() < valid_timestamp) {
             valid_timestamp = line->get_last_access_time();
             valid_line = index;
           }
-        } else if (m_config.m_replacement_policy == FIFO) {
+        }
+        else if (m_config.m_replacement_policy == FIFO) {
           if (line->get_alloc_time() < valid_timestamp) {
             valid_timestamp = line->get_alloc_time();
             valid_line = index;
           }
-        } else if (m_config.m_replacement_policy == VELRR){
+        } 
+        else if (m_config.m_replacement_policy == VELRR){
           //don't evict velma lines!!!!
           if (line->get_last_access_time() < valid_timestamp && not line->is_velma_line()){
             all_nonres_velma = false; 
@@ -347,27 +346,22 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
 //at this point, we know that we have no hits. run through the for-loop again,
 //only handling the replacement component. we only care here about cache blocks which are 
 //not reserved and are velma blocks. 
-  bool velma_victim = false;
   if (all_nonres_velma && m_config.m_replacement_policy == VELRR){
     for (unsigned way = 0; way < m_config.m_assoc; way++) {
       unsigned index = set_index * m_config.m_assoc + way;
       cache_block_t *line = m_lines[index];
       //filter out reserved lines 
       if (not line->is_reserved_line()){
-        if (line->is_invalid_line()){
-          invalid_line = index;
-        }
-        else {
+          all_reserved = false;
           valid_line = index;
-          velma_victim = true;
+          valid_timestamp = line->get_last_access_time();
           line->clear_velma_id();
         }
       } 
     }
-  }
   
   
-  if (all_reserved && !velma_victim && m_config.m_replacement_policy == VELRR) {
+  if (all_reserved) {
     assert(m_config.m_alloc_policy == ON_MISS);
     return RESERVATION_FAIL;
   }

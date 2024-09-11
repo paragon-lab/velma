@@ -181,8 +181,8 @@ struct cache_block_t {
   
   virtual velma_id_t get_velma_id() {return velma_id;} 
 
-  virtual void set_velma_id(velma_id_t new_vid){
-    velma_id = new_vid; 
+  virtual void set_velma_id(velma_id_t vid){
+    velma_id = vid; 
   }
 
   virtual void clear_velma_id(){
@@ -1084,7 +1084,6 @@ class tag_array {
 
 
   //////////////////////    VELMA METHODS /////////////////////////////////////
-  unsigned clear_expired_velma_ids();
 
   unsigned clear_expired_velma_ids(std::set<velma_id_t> expired){
     unsigned released = 0;
@@ -1094,6 +1093,8 @@ class tag_array {
     }
     return released; 
   }
+
+  unsigned clear_expired_velma_ids();
 
   //returns count of relinquished lines 
   unsigned release_velma_id_lines(velma_id_t expired_velma_id){
@@ -1108,21 +1109,6 @@ class tag_array {
     return num_lines_released; 
   }
 
-/*
-  //returns count of relinquished lines 
-  unsigned release_velma_id_lines(velma_id_t expired_velma_id){
-    int released = 0;
-    //for now, this is going to be naive and slow. 
-    for (int idx = 0; idx < size(); idx++){
-      if (m_lines[idx]->get_velma_id() == expired_velma_id){
-          m_lines[idx]->clear_velma_id();
-          released++;
-      }
-    }
-    velma_ids_linerefs.erase(-1);
-    return released; 
-  }*/ 
-      
   /* The scheduler figures out the mapping between velma_ids, PCs, and warp clusters, then  
    * calls this to label the appropriate line with the velma_id in question. 
    */

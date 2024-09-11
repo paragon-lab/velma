@@ -1237,14 +1237,10 @@ velma_id_t velma_scheduler::record_velma_access(warp_id_t wid, velma_pc_t pc, ve
     warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;  
     //get our velma id. 
     velma_id_t vid = get_velma_id(wcid,pc);
-    if (vid != -1) {
-      //if we found this velma id, reset its killtimer. 
-      reset_vid_killtimer(vid);
-    }      
-    else 
+    if (vid == -1) 
     { //not tracking it? let's do that! 
       add_new_velma_entry(wcid, pc, velma_id_ctr);
-      vid = velma_id_ctr;
+      vid = velma_id_ctr; //move inside ^ for better sw engineering
       velma_id_ctr++;
     }
 
@@ -1254,11 +1250,10 @@ velma_id_t velma_scheduler::record_velma_access(warp_id_t wid, velma_pc_t pc, ve
     class ldst_unit* ldstu = tshader->m_ldst_unit;
     l1_cache* mL1D = ldstu->m_L1D;
     tag_array* tagarr = mL1D->m_tag_array;
-    //Have the cache label some lines 
+    //Have the cache label a line 
     tagarr->label_velma_line(vid,addr);
     return vid;
   }
-
 
 
 template <class T>
@@ -1268,37 +1263,33 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
                                                         ::const_iterator &just_issued,
                                       unsigned num_warps_to_add) 
 {
-  reordered.clear();
-  
-  //first pass: push the velma warps, looking at [num_warps_to_add] elements.
-  auto v_itr = just_issued + 1; //iterator for vector of shd_warp_t* objects. 
-  for (int warps_seen = 0; warps_seen < num_warps_to_add; warps_seen++, ++v_itr){
-    //check our bounds!
-    if (v_itr == warps.end()){
-      v_itr = warps.begin();
-      if (v_itr == warps.end()) break; 
-    }
-    //velma check. 
-    unsigned wid = (*v_itr)->get_warp_id();
-    if (is_velma_wid(wid)){
-      reordered.push_back(*v_itr);
-    }
+  reordered.clear(); //clean slate.
+                     
+  std::vector<T> non_velma_warps;
+  if (num_warps_to_add > warps.size()){
+    frintf(stderr, 
+          "Number of warps to add: %d Number of warps available: %d\n", 
+          num_warps_to_add, 
+          warps.size());
+    abort();
   }
 
-  //second pass: push the non_velma warps, looking at the same set of elements. 
-  auto nv_itr = just_issued + 1; 
-  for (int warps_seen = 0; warps_seen < num_warps_to_add; warps_seen++, ++nv_itr) 
-  { //check our bounds! if we hit the end, loop. 
-    if (nv_itr == warps.end()){
-      nv_itr = warps.begin();
-      if (nv_itr == warps.end()) break;
-    }
+  //push the velma warps directly to reordered.
+  auto warps_itr = (just_issued != warps.end()) ? just_issued + 1 : warps.begin();  
+  for (int warps_seen = 0; warps_seen < num_warps_to_add; warps_seen++, ++warps_itr){
+    warps_itr = (warps_itr != warps.end()) ? warps_itr : warps.begin(); 
     //velma check. 
-    unsigned wid = (*nv_itr)->get_warp_id();
-    if (!is_velma_wid(wid)){
-      reordered.push_back(*v_itr);
+    unsigned wid = (*warps_itr)->get_warp_id();
+    if (is_velma_wid(wid)){
+      reordered.push_back(*warps_itr);
+    }
+    else {
+      non_velma_warps.push_back(*warps_itr);
     }
   }
+  //now push non_velma_warps to the back of reordered!
+  reordered.insert(reordered.end(), non_velma_warps.begin(), non_velma_warps.end());
+  non_velma_warps.clear();
 }
 
 /**
@@ -2811,7 +2802,6 @@ void sfu::issue(register_set &source_reg) {
   warp_inst_t **ready_reg =
       source_reg.get_ready(m_config->sub_core_model, m_issue_reg_id);
   // m_core->incexecstat((*ready_reg));
-
   (*ready_reg)->op_pipe = SFU__OP;
   m_core->incsfu_stat(m_core->get_config()->warp_size, (*ready_reg)->latency);
   pipelined_simd_unit::issue(source_reg);
@@ -2821,7 +2811,6 @@ void tensor_core::issue(register_set &source_reg) {
   warp_inst_t **ready_reg =
       source_reg.get_ready(m_config->sub_core_model, m_issue_reg_id);
   // m_core->incexecstat((*ready_reg));
-
   (*ready_reg)->op_pipe = TENSOR_CORE__OP;
   m_core->incsfu_stat(m_core->get_config()->warp_size, (*ready_reg)->latency);
   pipelined_simd_unit::issue(source_reg);

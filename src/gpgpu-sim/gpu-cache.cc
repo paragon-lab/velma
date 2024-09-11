@@ -312,7 +312,6 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
 
     if (not line->is_reserved_line()) {
       all_reserved = false;
-      
       //invalid line? doesn't matter if it's velma. 
       if (line->is_invalid_line()) {
         invalid_line = index;
@@ -343,15 +342,21 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
     }
   }
 
-//at this point, we know that we have no hits. run through the for-loop again,
-//only handling the replacement component. we only care here about cache blocks which are 
-//not reserved and are velma blocks. 
+  /*at this point, we know that we have no hits. run through the for-loop again,
+    only handling the replacement component. we only care here about cache blocks which are 
+    not reserved and are velma blocks. 
+  */
   if (all_nonres_velma && m_config.m_replacement_policy == VELRR){
+    //reset the timestamp for the second loop.
+    valid_timestamp = (unsigned)-1; 
     for (unsigned way = 0; way < m_config.m_assoc; way++) {
       unsigned index = set_index * m_config.m_assoc + way;
       cache_block_t *line = m_lines[index];
       //filter out reserved lines 
-      if (not line->is_reserved_line()){
+      if (!line->is_reserved_line() and 
+          line->is_velma_line() and 
+          line->get_last_access_time() < valid_timestamp)
+      {
           all_reserved = false;
           valid_line = index;
           valid_timestamp = line->get_last_access_time();

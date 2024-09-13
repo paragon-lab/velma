@@ -584,7 +584,7 @@ class velma_scheduler : public scheduler_unit {
    else return false;  
  }
 
- velma_id_t get_velma_id(warp_id_t wcid, velma_pc_t vpc){
+ velma_id_t get_warp_pc_pair_vid(warp_id_t wcid, velma_pc_t vpc){
    //make our pair for map indexing 
   velma_warp_pc_pair_t wcid_vpc = {wcid, vpc};
   //if we aren't tracking this velma id, just return 0.
@@ -598,8 +598,14 @@ class velma_scheduler : public scheduler_unit {
       if (vfp.second == false){
         vid = vfp.first;
         vfp.second = true;
+        break; 
       }
     }
+    return vid; 
+ }
+
+ bool is_free_velma_id(velma_id_t vid){
+    return !velma_id_pool[vid].second; 
  }
 
  //lots of room for optimization in velma_id_pool, but whatever.
@@ -612,20 +618,19 @@ class velma_scheduler : public scheduler_unit {
  }
 
  velma_id_t add_new_velma_entry(warp_id_t wcid, velma_pc_t vpc){
+    //fprintf(stdout, "\n\nVELMA ENTRY ADDED!\n\n");
     //first thing's first: get our new vid! 
     velma_id_t vid = get_free_velma_id();
+    //if there are none, we return -1. 
     if (vid == -1) return vid; 
-
     //make our warpid/pc pair 
     velma_warp_pc_pair_t wcid_pc = {wcid, vpc};
-    //attempt wcid-pc insertion.
-    auto wcid_pc_insertion = velma_pairs_ids.insert({wcid_pc, vid});
-    bool inserted = wcid_pc_insertion.second; 
-    //insertion successful, so we populate the inverse map and the killtimer. 
-    if (inserted){
-      velma_ids_pairs.insert({vid, wcid_pc});
-      velma_ids_killtimers.insert({vid, VELMA_KILLTIMER_START});
-    }
+    //wcid_pc insertion.
+    velma_pairs_ids.insert({wcid_pc, vid});
+    //populate the inverse map 
+    velma_ids_pairs.insert({vid, wcid_pc});
+    //populate the killtimers 
+    velma_ids_killtimers.insert({vid, VELMA_KILLTIMER_START});
 
     /* Processing the changes to our warpcluster_id->velma_id_ct map
      * isn't the simplest thing. A new vid does not necessarily mean 
@@ -637,7 +642,7 @@ class velma_scheduler : public scheduler_unit {
     }
     //either way, now we increment the count. 
     velma_wcids_vid_cts[wcid]++;
-    return inserted; 
+    return vid; 
   }
 
     
@@ -645,14 +650,8 @@ class velma_scheduler : public scheduler_unit {
     velma_warp_pc_pair_t wcid_pc = {0,0};
     bool vid_was_cleared = true;
     //erase pertinent entries in velma_ids_pairs
-    if (velma_ids_pairs.find(vid) != velma_ids_pairs.end()){
-      wcid_pc = velma_ids_pairs[vid]; 
-      //With warp/pc pair created, attempt to erase the vid from ids_pairs;
-      size_t num_pairs_erased = velma_ids_pairs.erase(vid);
-    } 
-    else {
-      vid_was_cleared = false;
-    }
+    wcid_pc = velma_ids_pairs[vid]; 
+    velma_ids_pairs.erase(vid);
 
     //erase pertinent entries in velma_pairs_ids
     velma_pairs_ids.erase(wcid_pc);
@@ -701,13 +700,13 @@ class velma_scheduler : public scheduler_unit {
 
   std::set<velma_id_t> decr_pc_killtimers(){
     std::set<velma_id_t> expiring;
-    for (auto& pct : velma_ids_killtimers){
-      //is the killtimer 0? 
-      if (pct.second == 0){ //yes? record the vid as expired.
-        expiring.insert(pct.first);
+    for (auto& vid_kt : velma_ids_killtimers){
+      //is the killtimer 0 
+      if (vid_kt.second <= 0){ //yes? record the vid as expired.
+        expiring.insert(vid_kt.first);
       }
       else{ //no? decrement the timer. 
-        pct.second--; 
+        vid_kt.second--; 
       }
     }
     return expiring; 

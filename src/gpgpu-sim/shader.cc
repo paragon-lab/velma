@@ -189,8 +189,7 @@ void shader_core_ctx::create_schedulers() {
   std::string sched_config = m_config->gpgpu_scheduler_string;
   const concrete_scheduler scheduler =
       sched_config.find("lrr") != std::string::npos ? CONCRETE_SCHEDULER_LRR
-      : sched_config.find("two_level_active") != std::string::npos
-          ? CONCRETE_SCHEDULER_TWO_LEVEL_ACTIVE
+      : sched_config.find("two_level_active") != std::string::npos ? CONCRETE_SCHEDULER_TWO_LEVEL_ACTIVE
       : sched_config.find("gto") != std::string::npos ? CONCRETE_SCHEDULER_GTO
       : sched_config.find("rrr") != std::string::npos ? CONCRETE_SCHEDULER_RRR
       : sched_config.find("old") != std::string::npos ? CONCRETE_SCHEDULER_OLDEST_FIRST
@@ -1236,7 +1235,7 @@ velma_id_t velma_scheduler::record_velma_access(warp_id_t wid, velma_pc_t pc, ve
     //primary conversion to warpcluster size 
     warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;  
     //get our velma id. 
-    velma_id_t vid = get_velma_id(wcid,pc);
+    velma_id_t vid = get_warp_pc_pair_vid(wcid,pc);
     if (vid == -1) 
     { //not tracking it? let's do that! 
       vid = add_new_velma_entry(wcid, pc);
@@ -1268,7 +1267,6 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
 {
   reordered.clear(); //clean slate.
                      
-  std::vector<T> non_velma_warps;
   if (num_warps_to_add > warps.size()){
     fprintf(stderr, 
           "Number of warps to add: %d Number of warps available: %d\n", 
@@ -1279,6 +1277,7 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
 
   //push the velma warps directly to reordered.
   //push the non_velma warps to a side list and append. 
+  std::vector<T> non_velma_warps;
   auto warps_itr = (just_issued != warps.end()) ? just_issued + 1 : warps.begin();  
   for (int warps_seen = 0; warps_seen < num_warps_to_add; warps_seen++, ++warps_itr){
     warps_itr = (warps_itr != warps.end()) ? warps_itr : warps.begin(); 
@@ -1662,6 +1661,11 @@ void velma_scheduler::cycle(){
   bool ready_inst = false;   // of the valid instructions, there was one not
                              // waiting for pending register writes
   bool issued_inst = false;  // of these we issued one
+                             //
+  //cycle here. this decrements the killtimers and cleans up as necessary before 
+  //we order the warps. 
+  velma_cycle();
+
 
   order_warps();
   for (std::vector<shd_warp_t *>::const_iterator iter =
@@ -1979,7 +1983,7 @@ void velma_scheduler::cycle(){
 
   ////////////////////////// velma stuff //////////////////////// 
   // just a cycle. decrement the pc killtimers and clear entries as needed. 
-  velma_cycle();
+  //velma_cycle();
   
   // issue stall statistics:
   if (!valid_inst)
@@ -2770,9 +2774,6 @@ void ldst_unit::invalidate() {
   m_L1D->invalidate();
 }
 
-//TODO: VELMA: modify shader_core_config's M_L1D cache_config?
-//either that or add a new config and figure out how to use it instead
-//REMEMBER DAWG ALL U GOTTA DO IS CHANGE THE REPLACEMENT POLICY TO VELRR
 simd_function_unit::simd_function_unit(const shader_core_config *config) {
   m_config = config;
   m_dispatch_reg = new warp_inst_t(config);

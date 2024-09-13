@@ -129,6 +129,7 @@ struct cache_block_t {
   cache_block_t() {
     m_tag = 0;
     m_block_addr = 0;
+    velma_id = -1;
   }
 
   virtual void allocate(new_addr_type tag, new_addr_type block_addr,
@@ -547,7 +548,7 @@ struct sector_cache_block : public cache_block_t {
 
 };
 
-enum replacement_policy_t { LRU, FIFO, VELRR};
+enum replacement_policy_t { LRU, FIFO, VELRU};
 
 enum write_policy_t {
   READ_ONLY,
@@ -639,9 +640,10 @@ class cache_config {
         m_replacement_policy = FIFO;
         break;
       case 'V':
-        m_replacement_policy = VELRR;
+        m_replacement_policy = VELRU;
         break;
       default:
+        printf("Replacement policy is the issue with config.");
         exit_parse_error();
     }
     switch (wp) {

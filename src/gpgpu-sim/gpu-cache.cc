@@ -318,25 +318,28 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
         line->clear_velma_id(); //TODO: does any other state need clearing here?
       } 
       else {
-        if (m_config.m_replacement_policy == LRU) {
-          if (line->get_last_access_time() < valid_timestamp) {
-            valid_timestamp = line->get_last_access_time();
-            valid_line = index;
-          }
-        }
-        else if (m_config.m_replacement_policy == FIFO) {
-          if (line->get_alloc_time() < valid_timestamp) {
-            valid_timestamp = line->get_alloc_time();
-            valid_line = index;
-          }
-        } 
-        else if (m_config.m_replacement_policy == VELRR){
-          //don't evict velma lines!!!!
-          if (line->get_last_access_time() < valid_timestamp && not line->is_velma_line()){
-            all_nonres_velma = false; 
-            valid_timestamp = line->get_last_access_time();
-            valid_line = index;
-          }
+        switch (m_config.m_replacement_policy) {
+          case LRU:
+            if (line->get_last_access_time() < valid_timestamp) {
+              valid_timestamp = line->get_last_access_time();
+              valid_line = index;
+            }
+            break;
+
+          case FIFO:
+            if (line->get_alloc_time() < valid_timestamp) {
+              valid_timestamp = line->get_alloc_time();
+              valid_line = index;
+            }
+            break; 
+
+          case VELRU:  
+            if (line->get_last_access_time() < valid_timestamp && not line->is_velma_line()){
+              all_nonres_velma = false; 
+              valid_timestamp = line->get_last_access_time();
+              valid_line = index;
+            }
+            break;
         }
       }
     }
@@ -346,7 +349,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
     only handling the replacement component. we only care here about cache blocks which are 
     not reserved and are velma blocks. 
   */
-  if (all_nonres_velma && m_config.m_replacement_policy == VELRR){
+  if (all_nonres_velma && m_config.m_replacement_policy == VELRU){
     //reset the timestamp for the second loop.
     valid_timestamp = (unsigned)-1; 
     for (unsigned way = 0; way < m_config.m_assoc; way++) {

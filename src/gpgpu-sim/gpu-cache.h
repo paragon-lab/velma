@@ -1392,8 +1392,6 @@ bool was_writeallocate_sent(const std::list<cache_event> &events);
 /// Each subclass implements its own 'access' function
 class baseline_cache : public cache_t {
  public:
-  //public for velma 
-  tag_array *m_tag_array;
   baseline_cache(const char *name, cache_config &config, int core_id,
                  int type_id, mem_fetch_interface *memport,
                  enum mem_fetch_status status)
@@ -1494,6 +1492,9 @@ class baseline_cache : public cache_t {
  protected:
   std::string m_name;
   cache_config &m_config;
+ public:
+  tag_array *m_tag_array; //public for velma 
+ protected:
   mshr_table m_mshrs;
   std::list<mem_fetch *> m_miss_queue;
   enum mem_fetch_status m_miss_queue_status;

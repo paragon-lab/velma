@@ -25,6 +25,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+export LDFLAGS+= -fsanitize=address -lasan
+export CXXFLAGS+= -fsanitize=address -lasan
 
 # comment out next line to disable OpenGL support
 # export OPENGL_SUPPORT=1

@@ -35,7 +35,8 @@ TRACE?=1
 include ../version_detection.mk
 
 CXXFLAGS =  -w -DDEBUG -Wall
-CXXFLAGS += -DCUDART_VERSION=$(CUDART_VERSION)
+CXXFLAGS += -DCUDART_VERSION=$(CUDART_VERSION) -fsanitize=address
+LDFLAGS += -fsanitize=address
 
 ifeq ($(GNUC_CPP0X), 1)
     CXXFLAGS += -std=c++0x
@@ -78,7 +79,7 @@ clean:
 	rm -f *.o core *~ *.a Makefile.makedepend Makefile.makedepend.bak
 
 $(OUTPUT_DIR)/%.$(OEXT): %.cc
-	$(CPP) $(OPTFLAGS) $(CXXFLAGS) -o $(OUTPUT_DIR)/$*.$(OEXT) -c $*.cc
+	$(CPP) $(OPTFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $(OUTPUT_DIR)/$*.$(OEXT) -c $*.cc
 
 option_parser.$(OEXT): option_parser.h
 

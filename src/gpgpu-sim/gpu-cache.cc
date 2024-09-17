@@ -187,12 +187,6 @@ void tag_array::update_cache_parameters(cache_config &config) {
   m_config = config;
 }
 
-//VELMA NOTE: 8/11 1600 -- configuration should be capable internally of 
-//  setting the tag_array to do velma things. now we need to actually splice
-//  all the functionality from the velma_tag_array class into the tag_array class,
-//  implement behavior switching, and delete the velma_tag_array stuff. From there,
-//  we verify scheduler/tag_array coordination and then figure out how to write the 
-//  top-level configuration. from there, we can theoretically start simming. 
 tag_array::tag_array(class cache_config &config, int core_id, int type_id)
     : m_config(config) {
   // assert( m_config.m_write_policy == READ_ONLY ); Old assert
@@ -317,7 +311,8 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
         invalid_line = index;
         line->clear_velma_id(); //TODO: does any other state need clearing here?
       } 
-      else {
+      else 
+      {
         switch (m_config.m_replacement_policy) {
           case LRU:
             if (line->get_last_access_time() < valid_timestamp) {

@@ -46,10 +46,11 @@ CPPFLAGS += -Wall $(INCPATH) $(DEFINE)
 ifneq ($(DEBUG),1)
 CPPFLAGS += -O3
 endif
-CPPFLAGS += -g
+CPPFLAGS += -g3
 CPPFLAGS += -fPIC
 CPPFLAGS += -I$(CUDA_INSTALL_PATH)/include
-LFLAGS +=
+CPPFLAGS += -fsanitize=address
+LFLAGS += -fsanitize=address
 
 
 ifeq ($(SIM_OBJ_FILES_DIR),)

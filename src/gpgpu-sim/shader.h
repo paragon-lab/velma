@@ -63,8 +63,8 @@
 #define MAX_VELMA_PCS 1024
 #define VELMA_WARPCLUSTER_SIZE 4
 //result from old histogramming. 
-#define VELMA_KILLTIMER_START 256
-#define MAX_VELMA_IDS 64 
+#define VELMA_KILLTIMER_START 1024
+#define MAX_VELMA_IDS 8 
 
 
 /* Some Velma types, for clarity in nested std::container declarations */ 
@@ -373,7 +373,7 @@ enum scheduler_prioritization_type {
   SCHEDULER_PRIORITIZATION_GTY,       // Greedy Then Youngest
   SCHEDULER_PRIORITIZATION_OLDEST,    // Oldest First
   SCHEDULER_PRIORITIZATION_YOUNGEST,  // Youngest First
-  SCHEDULER_PRIORITIZATION_VELRR      //velma loose round robin
+  SCHEDULER_PRIORITIZATION_VELMARR      //velma loose round robin
 };
 
 // Each of these corresponds to a string value in the gpgpsim.config file
@@ -385,7 +385,7 @@ enum concrete_scheduler {
   CONCRETE_SCHEDULER_RRR,
   CONCRETE_SCHEDULER_WARP_LIMITING,
   CONCRETE_SCHEDULER_OLDEST_FIRST,
-  CONCRETE_SCHEDULER_VELRR,
+  CONCRETE_SCHEDULER_VELMARR,
   NUM_CONCRETE_SCHEDULERS
 };
 

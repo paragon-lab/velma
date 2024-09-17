@@ -70,7 +70,7 @@ CPP = g++
 CC = gcc
 CREATELIBRARY    =  1
 DEBUG ?= 0
-CCFLAGS = -O3 -g -Wall -fPIC $(GL)
+CCFLAGS = -O3 -g -Wall -fPIC $(GL) -fsanitize=address
 ifeq ($(DEBUG),1)
 	CCFLAGS =  -Wall -g -fPIC $(GL)
 endif

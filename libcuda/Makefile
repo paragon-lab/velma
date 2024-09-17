@@ -77,12 +77,12 @@ CREATELIBRARY    =  1
 DEBUG ?= 0
 ifeq ($(DEBUG),1)
 	#CXXFLAGS +=  -Wall -Wno-unused-function -Wno-sign-compare -g -fPIC $(GL)
-	CXXFLAGS +=  -w -g -fPIC $(GL)
+	CXXFLAGS +=  -w -g3 -fPIC $(GL)
 	#CCFLAGS += -Wall -Wno-unused-function -Wno-sign-compare -ggdb -fPIC
-	CCFLAGS += -w -ggdb -fPIC
+	CCFLAGS += -w -g3 -fPIC
 else
 	#CXXFLAGS += -O3 -g -Wall -Wno-unused-function -Wno-sign-compare -fPIC $(GL)
-	CXXFLAGS += -O3 -g -w -fPIC $(GL)
+	CXXFLAGS += -O3 -g3 -w -fPIC $(GL)
 	#CCFLAGS += -Wall -Wno-unused-function -Wno-sign-compare -fPIC
 	CCFLAGS += -w -fPIC
 endif

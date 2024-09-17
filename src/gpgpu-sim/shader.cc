@@ -193,7 +193,7 @@ void shader_core_ctx::create_schedulers() {
       : sched_config.find("gto") != std::string::npos ? CONCRETE_SCHEDULER_GTO
       : sched_config.find("rrr") != std::string::npos ? CONCRETE_SCHEDULER_RRR
       : sched_config.find("old") != std::string::npos ? CONCRETE_SCHEDULER_OLDEST_FIRST
-      : sched_config.find("velrr") != std::string::npos ? CONCRETE_SCHEDULER_VELRR
+      : sched_config.find("velmarr") != std::string::npos ? CONCRETE_SCHEDULER_VELMARR
       : sched_config.find("warp_limiting") != std::string::npos ? CONCRETE_SCHEDULER_WARP_LIMITING
           : NUM_CONCRETE_SCHEDULERS;
   assert(scheduler != NUM_CONCRETE_SCHEDULERS);
@@ -208,7 +208,7 @@ void shader_core_ctx::create_schedulers() {
             &m_pipeline_reg[ID_OC_TENSOR_CORE], m_specilized_dispatch_reg,
             &m_pipeline_reg[ID_OC_MEM], i));
         break; 
-      case CONCRETE_SCHEDULER_VELRR:
+      case CONCRETE_SCHEDULER_VELMARR:
         std::cout << "Velma!!!\n";
         schedulers.push_back(new velma_scheduler(
             m_stats, this, m_scoreboard, m_simt_stack, &m_warp,
@@ -1266,7 +1266,7 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
                                       unsigned num_warps_to_add) 
 {
   reordered.clear(); //clean slate.
-                     
+  //if this doesn't cause execution to straight up stop, idk what will.
   if (num_warps_to_add > warps.size()){
     fprintf(stderr, 
           "Number of warps to add: %d Number of warps available: %d\n", 
@@ -1277,6 +1277,29 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
 
   //push the velma warps directly to reordered.
   //push the non_velma warps to a side list and append. 
+  //
+
+  /*TODO 11/13: Fix this warp scheduling to make it such that we don't just prioritize ANY
+    velma warps, but specifically those of the relevant cluster? 
+    In general, we need to put more thought into this. Should velma be changed such that 
+    each cluster just has a set of associated PCs and velma ids? Just because a velma warp 
+    is a velma warp doesn't mean we necessarily want it scheduled--we want warps in the same 
+    cluster at the same PC to run together -- perhaps the solution to this problem is to only 
+    track, say, one or two clusters, and only one or two PCs per cluster?  
+
+    This may be where I want to start using the pre-established warp clustering notion instead
+    of my own. When a cluster member executes a PC, note that member as the cluster LEADER
+    FOR THAT PARTICULAR PC. Within VELMA, we don't want to be scheduling round-robin if we have 
+    multiple PCs for a given cluster, for example. We want the leader to wait for the rest to 
+    reach the same PC as the leader -- this may or may not preserve some iteration information. 
+
+    We could model things in terms of iterations a bit more explicitly, but I think a different
+    strategy is better. After finding our current leader and prioritizing it first, we should then 
+    choose to prioritize other warps in the leader's cluster until the timer hits zero, over ALL OTHER WARPS.
+    Once the timer hits zero, we revert the cluster to being non-velma?
+
+    Either way, we fix this AFTER we know the lay of the land vis a vis configuration. 
+  */
   std::vector<T> non_velma_warps;
   auto warps_itr = (just_issued != warps.end()) ? just_issued + 1 : warps.begin();  
   for (int warps_seen = 0; warps_seen < num_warps_to_add; warps_seen++, ++warps_itr){
@@ -1772,10 +1795,13 @@ void velma_scheduler::cycle(){
                 for (new_addr_type lineaddr : pI_lineaddrs){
                   velma_addr_t tvaddr = static_cast<velma_addr_t>(lineaddr);
                   vaddrs.insert(tvaddr);
+                  printf("velma addr in scheduler!\n");
+                  std::cout << "velma addr in scheduler!\n";
+                  fprintf(stderr, "velma addr in scheduler!\n");
                 }
                                                 
                 for (velma_addr_t vaddr : vaddrs){  
-                record_velma_access(warp_id, pc, vaddr);
+                  record_velma_access(warp_id, pc, vaddr);
                 }
               }
             } 

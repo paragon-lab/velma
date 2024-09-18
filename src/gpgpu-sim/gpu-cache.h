@@ -45,8 +45,6 @@
 #include "addrdec.h"
 
 #define MAX_DEFAULT_CACHE_SIZE_MULTIBLIER 4
-#define VELMA_WARPCLUSTER_SIZE 4
-#define VELMA_MAX_ENTRIES 1024 
 
 //forward declaration to shader.
 class velma_scheduler;

@@ -209,7 +209,6 @@ void shader_core_ctx::create_schedulers() {
             &m_pipeline_reg[ID_OC_MEM], i));
         break; 
       case CONCRETE_SCHEDULER_VELMARR:
-        std::cout << "Velma!!!\n";
         schedulers.push_back(new velma_scheduler(
             m_stats, this, m_scoreboard, m_simt_stack, &m_warp,
             &m_pipeline_reg[ID_OC_SP], &m_pipeline_reg[ID_OC_DP],
@@ -1788,21 +1787,22 @@ void velma_scheduler::cycle(){
                 ///////////////////////////////// some velma stuff //////////////////////////// 
                 // this is where we add the new warp_id/pc pair
                 //RECORD VELMA ACCESS HERE!
-                warp_inst_t nc_pI = *pI;  //not const 
+                
                 //Get a list of addresses, record the entries.
-                std::set<new_addr_type> pI_lineaddrs = nc_pI.get_lineaddrs();
+                std::set<new_addr_type> pI_lineaddrs = pI->get_lineaddrs();// = nc_pI.get_lineaddrs();
                 std::set<velma_addr_t> vaddrs;
                 for (new_addr_type lineaddr : pI_lineaddrs){
                   velma_addr_t tvaddr = static_cast<velma_addr_t>(lineaddr);
                   vaddrs.insert(tvaddr);
-                  printf("velma addr in scheduler!\n");
-                  std::cout << "velma addr in scheduler!\n";
-                  fprintf(stderr, "velma addr in scheduler!\n");
+                  //printf("velma addr in scheduler!\n");
+                  //std::cout << "velma addr in scheduler!\n";
+                  //fprintf(stderr, "velma addr in scheduler!\n");
                 }
                                                 
                 for (velma_addr_t vaddr : vaddrs){  
                   record_velma_access(warp_id, pc, vaddr);
                 }
+                 
               }
             } 
             else 

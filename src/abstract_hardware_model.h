@@ -1213,16 +1213,16 @@ class warp_inst_t : public inst_t {
     return m_per_scalar_thread[n].memreqaddr[0];
   }
 
-  std::set<new_addr_type> get_lineaddrs(){
+  std::set<new_addr_type> get_lineaddrs() const{
+    if (!m_per_scalar_thread_valid) return {};
+    
     std::set<new_addr_type> lineaddrs;
-    active_mask_t tmask = m_warp_active_mask; //this is a std::bitset
-    int tctr = 0; 
-    for (auto pst : m_per_scalar_thread){
-      if (tmask[tctr] == 1){
-        new_addr_type lineaddr = pst.memreqaddr[0] & ~0x7FUL;
-        lineaddrs.insert(lineaddr);
+    const active_mask_t tmask = m_warp_active_mask; //this is a std::bitset
+    for (int i = 0; i < tmask.size(), i<=m_per_scalar_thread.size(); i++){
+      if (tmask[i] == 1){
+        new_addr_type lineaddr = m_per_scalar_thread[i].memreqaddr[0] & ~0x7FUL;
+        lineaddrs.insert(lineaddr); 
       }
-      tctr++;
     }
     return lineaddrs;
   }

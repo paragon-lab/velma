@@ -35,8 +35,9 @@ TRACE?=1
 include ../version_detection.mk
 
 CXXFLAGS =  -w -DDEBUG -Wall
-CXXFLAGS += -DCUDART_VERSION=$(CUDART_VERSION) -fsanitize=address
-LDFLAGS += -fsanitize=address
+export CXXFLAGS += -DCUDART_VERSION=$(CUDART_VERSION) #-fsanitize=address
+#connor asan change 
+#export LDFLAGS += -fsanitize=address
 
 ifeq ($(GNUC_CPP0X), 1)
     CXXFLAGS += -std=c++0x

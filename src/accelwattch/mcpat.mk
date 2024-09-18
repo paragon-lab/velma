@@ -26,7 +26,7 @@ endif
 
 ifeq ($(TAG),dbg)
   DBG = -Wall 
-  OPT = -ggdb -fPIC -g -O0 -DNTHREADS=1 -Icacti -lz
+  OPT = -ggdb -fPIC -O0 -DNTHREADS=1 -Icacti -lz
 else
   DBG = 
   OPT = -O3 -fPIC -msse2 -mfpmath=sse -DNTHREADS=$(NTHREADS) -Icacti -lz
@@ -34,8 +34,9 @@ else
 endif
 
 #CXXFLAGS = -Wall -Wno-unknown-pragmas -Winline $(DBG) $(OPT) 
-CXXFLAGS = -Wno-unknown-pragmas $(DBG) $(OPT) 
-
+CXXFLAGS = -Wno-unknown-pragmas $(DBG) $(OPT) # -fsanitize=address
+#connor asan change 
+#LDFLAGS += -fsanitize=address
 
 
 

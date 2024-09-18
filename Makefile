@@ -25,8 +25,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-export LDFLAGS+= -fsanitize=address -lasan
-export CXXFLAGS+= -fsanitize=address -lasan
+#export LDFLAGS+= -fsanitize=address -lasan
+#export CXXFLAGS+= -fsanitize=address -lasan 
 
 # comment out next line to disable OpenGL support
 # export OPENGL_SUPPORT=1
@@ -213,7 +213,7 @@ TFLAGS = -std=c++0x -I$(CUDA_INSTALL_PATH)/include
 ifneq ($(DEBUG),1)
 	TFLAGS += -O3
 endif
-TFLAGS += -g3 -fPIC
+TFLAGS += -g3 -fPIC #-fsanitize=address
 
 gpgpu-sim_uarch: makedirs cuda-sim
 	$(MAKE) -C ./src/gpgpu-sim/ depend

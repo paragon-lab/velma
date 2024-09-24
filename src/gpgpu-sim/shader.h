@@ -61,10 +61,10 @@
 
 #define NO_OP_FLAG 0xFF
 #define MAX_VELMA_PCS 1024
-#define VELMA_WARPCLUSTER_SIZE 8
+#define VELMA_WARPCLUSTER_SIZE 4
 //result from old histogramming. 
 #define VELMA_KILLTIMER_START 256
-#define MAX_VELMA_IDS 256
+#define MAX_VELMA_IDS 16
 
 
 /* Some Velma types, for clarity in nested std::container declarations */ 

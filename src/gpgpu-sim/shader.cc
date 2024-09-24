@@ -1265,7 +1265,6 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
                                       unsigned num_warps_to_add) 
 {
   reordered.clear(); //clean slate.
-  //if this doesn't cause execution to straight up stop, idk what will.
   if (num_warps_to_add > warps.size()){
     fprintf(stderr, 
           "Number of warps to add: %d Number of warps available: %d\n", 
@@ -2006,10 +2005,6 @@ void velma_scheduler::cycle(){
       break;
     }
   }
-
-  ////////////////////////// velma stuff //////////////////////// 
-  // just a cycle. decrement the pc killtimers and clear entries as needed. 
-  //velma_cycle();
   
   // issue stall statistics:
   if (!valid_inst)

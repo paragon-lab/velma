@@ -322,7 +322,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
         
         if (line->is_invalid_line()) {
           invalid_line = index;
-          line->clear_velma_id(); //TODO: does any other state need clearing here?
+          line->clear_velma_id(); 
         } 
         else 
         {
@@ -404,7 +404,6 @@ enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
                                             evicted_block_info &evicted,
                                             mem_fetch *mf) {
 
-  //TODO: THERE USED TO BE A CLEAR_EXPIRED_VELMA_IDS CALL HERE. 
   m_access++;
   is_used = true;
   shader_cache_access_log(m_core_id, m_type_id, 0);  // log accesses to cache
@@ -1224,7 +1223,6 @@ void baseline_cache::send_read_request(new_addr_type addr,
   bool mshr_hit = m_mshrs.probe(mshr_addr);
   bool mshr_avail = !m_mshrs.full(mshr_addr);
 
-  //TODO: VELMA NOTE This is where we call the m_tag_array velma_access function. 
   if (mshr_hit && mshr_avail) {
     if (read_only)
       m_tag_array->access(block_addr, time, cache_index, mf);

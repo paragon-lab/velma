@@ -45,6 +45,7 @@
 #include "addrdec.h"
 
 #define MAX_DEFAULT_CACHE_SIZE_MULTIBLIER 4
+#define VELMA_WARPCLUSTER_SIZE 8
 
 //forward declaration to shader.
 class velma_scheduler;
@@ -1791,9 +1792,6 @@ class data_cache : public baseline_cache {
                                          enum cache_request_status status);
 };
 
-//i like star wars 
-//
-////i like star wars 
 
 /// This is meant to model the first level data cache in Fermi.
 /// It is write-evict (global) or write-back (local) at

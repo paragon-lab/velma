@@ -369,7 +369,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
   else if (valid_line != (unsigned)-1) {
     idx = valid_line;
   } 
-  else if (velma_valid_line != (unsigned)-1){
+  else if (velma_valid_line != (unsigned)-1 and m_config.m_replacement_policy == VELRU){
     idx = velma_valid_line; 
     cache_block_t *line = m_lines[idx];
     line->clear_velma_id();
@@ -404,8 +404,7 @@ enum cache_request_status tag_array::access(new_addr_type addr, unsigned time,
                                             evicted_block_info &evicted,
                                             mem_fetch *mf) {
 
-  clear_expired_velma_ids(just_expired_velma_ids); 
-
+  //TODO: THERE USED TO BE A CLEAR_EXPIRED_VELMA_IDS CALL HERE. 
   m_access++;
   is_used = true;
   shader_cache_access_log(m_core_id, m_type_id, 0);  // log accesses to cache

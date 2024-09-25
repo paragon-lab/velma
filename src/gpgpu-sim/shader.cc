@@ -1214,6 +1214,34 @@ void scheduler_unit::order_rrr(
   }
 }
 
+
+
+velma_scheduler::velma_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
+                Scoreboard *scoreboard, simt_stack **simt,
+                std::vector<shd_warp_t *> *warp, register_set *sp_out,
+                register_set *dp_out, register_set *sfu_out,
+                register_set *int_out, register_set *tensor_core_out,
+                std::vector<register_set *> &spec_cores_out,
+                register_set *mem_out, int id)
+      : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out,
+                       sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
+  { 
+    //Create our pool of velma ids!  
+    for (int i = 0; i < MAX_VELMA_IDS; i++){
+      vid_flag_pair_t vid_pool_entry = {i, false};
+      velma_id_pool.push_back(vid_pool_entry);
+    }
+
+    //initialize pointers to structures in L1 
+    ldstu = m_shader->m_ldst_unit;
+    mL1D = ldstu->m_L1D;
+    tag_arr = mL1D->m_tag_array;
+
+  }
+
+
+
+
 void velma_scheduler::order_warps() {
   order_velma_lrr(m_next_cycle_prioritized_warps, m_supervised_warps,
             m_last_supervised_issued, m_supervised_warps.size());
@@ -1245,13 +1273,9 @@ velma_id_t velma_scheduler::record_velma_access(warp_id_t wid, velma_pc_t pc, ve
      * mark the appropriate cache line. 
      * First, though, we need access to the tag array.
      */
-    class shader_core_ctx* tshader = this->m_shader;
-    class ldst_unit* ldstu = tshader->m_ldst_unit;
-    l1_cache* mL1D = ldstu->m_L1D;
-    tag_array* tagarr = mL1D->m_tag_array;
     //Have the cache label the line! 
     if (vid != -1){
-      tagarr->label_velma_line(vid,addr);
+      tag_arr->label_velma_line(vid,addr);
     }
     return vid;
   }
@@ -1299,7 +1323,7 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
     Either way, we fix this AFTER we know the lay of the land vis a vis configuration. 
   */
   std::vector<T> non_velma_warps;
-  //this probably causes the edge-case segfaults
+  //this probably causes the edge-case segfaults. (out of bounds) 
   auto warps_itr = (just_issued != warps.end()) ? just_issued + 1 : warps.begin();  
   for (int warps_seen = 0; warps_seen < num_warps_to_add; warps_seen++, ++warps_itr){
     warps_itr = (warps_itr != warps.end()) ? warps_itr : warps.begin(); 

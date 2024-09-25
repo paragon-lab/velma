@@ -524,6 +524,9 @@ class lrr_scheduler : public scheduler_unit {
   }
 };
 
+
+class shader_core_ctx;
+
 class velma_scheduler : public scheduler_unit {
  public:
   /* We need to map velma ids to warp clusters and vice versa. 
@@ -543,6 +546,16 @@ class velma_scheduler : public scheduler_unit {
    */
   using vid_flag_pair_t = std::pair<velma_id_t, bool>;
   std::vector<vid_flag_pair_t>  velma_id_pool;
+
+  /* We need to keep a pointer to the velma_tag_array so that 
+   * the velma scheduler has direct control over the tag_array's
+   * data structures. 
+   */
+  class ldst_unit* ldstu; 
+  l1_cache* mL1D; 
+  tag_array* tag_arr;
+    
+
  
   int velma_id_ctr; 
   
@@ -552,16 +565,7 @@ class velma_scheduler : public scheduler_unit {
                 register_set *dp_out, register_set *sfu_out,
                 register_set *int_out, register_set *tensor_core_out,
                 std::vector<register_set *> &spec_cores_out,
-                register_set *mem_out, int id)
-      : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out,
-                       sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
-  { 
-    //Create our pool of velma ids!  
-    for (int i = 0; i < MAX_VELMA_IDS; i++){
-      vid_flag_pair_t vid_pool_entry = {i, false};
-      velma_id_pool.push_back(vid_pool_entry);
-    }
-  }
+                register_set *mem_out, int id);
 
   virtual ~velma_scheduler() {}
   virtual void order_warps();
@@ -674,6 +678,10 @@ class velma_scheduler : public scheduler_unit {
 
     //free the velma_id in the velma_id_pool
     free_velma_id(vid);
+
+    //finally, free the corresponding lines in the tag array. 
+    tag_arr->release_velma_id_lines(vid);
+
     return vid_was_cleared;
   }
   

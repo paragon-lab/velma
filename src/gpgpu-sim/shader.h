@@ -60,7 +60,6 @@
 #include "traffic_breakdown.h"
 
 #define NO_OP_FLAG 0xFF
-#define MAX_VELMA_PCS 1024
 #define VELMA_WARPCLUSTER_SIZE 4
 //result from old histogramming. 
 #define VELMA_KILLTIMER_START 256
@@ -74,6 +73,11 @@ using velma_pc_t = unsigned;
 using velma_warp_pc_pair_t = std::pair<warp_id_t, velma_pc_t>;
 using velma_addr_t = uint64_t; 
 
+
+using velma_wc_bitmask_t = std::bitset<VELMA_WARPCLUSTER_SIZE>;
+
+
+//using wcid_vid_wc_bitmasks_t = std::pair
 /* READ_PACKET_SIZE:
    bytes: 6 address (flit can specify chanel so this gives up to ~2GB/channel,
    so good for now), 2 bytes   [shaderid + mshrid](14 bits) + req_size(0-2 bits
@@ -527,17 +531,125 @@ class lrr_scheduler : public scheduler_unit {
 
 class shader_core_ctx;
 
+class velma_table{
+  friend class velma_scheduler; 
+
+  struct velma_entry_t{
+    velma_pc_t vpc;
+    velma_id_t vid = -1; 
+    velma_wc_bitmask_t wc_mask;
+    unsigned killtimer;
+     
+    velma_entry_t(velma_pc_t pc, velma_id_t vid_){
+      vpc = pc; 
+      vid = vid_; 
+      wc_mask.reset(); 
+      killtimer = VELMA_KILLTIMER_START;
+    } 
+
+    inline void mark_warp_reached(uint8_t warp_index){
+      wc_mask.set(warp_index);
+    }
+
+    inline bool has_reached(uint8_t warp_index){
+      return static_cast<bool>(wc_mask[warp_index]);
+    } 
+
+    velma_id_t decr_killtimer(){
+      if (killtimer > 0){
+        killtimer--;
+        return vid;
+      }
+      else {
+        return -1;
+      }
+    }
+
+
+    velma_pc_t get_vpc(){return vpc;}
+    velma_id_t get_vid(){return vid;} 
+    ~velma_entry_t(){}
+  };
+
+  //this data structure is the entire velma tracking set for 1 (one) (I) 
+  //warpcluster. There will likely be more than one of these entries.
+  struct wc_entry_t{
+    //need both pop_front() and pop_back()
+    std::deque<velma_entry_t> cluster_subtable; 
+    warp_id_t wid; 
+
+    //Checks this cluster's subtable for the pc in question.
+    //We only care about the first instance.
+    int find_vid_from_pc(velma_pc_t pc){
+      for (auto vid_pc : cluster_subtable){
+        if (vid_pc.get_vpc() == pc){
+          return vid_pc.get_vid();
+        }
+      }
+    }
+
+    //checks if a vid is present in this cluster's subtable
+    bool contains_vid(velma_id_t vid){
+      for (auto vid_pc : cluster_subtable){
+        if (vid_pc.get_vid() == vid and vid != -1){
+          return true;
+        }
+      }
+    }
+
+    /* goes through the killtimers for this warpcluster, decrementing 
+     * each one. returns a set of the velma ids for whom the bell tolls,
+     * which we will subsequently clear elsewhere
+    */
+    int decr_top_killtimer(){
+      //no segfaults, please. 
+      if (cluster_subtable.begin() == cluster_subtable.end()) return -1;
+      velma_id_t decr_vid = cluster_subtable.begin()->decr_killtimer();
+      return decr_vid;
+    }
+
+    //reports the set of velma ids this cluster is tracking. 
+    std::set<velma_id_t> report_vids(){
+      std::set<velma_id_t> vids;
+      for (auto vid_pc : cluster_subtable){
+        vids.insert(vid_pc.get_vid());
+      }
+    }
+  };
+
+
+
+};
+
+
 class velma_scheduler : public scheduler_unit {
  public:
   /* We need to map velma ids to warp clusters and vice versa. 
    * One velma id will correspond to one and only one warpcluster id/pc combo. 
    * A warpcluster id can correspond to 0 or more velma_ids. 
    */
+
+  //
   using velma_warp_pc_pair_t = std::pair<warp_id_t, velma_pc_t>;
   std::map<velma_id_t, velma_warp_pc_pair_t> velma_ids_pairs;
-  std::map<velma_warp_pc_pair_t, velma_id_t> velma_pairs_ids; 
+  std::map<velma_warp_pc_pair_t, velma_id_t> velma_pairs_ids;
   std::map<velma_id_t, unsigned> velma_ids_killtimers; 
-  std::map<warp_id_t, unsigned> velma_wcids_vid_cts;
+
+  //SCHEDULING BITMASKS  
+  using velma_wc_bitmask_t = std::bitset<VELMA_WARPCLUSTER_SIZE>;
+  using vid_wc_bitmask_pair_t = std::pair<velma_id_t, velma_wc_bitmask_t>;
+  using vid_bitmask_queue_t = std::deque<vid_wc_bitmask_pair_t>;
+
+  using wc_bitmask_queue_t = std::deque<velma_wc_bitmask_t>;
+  using wc_pc_queue_t = std::deque<velma_pc_t>;
+  
+  
+  
+  
+  
+  
+  
+
   /* We need to limit the number of velma ids we allow. 
    * To do so, we create a pool of ids, each of which is 
    * associated with a flag indicating whether or not 
@@ -583,9 +695,7 @@ class velma_scheduler : public scheduler_unit {
 
  bool is_velma_wid(warp_id_t wid){
    warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;
-   bool is_v_wcid = velma_wcids_vid_cts.find(wcid) != velma_wcids_vid_cts.end();
-   if (is_v_wcid) return true;
-   else return false;  
+   return velma_cluster_bitmasks.find(wcid) != velma_cluster_bitmasks.end();
  }
 
  velma_id_t get_warp_pc_pair_vid(warp_id_t wcid, velma_pc_t vpc){

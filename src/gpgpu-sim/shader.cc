@@ -1323,7 +1323,7 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
     Either way, we fix this AFTER we know the lay of the land vis a vis configuration. 
   */
   std::vector<T> non_velma_warps;
-  //this probably causes the edge-case segfaults. (out of bounds) 
+  //this probably causes the edge-case segfaults. (out of bounds) TODO
   auto warps_itr = (just_issued != warps.end()) ? just_issued + 1 : warps.begin();  
   for (int warps_seen = 0; warps_seen < num_warps_to_add; warps_seen++, ++warps_itr){
     warps_itr = (warps_itr != warps.end()) ? warps_itr : warps.begin(); 

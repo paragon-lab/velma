@@ -627,11 +627,19 @@ class velma_table{
       }
     }
 
-    //pops the top velma entry, advancing the queue. 
+    /* Pops the top velma entry, advancing the queue.
+     * also returns the velma id of that element,
+     * or -1 if the list is empty.
+     */
     velma_id_t pop_front_velma_entry(){
-      cluster_subtable.pop_front(); 
+      velma_id_t ret_vid = -1; 
+      if(cluster_subtable.begin() != cluster_subtable.end()){
+        ret_vid = cluster_subtable.begin()->get_vid();
+        cluster_subtable.pop_front(); 
+      }
+      return ret_vid; 
     }
-
+    
   };
 
 

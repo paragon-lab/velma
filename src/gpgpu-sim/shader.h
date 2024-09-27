@@ -74,7 +74,6 @@ using velma_warp_pc_pair_t = std::pair<warp_id_t, velma_pc_t>;
 using velma_addr_t = uint64_t; 
 
 
-using velma_wc_bitmask_t = std::bitset<VELMA_WARPCLUSTER_SIZE>;
 
 
 //using wcid_vid_wc_bitmasks_t = std::pair
@@ -537,13 +536,14 @@ class velma_table{
   struct velma_entry_t{
     velma_pc_t vpc;
     velma_id_t vid = -1; 
-    velma_wc_bitmask_t wc_mask;
+    std::bitset<VELMA_WARPCLUSTER_SIZE> wc_mask;
     unsigned killtimer;
      
     velma_entry_t(velma_pc_t pc, velma_id_t vid_){
       vpc = pc; 
       vid = vid_; 
-      wc_mask.reset(); 
+      //initialize the warpcluster mask to all 1s! 
+      wc_mask = std::bitset<VELMA_WARPCLUSTER_SIZE>((1ULL << VELMA_WARPCLUSTER_SIZE) - 1); 
       killtimer = VELMA_KILLTIMER_START;
     } 
 
@@ -551,7 +551,7 @@ class velma_table{
       wc_mask.set(warp_index);
     }
 
-    inline bool has_reached(uint8_t warp_index){
+    inline bool has_warp_reached(uint8_t warp_index){
       return static_cast<bool>(wc_mask[warp_index]);
     } 
 
@@ -580,41 +580,58 @@ class velma_table{
 
     //Checks this cluster's subtable for the pc in question.
     //We only care about the first instance.
-    int find_vid_from_pc(velma_pc_t pc){
-      for (auto vid_pc : cluster_subtable){
-        if (vid_pc.get_vpc() == pc){
-          return vid_pc.get_vid();
+    int first_vid_from_pc(velma_pc_t pc){
+      for (auto velma_entry : cluster_subtable){
+        if (velma_entry.get_vpc() == pc){
+          return velma_entry.get_vid();
         }
       }
     }
 
+
+    std::set<velma_id_t> all_vids_from_pc(velma_pc_t pc){
+      std::set<velma_id_t> vids;
+      for (auto velma_entry : cluster_subtable){
+        if (velma_entry.get_vpc() == pc){
+          vids.insert(velma_entry.get_vid());
+        }
+      }
+      return vids;
+    }
+
+
     //checks if a vid is present in this cluster's subtable
     bool contains_vid(velma_id_t vid){
-      for (auto vid_pc : cluster_subtable){
-        if (vid_pc.get_vid() == vid and vid != -1){
+      for (auto velma_entry : cluster_subtable){
+        if (velma_entry.get_vid() == vid and vid != -1){
           return true;
         }
       }
     }
 
-    /* goes through the killtimers for this warpcluster, decrementing 
-     * each one. returns a set of the velma ids for whom the bell tolls,
-     * which we will subsequently clear elsewhere
-    */
-    int decr_top_killtimer(){
+    //decrements the top killtimer and returns the associated vid. 
+    velma_id_t decr_top_killtimer(){
+      velma_id_t decr_vid = -1;
       //no segfaults, please. 
-      if (cluster_subtable.begin() == cluster_subtable.end()) return -1;
-      velma_id_t decr_vid = cluster_subtable.begin()->decr_killtimer();
+      if (cluster_subtable.begin() != cluster_subtable.end()){ 
+        decr_vid = cluster_subtable.begin()->decr_killtimer();
+      }
       return decr_vid;
     }
 
     //reports the set of velma ids this cluster is tracking. 
     std::set<velma_id_t> report_vids(){
       std::set<velma_id_t> vids;
-      for (auto vid_pc : cluster_subtable){
-        vids.insert(vid_pc.get_vid());
+      for (auto velma_entry : cluster_subtable){
+        vids.insert(velma_entry.get_vid());
       }
     }
+
+    //pops the top velma entry, advancing the queue. 
+    velma_id_t pop_front_velma_entry(){
+      cluster_subtable.pop_front(); 
+    }
+
   };
 
 
@@ -636,11 +653,11 @@ class velma_scheduler : public scheduler_unit {
   std::map<velma_id_t, unsigned> velma_ids_killtimers; 
 
   //SCHEDULING BITMASKS  
-  using velma_wc_bitmask_t = std::bitset<VELMA_WARPCLUSTER_SIZE>;
-  using vid_wc_bitmask_pair_t = std::pair<velma_id_t, velma_wc_bitmask_t>;
+  using std::bitset<VELMA_WARPCLUSTER_SIZE> = std::bitset<VELMA_WARPCLUSTER_SIZE>;
+  using vid_wc_bitmask_pair_t = std::pair<velma_id_t, std::bitset<VELMA_WARPCLUSTER_SIZE>>;
   using vid_bitmask_queue_t = std::deque<vid_wc_bitmask_pair_t>;
 
-  using wc_bitmask_queue_t = std::deque<velma_wc_bitmask_t>;
+  using wc_bitmask_queue_t = std::deque<std::bitset<VELMA_WARPCLUSTER_SIZE>>;
   using wc_pc_queue_t = std::deque<velma_pc_t>;
   
   

@@ -578,9 +578,18 @@ class velma_table{
     std::deque<velma_entry_t> cluster_subtable; 
     warp_id_t wid; 
 
+
+    velma_id_t active_vid(){
+      velma_id_t retvid = -1;
+      if (cluster_subtable.begin() != cluster_subtable.end()){
+        retvid = cluster_subtable.begin()->get_vid();
+      }
+      return retvid;
+    }
+
     //Checks this cluster's subtable for the pc in question.
     //We only care about the first instance.
-    int first_vid_from_pc(velma_pc_t pc){
+    velma_id_t first_vid_from_pc(velma_pc_t pc){
       for (auto velma_entry : cluster_subtable){
         if (velma_entry.get_vpc() == pc){
           return velma_entry.get_vid();
@@ -613,7 +622,7 @@ class velma_table{
     velma_id_t decr_top_killtimer(){
       velma_id_t decr_vid = -1;
       //no segfaults, please. 
-      if (cluster_subtable.begin() != cluster_subtable.end()){ 
+      if (!cluster_subtable.empty()){ 
         decr_vid = cluster_subtable.begin()->decr_killtimer();
       }
       return decr_vid;
@@ -625,7 +634,10 @@ class velma_table{
       for (auto velma_entry : cluster_subtable){
         vids.insert(velma_entry.get_vid());
       }
+      return vids;
     }
+
+      
 
     /* Pops the top velma entry, advancing the queue.
      * also returns the velma id of that element,
@@ -633,7 +645,7 @@ class velma_table{
      */
     velma_id_t pop_front_velma_entry(){
       velma_id_t ret_vid = -1; 
-      if(cluster_subtable.begin() != cluster_subtable.end()){
+      if(!cluster_subtable.empty()){
         ret_vid = cluster_subtable.begin()->get_vid();
         cluster_subtable.pop_front(); 
       }
@@ -641,6 +653,7 @@ class velma_table{
     }
     
   };
+
 
 
 

@@ -90,7 +90,7 @@ struct warpcluster_entry_t{
 
 class velma_table_t{
   friend class velma_scheduler; 
-
+  
   
   
 

@@ -19,7 +19,9 @@ list(APPEND gpgpusim_SRC addrdec.cc
     stack.cc
     stat-tool.cc
     traffic_breakdown.cc
-    visualizer.cc)
+    visualizer.cc
+    velma_table.cc
+    velma_scheduler.cc)
 if(NOT GPGPUSIM_USE_POWER_MODEL)
     list(REMOVE_ITEM ${gpgpusim_SRC} power_interface.cc)
 endif()

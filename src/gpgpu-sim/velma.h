@@ -88,6 +88,8 @@ struct warpcluster_entry_t{
    */
   velma_id_t mark_warp_reached_pc(warp_id_t wid, velma_pc_t pc);
 
+  velma_id_t add_velma_entry(velma_pc_t pc, velma_addr_t addr);
+
 };
 
 
@@ -162,19 +164,19 @@ class velma_scheduler : public scheduler_unit {
                       unsigned num_warps_to_add);
 
   
-
+//TODO
  bool is_velma_wid(warp_id_t wid){
    warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;
    return false;//velma_cluster_bitmasks.find(wcid) != velma_cluster_bitmasks.end();
  }
-
+//TODO 
  velma_id_t get_warp_pc_pair_vid(warp_id_t wcid, velma_pc_t vpc){
    //make our pair for map indexing 
   velma_warp_pc_pair_t wcid_vpc = {wcid, vpc};
   //if we aren't tracking this velma id, just return 0.
   return -1;//(velma_pairs_ids.find(wcid_vpc) != velma_pairs_ids.end()) ? velma_pairs_ids[wcid_vpc] : -1; 
   }
-
+ //TODO???
  velma_id_t get_free_velma_id(){
     velma_id_t vid = -1; 
     for (auto vfp : velma_id_pool){
@@ -187,10 +189,12 @@ class velma_scheduler : public scheduler_unit {
     return vid; 
  }
 
+ //TODO???
  bool is_free_velma_id(velma_id_t vid){
     return !velma_id_pool[vid].second; 
  }
 
+ //TODO???
  //lots of room for optimization in velma_id_pool, but whatever.
  //keep it simple right now.
  void free_velma_id(velma_id_t vid){
@@ -200,6 +204,7 @@ class velma_scheduler : public scheduler_unit {
     }
  }
 
+ //TODO
  velma_id_t add_new_velma_entry(warp_id_t wcid, velma_pc_t vpc){
     //fprintf(stdout, "\n\nVELMA ENTRY ADDED!\n\n");
     //first thing's first: get our new vid! 
@@ -228,7 +233,7 @@ class velma_scheduler : public scheduler_unit {
     return -1;//vid; 
   }
 
-    
+  //TODO  
   bool clear_velma_entry(velma_id_t vid){
     velma_warp_pc_pair_t wcid_pc = {0,0};
     bool vid_was_cleared = true;
@@ -276,6 +281,8 @@ class velma_scheduler : public scheduler_unit {
     }
   }
 
+
+  //TODO  
   /* Big stuff here. This is how we will process ld/st instructions isssued.
    * First: Calculate the warpcluster id from the warp id. 
    * Second: check if velma already knows this warpcluster and pc. 
@@ -286,6 +293,7 @@ class velma_scheduler : public scheduler_unit {
   velma_id_t record_velma_access(warp_id_t wid, velma_pc_t pc, velma_addr_t addr);
 
 
+  //TODO
   std::set<velma_id_t> decr_pc_killtimers(){
     std::set<velma_id_t> expiring;
     for (auto& vid_kt : velma_ids_killtimers){

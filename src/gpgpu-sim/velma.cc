@@ -14,6 +14,7 @@
 #include "icnt_wrapper.h"
 #include "mem_fetch.h"
 #include "mem_latency_stat.h"
+#include "shader.h"
 #include "shader_trace.h"
 #include "stat-tool.h"
 #include "traffic_breakdown.h"
@@ -145,6 +146,21 @@ velma_id_t warpcluster_entry_t::mark_warp_reached_pc(warp_id_t wid, velma_pc_t p
   }
   return -1;
 }
+
+
+/* What do we do when we record a velma access?
+ * -if wid's warpcluster is represented by velma, joe.
+ *
+ *
+ */
+velma_id_t warpcluster_entry_t::add_velma_entry(velma_pc_t pc, velma_addr_t addr){
+  velma_entries.emplace_back(velma_entry_t(pc, addr));
+}
+
+
+
+
+
 
 //////////////////////////////////////////////////////////////////////////////////
 /////////////////////////   SCHEDULER       /////////////////////////

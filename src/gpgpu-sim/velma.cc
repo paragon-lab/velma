@@ -1,6 +1,6 @@
-#include "velma.h"
-
 #include <string.h>
+
+#include "velma.h"
 #include "../abstract_hardware_model.h"
 #include "../../libcuda/gpgpu_context.h"
 #include "../cuda-sim/cuda-sim.h"
@@ -14,7 +14,6 @@
 #include "icnt_wrapper.h"
 #include "mem_fetch.h"
 #include "mem_latency_stat.h"
-#include "shader.h"
 #include "shader_trace.h"
 #include "stat-tool.h"
 #include "traffic_breakdown.h"
@@ -148,16 +147,55 @@ velma_id_t warpcluster_entry_t::mark_warp_reached_pc(warp_id_t wid, velma_pc_t p
 }
 
 
-/* What do we do when we record a velma access?
- * -if wid's warpcluster is represented by velma, joe.
- *
- *
- */
+
+
 velma_id_t warpcluster_entry_t::add_velma_entry(velma_pc_t pc, velma_addr_t addr){
   velma_entries.emplace_back(velma_entry_t(pc, addr));
 }
 
 
+/////////////////////////////////////////////////////////////////////////////////
+////////////////////////    VELMA TABLE /////////////////////
+//////////////////////////////////////////////////
+
+
+/* Records an access in the velma_table. In the case that a wcid/pc combo 
+ * has already been assigned a velma id, just update the mask in the appropriate
+ * velma entry and return its velma id. If the same wid/pc combo is assigned
+ * multiple velma_ids, we only mark the first entry in the queue in which 
+ * warp wid's bit is set high in the mask. 
+ *
+ * If either A. the warpcluster hasn't been tracked, B. the PC hasn't been 
+ * tracked, or C. no instance of the bit unset is present, do the following:
+ * IF there's space, create new velma and warpcluster entries as necessary,
+ * returning the newly-assigned velma id. If there isn't space, return -1.
+ */
+velma_id_t velma_table_t::record_velma_access(warp_id_t wid, velma_pc_t pc){
+  velma_id_t access_vid = -1; 
+  warpcluster_entry_t* wc = nullptr;
+
+  //first: check if we're tracking the warp 
+  for (auto& wc_entry : cluster_entries){
+    if (wc_entry.cluster_entries/VELMA_WARPCLUSTER_SIZE == wid) 
+      wc = &wc_entry;
+  }
+
+  if (wc != nullptr){ 
+    /* if we take this branch, it means we've found the warpcluster_entry_t
+     * matching warp_id_t wid. This warp is being tracked, so we should try
+     * to mark it as reached. If there isn't an unmarked bitmask for this
+     * warp and this pc, try to add one. If there isn't space for a new 
+     * velma_entry_t in the queue, mark_warp_reached_pc() will return -1, 
+     * otherwise it will return the velma_id of the entry marked. 
+     */ 
+    
+  }  
+
+  
+  
+
+  return access_vid;
+}
 
 
 

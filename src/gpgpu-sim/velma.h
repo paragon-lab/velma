@@ -10,13 +10,15 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include <iostream>
 #include "shader.h"
+
 
 #define VELMA_WARPCLUSTER_SIZE 4
 //result from old histogramming. 
 #define VELMA_KILLTIMER_START 256
 #define MAX_VELMA_IDS 16
-
+#define MAX_VELMA_CLUSTERS 4
 
 using velma_id_t = int64_t; 
 using warp_id_t = unsigned; 
@@ -89,6 +91,10 @@ struct warpcluster_entry_t{
   velma_id_t mark_warp_reached_pc(warp_id_t wid, velma_pc_t pc);
 
   velma_id_t add_velma_entry(velma_pc_t pc, velma_addr_t addr);
+  
+  //simply just tells us if this cluster is tracking the pc in question
+  bool tracking_pc(velma_pc_t pc);
+
 
 };
 
@@ -96,6 +102,11 @@ struct warpcluster_entry_t{
 class velma_table_t{
   friend class velma_scheduler; 
   
+  std::vector<warpcluster_entry_t> cluster_entries; 
+  
+
+  velma_id_t record_velma_access(warp_id_t wid, velma_pc_t pc);
+
 
 };
 

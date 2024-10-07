@@ -131,6 +131,7 @@ class velma_table_t{
   velma_id_t add_entry(warpcluster_entry_t* wc, velma_pc_t pc);
   velma_id_t process_access(warp_id_t wid, velma_pc_t pc);
 
+  warpcluster_entry_t* add_warpcluster(warp_id_t wid);
 
 
 };

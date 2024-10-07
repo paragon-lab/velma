@@ -245,6 +245,13 @@ velma_id_t velma_table_t::add_entry(warpcluster_entry_t* wc, velma_pc_t pc){
   return free_vid;
 }
 
+warpcluster_entry_t* velma_table_t::add_warpcluster(warp_id_t wid){
+  warp_id_t wcid = wid/VELMA_WARPCLUSTER_SIZE;
+  warpclusters.insert({wcid, warpcluster_entry_t(wcid)});
+  warpcluster_entry_t* wc_ptr = &(warpclusters[wcid]);
+  return wc_ptr;
+}
+
 
 
 //////////////////////////////////////////////////////////////////////////////////

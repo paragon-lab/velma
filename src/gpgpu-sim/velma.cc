@@ -14,6 +14,7 @@
 #include "icnt_wrapper.h"
 #include "mem_fetch.h"
 #include "mem_latency_stat.h"
+#include "shader.h"
 #include "shader_trace.h"
 #include "stat-tool.h"
 #include "traffic_breakdown.h"
@@ -133,30 +134,67 @@ velma_id_t warpcluster_entry_t::pop_front_velma_entry(){
 
 
 velma_id_t warpcluster_entry_t::mark_warp_reached_pc(warp_id_t wid, velma_pc_t pc){
+  velma_id_t marked_vid = -1;
   for (velma_entry_t& entry : velma_entries){
     //does this entry correspond to the pc we care about? 
-    if (entry.pc == pc){
+    if (entry.pc == pc and !entry.has_warp_reached(wid)){
       //if this warp isn't marked, mark it, and return the id!
-      if (!entry.has_warp_reached(wid)){
-        entry.mark_warp_reached(wid);
-        return entry.velma_id;
-      }
+      entry.mark_warp_reached(wid);
+      marked_vid = entry.velma_id;
+      break;
     }
   }
-  return -1;
+  return marked_vid;
 }
 
 
 
-
-velma_id_t warpcluster_entry_t::add_velma_entry(velma_pc_t pc, velma_addr_t addr){
-  velma_entries.emplace_back(velma_entry_t(pc, addr));
+void warpcluster_entry_t::add_velma_entry_to_queue(velma_pc_t pc, velma_id_t vid){
+    velma_entries.emplace_back(velma_entry_t(pc, vid)); 
 }
 
 
 /////////////////////////////////////////////////////////////////////////////////
 ////////////////////////    VELMA TABLE /////////////////////
 //////////////////////////////////////////////////
+
+
+velma_id_t velma_table_t::find_free_velma_id(){
+  velma_id_t free_id = -1;
+  for (std::pair<velma_id_t, bool>& id_flag : velma_ids_flags){
+    if (id_flag.second == true){
+      free_id = id_flag.first;
+      break;
+    }
+  }
+  return free_id; 
+}
+
+
+void velma_table_t::mark_velma_id_taken(velma_id_t vid){
+  for (std::pair<velma_id_t, bool>& id_flag : velma_ids_flags){
+    if (id_flag.first == vid){
+      id_flag.second = false; 
+    }
+  }
+}
+    
+
+
+
+velma_id_t velma_table_t::get_free_velma_id(){
+  velma_id_t free_id = -1;
+
+  for (std::pair<velma_id_t, bool>& id_flag : velma_ids_flags){
+    if (id_flag.second == true){
+      free_id = id_flag.first;
+      id_flag.second = false; 
+      break;
+    }
+  }
+  return free_id; 
+}
+
 
 
 /* Records an access in the velma_table. In the case that a wcid/pc combo 
@@ -170,33 +208,42 @@ velma_id_t warpcluster_entry_t::add_velma_entry(velma_pc_t pc, velma_addr_t addr
  * IF there's space, create new velma and warpcluster entries as necessary,
  * returning the newly-assigned velma id. If there isn't space, return -1.
  */
-velma_id_t velma_table_t::record_velma_access(warp_id_t wid, velma_pc_t pc){
+velma_id_t velma_table_t::process_access(warp_id_t wid, velma_pc_t pc){
   velma_id_t access_vid = -1; 
-  warpcluster_entry_t* wc = nullptr;
-
+  warpcluster_entry_t* wc = nullptr;  
   //first: check if we're tracking the warp 
-  for (auto& wc_entry : cluster_entries){
-    if (wc_entry.cluster_entries/VELMA_WARPCLUSTER_SIZE == wid) 
-      wc = &wc_entry;
+  for (std::pair<warp_id_t, warpcluster_entry_t>& wc_entry : warpclusters){
+    if (wc_entry.first/VELMA_WARPCLUSTER_SIZE == wid) 
+      wc = &wc_entry.second; //nute gunray has a question 
   }
 
-  if (wc != nullptr){ 
-    /* if we take this branch, it means we've found the warpcluster_entry_t
-     * matching warp_id_t wid. This warp is being tracked, so we should try
-     * to mark it as reached. If there isn't an unmarked bitmask for this
-     * warp and this pc, try to add one. If there isn't space for a new 
-     * velma_entry_t in the queue, mark_warp_reached_pc() will return -1, 
-     * otherwise it will return the velma_id of the entry marked. 
-     */ 
-    
-  }  
+  //if we aren't tracking the warp, can we? TODO!!!
 
   
-  
+  if (wc != nullptr){ 
+    //find and mark the first suitable velma entry. will return -1 if there isn't one. 
+    access_vid = wc->mark_warp_reached_pc(wid, pc);
+    //if we don't find a corresponding entry:
+    if (access_vid == -1){
+      access_vid = add_entry(wc, pc);
+    }
+  }  
 
   return access_vid;
 }
 
+
+velma_id_t velma_table_t::add_entry(warpcluster_entry_t* wc, velma_pc_t pc){
+  velma_id_t free_vid = find_free_velma_id();
+  //does this warpcluster have space for a new entry? did we get a velma_id? 
+  if (free_vid > -1 and wc->velma_entries.size() < MAX_VELMA_IDS_PER_CLUSTER){
+    //add the new entry 
+    wc->add_velma_entry_to_queue(pc, free_vid);
+    //since we're actually using it, mark vid as taken. 
+    mark_velma_id_taken(free_vid);
+  }
+  return free_vid;
+}
 
 
 

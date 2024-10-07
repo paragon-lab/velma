@@ -17,7 +17,7 @@
 #define VELMA_WARPCLUSTER_SIZE 4
 //result from old histogramming. 
 #define VELMA_KILLTIMER_START 256
-#define MAX_VELMA_IDS 16
+#define MAX_VELMA_IDS_PER_CLUSTER 4
 #define MAX_VELMA_CLUSTERS 4
 
 using velma_id_t = int64_t; 
@@ -54,6 +54,21 @@ struct warpcluster_entry_t{
   //need both pop_front() and pop_back(), so we keep our entries in a deque.
   std::deque<velma_entry_t> velma_entries; 
   warp_id_t cluster_id; 
+  std::map<velma_id_t, bool> velma_ids_flags;
+
+
+
+
+  warpcluster_entry_t(){}
+
+  ~warpcluster_entry_t(){
+    velma_entries.clear();
+  }
+
+  warpcluster_entry_t(velma_id_t wcid){
+    cluster_id = wcid;
+  }
+
 
   /* Which velma_id is the one we're currently basing
    * this warpcluster's scheduling decisions on? 
@@ -86,11 +101,12 @@ struct warpcluster_entry_t{
   /* Marks the first velma entry with a matching pc in 
    * which the warp has not been marked, mark it, and 
    * return the velma id of that entry. Returns -1 if 
-   * pc isn't being tracked.
+   * pc isn't being tracked. TODO: extend to try to add 
+   * a new entry if there isn't an appropriate one.
    */
   velma_id_t mark_warp_reached_pc(warp_id_t wid, velma_pc_t pc);
 
-  velma_id_t add_velma_entry(velma_pc_t pc, velma_addr_t addr);
+  void add_velma_entry_to_queue(velma_pc_t pc, velma_id_t vid);
   
   //simply just tells us if this cluster is tracking the pc in question
   bool tracking_pc(velma_pc_t pc);
@@ -102,10 +118,19 @@ struct warpcluster_entry_t{
 class velma_table_t{
   friend class velma_scheduler; 
   
-  std::vector<warpcluster_entry_t> cluster_entries; 
+  
+  std::map<warp_id_t, warpcluster_entry_t> warpclusters; 
+  std::map<velma_id_t, bool> velma_ids_flags;
   
 
-  velma_id_t record_velma_access(warp_id_t wid, velma_pc_t pc);
+  velma_id_t get_free_velma_id();
+  velma_id_t find_free_velma_id();
+  void mark_velma_id_taken(velma_id_t vid);
+
+
+  velma_id_t add_entry(warpcluster_entry_t* wc, velma_pc_t pc);
+  velma_id_t process_access(warp_id_t wid, velma_pc_t pc);
+
 
 
 };

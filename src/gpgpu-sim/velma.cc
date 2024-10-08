@@ -158,8 +158,18 @@ void warpcluster_entry_t::add_velma_entry_to_queue(velma_pc_t pc, velma_id_t vid
 ////////////////////////    VELMA TABLE /////////////////////
 //////////////////////////////////////////////////
 
+bool velma_table_t::free_velma_id(velma_id_t vid){
+  bool insertion_completed = false;
+  if (vid != -1){
+    assert(velma_ids_flags.find(vid) != velma_ids_flags.end());
+    assert(velma_ids_flags[vid] == false); //should not duplicate frees 
+    velma_ids_flags[vid] = true; 
+    insertion_completed = true;
+  }
+  return insertion_completed;
+}
 
-
+//looks for a free velma_id. that's it. 
 velma_id_t velma_table_t::find_free_velma_id(){
   velma_id_t free_id = -1;
   for (std::pair<velma_id_t, bool>& id_flag : velma_ids_flags){
@@ -171,7 +181,7 @@ velma_id_t velma_table_t::find_free_velma_id(){
   return free_id; 
 }
 
-
+//marks a velma_id as not free. 
 void velma_table_t::mark_velma_id_taken(velma_id_t vid){
   for (std::pair<velma_id_t, bool>& id_flag : velma_ids_flags){
     if (id_flag.first == vid){
@@ -182,7 +192,7 @@ void velma_table_t::mark_velma_id_taken(velma_id_t vid){
     
 
 
-
+//finds a free velma_id, marks it as not free, and returns it. 
 velma_id_t velma_table_t::get_free_velma_id(){
   velma_id_t free_id = -1;
   for (std::pair<velma_id_t, bool>& id_flag : velma_ids_flags){
@@ -257,6 +267,10 @@ warpcluster_entry_t* velma_table_t::add_warpcluster(warp_id_t wid){
 }
 
 
+void velma_table_t::set_active_warpcluster(warp_id_t wcid){
+  active_wc_id = wcid; 
+}
+
 //returns a pointer to the active warpcluster (the one being prioritized) 
 warpcluster_entry_t* velma_table_t::get_active_warpcluster(){
   warpcluster_entry_t* active_wc = nullptr;
@@ -266,13 +280,14 @@ warpcluster_entry_t* velma_table_t::get_active_warpcluster(){
   return active_wc;
 }
 
-
-warpcluster_entry_t* velma_table_t::get_warpcluster(warp_id_t wid){
+//returns a pointer to a given warpcluster.  
+warpcluster_entry_t* velma_table_t::get_warpcluster(warp_id_t wcid){
   warpcluster_entry_t* target = nullptr;
-  //TODO range-based for, check warp_id, return. ez. 
+  if (warpclusters.find(wcid) != warpclusters.end()){
+    target = warpclusters.find(wcid);
+  }
   return target;
 }
-
 
 
 

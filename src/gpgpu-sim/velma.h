@@ -123,6 +123,7 @@ class velma_table_t{
   std::map<velma_id_t, bool> velma_ids_flags;
   warp_id_t active_wc_id = -1; 
 
+  bool free_velma_id(velma_id_t vid);
   velma_id_t get_free_velma_id();
   velma_id_t find_free_velma_id();
   void mark_velma_id_taken(velma_id_t vid);
@@ -132,10 +133,10 @@ class velma_table_t{
   warpcluster_entry_t* add_warpcluster(warp_id_t wid);
   velma_id_t record_access(warp_id_t wid, velma_pc_t pc);
 
-  //something to decrement the active cluster's killtimer.
-  //TODO: fill this in, boyo 
+  //TODO:something to decrement the active cluster's killtimer.
+  void set_active_warpcluster(warp_id_t wcid);
   warpcluster_entry_t* get_active_warpcluster();
-  warpcluster_entry_t* get_warpcluster(warp_id_t wid);
+  warpcluster_entry_t* get_warpcluster(warp_id_t wcid);
 };
 
 

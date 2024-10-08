@@ -184,7 +184,6 @@ void velma_table_t::mark_velma_id_taken(velma_id_t vid){
 
 velma_id_t velma_table_t::get_free_velma_id(){
   velma_id_t free_id = -1;
-
   for (std::pair<velma_id_t, bool>& id_flag : velma_ids_flags){
     if (id_flag.second == true){
       free_id = id_flag.first;
@@ -208,7 +207,7 @@ velma_id_t velma_table_t::get_free_velma_id(){
  * IF there's space, create new velma and warpcluster entries as necessary,
  * returning the newly-assigned velma id. If there isn't space, return -1.
  */
-velma_id_t velma_table_t::process_access(warp_id_t wid, velma_pc_t pc){
+velma_id_t velma_table_t::record_access(warp_id_t wid, velma_pc_t pc){
   velma_id_t access_vid = -1; 
   warpcluster_entry_t* wc = nullptr;  
   //first: check if we're tracking the warp 
@@ -217,8 +216,11 @@ velma_id_t velma_table_t::process_access(warp_id_t wid, velma_pc_t pc){
       wc = &wc_entry.second; //nute gunray has a question 
   }
 
-  //if we aren't tracking the warp, can we? TODO!!!
-
+  //if we aren't tracking the warp, do we have space to?
+  if (wc == nullptr and warpclusters.size() < MAX_VELMA_CLUSTERS){
+    //we do! let's add a new warp 
+    wc = add_warpcluster(wid);
+  }
   
   if (wc != nullptr){ 
     //find and mark the first suitable velma entry. will return -1 if there isn't one. 
@@ -228,7 +230,7 @@ velma_id_t velma_table_t::process_access(warp_id_t wid, velma_pc_t pc){
       access_vid = add_entry(wc, pc);
     }
   }  
-
+  //if we touched a velma entry, return its velma_id. 
   return access_vid;
 }
 
@@ -245,6 +247,7 @@ velma_id_t velma_table_t::add_entry(warpcluster_entry_t* wc, velma_pc_t pc){
   return free_vid;
 }
 
+//adds a new warpcluster_entry_t to warpclusters and returns a pointer to it.
 warpcluster_entry_t* velma_table_t::add_warpcluster(warp_id_t wid){
   warp_id_t wcid = wid/VELMA_WARPCLUSTER_SIZE;
   warpclusters.insert({wcid, warpcluster_entry_t(wcid)});

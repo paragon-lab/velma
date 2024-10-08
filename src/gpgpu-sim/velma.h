@@ -41,7 +41,7 @@ struct velma_entry_t{
     /* Decrements the killtimer. If the timer hits 0,
      * return the velma_id. Otherwise, return -1.
      */ 
-    velma_id_t decr_killtimer();
+    inline unsigned decr_killtimer();
 
     ~velma_entry_t(){}
   };
@@ -129,10 +129,11 @@ class velma_table_t{
 
 
   velma_id_t add_entry(warpcluster_entry_t* wc, velma_pc_t pc);
+  warpcluster_entry_t* add_warpcluster(warp_id_t wid);
   velma_id_t record_access(warp_id_t wid, velma_pc_t pc);
 
-  warpcluster_entry_t* add_warpcluster(warp_id_t wid);
-
+  //something to decrement the active cluster's killtimer.
+  //TODO: fill this in, boyo 
 
 };
 

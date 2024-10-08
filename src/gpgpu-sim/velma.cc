@@ -27,12 +27,12 @@
 /////////////////////////////////////////////////////////////// 
 
 velma_entry_t::velma_entry_t(velma_pc_t pc_, velma_id_t vid){
-      pc = pc_; 
-      velma_id = vid; 
-      //initialize the warpcluster mask to all 1s! 
-      wc_mask = std::bitset<VELMA_WARPCLUSTER_SIZE>((1ULL << VELMA_WARPCLUSTER_SIZE) - 1); 
-      killtimer = VELMA_KILLTIMER_START;
-    } 
+  pc = pc_; 
+  velma_id = vid; 
+  //initialize the warpcluster mask to all 1s! 
+  wc_mask = std::bitset<VELMA_WARPCLUSTER_SIZE>((1ULL << VELMA_WARPCLUSTER_SIZE) - 1); 
+  killtimer = VELMA_KILLTIMER_START;
+} 
 
 inline void velma_entry_t::mark_warp_reached(warp_id_t wid){
   uint8_t warp_index = wid % VELMA_WARPCLUSTER_SIZE;  
@@ -44,15 +44,9 @@ inline bool velma_entry_t::has_warp_reached(warp_id_t wid){
   return static_cast<bool>(wc_mask[warp_index]);
 } 
 
-//decrements the killtimer of the entry. if it reaches 0,
-//return -1 as the velma_id. 
-velma_id_t velma_entry_t::decr_killtimer(){
-  velma_id_t vid = -1;
-  if (killtimer > 0){
-    killtimer--;
-    vid = velma_id;
-  }
-  return vid;
+//decrements the killtimer of the entry. 
+inline unsigned velma_entry_t::decr_killtimer(){
+  return --killtimer;  
 }
 
 
@@ -100,14 +94,20 @@ bool warpcluster_entry_t::contains_velma_id(velma_id_t vid){
 }
 
 
-//decrements the top killtimer and returns the associated vid. 
+/* Decrement the killtimer for the velma_entry at the top of this entry's queue. 
+ * If it reaches zero, return the velma_id. Otherwise, return -1.  
+ */
 velma_id_t warpcluster_entry_t::decr_top_killtimer(){
-  velma_id_t decr_vid = -1;
+  velma_id_t vid = -1;
   //no segfaults, please. 
   if (!velma_entries.empty()){ 
-    decr_vid = velma_entries.begin()->decr_killtimer();
+    //decrement the killtimer of the first element in the queue. 
+    //if it's zero, we return that element's velma_id. 
+    if(velma_entries.begin()->decr_killtimer() <= 0){
+      vid = velma_entries.begin()->velma_id;
+    }
   }
-  return decr_vid;
+  return vid;
 }
 
 //reports the set of velma ids this cluster is tracking. 
@@ -234,7 +234,7 @@ velma_id_t velma_table_t::record_access(warp_id_t wid, velma_pc_t pc){
   return access_vid;
 }
 
-
+//if there's space, adds a new velma entry for pc to wc->velma_entries
 velma_id_t velma_table_t::add_entry(warpcluster_entry_t* wc, velma_pc_t pc){
   velma_id_t free_vid = find_free_velma_id();
   //does this warpcluster have space for a new entry? did we get a velma_id? 
@@ -254,6 +254,26 @@ warpcluster_entry_t* velma_table_t::add_warpcluster(warp_id_t wid){
   warpcluster_entry_t* wc_ptr = &(warpclusters[wcid]);
   return wc_ptr;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -159,6 +159,7 @@ void warpcluster_entry_t::add_velma_entry_to_queue(velma_pc_t pc, velma_id_t vid
 //////////////////////////////////////////////////
 
 
+
 velma_id_t velma_table_t::find_free_velma_id(){
   velma_id_t free_id = -1;
   for (std::pair<velma_id_t, bool>& id_flag : velma_ids_flags){
@@ -256,7 +257,21 @@ warpcluster_entry_t* velma_table_t::add_warpcluster(warp_id_t wid){
 }
 
 
+//returns a pointer to the active warpcluster (the one being prioritized) 
+warpcluster_entry_t* velma_table_t::get_active_warpcluster(){
+  warpcluster_entry_t* active_wc = nullptr;
+  if (active_wc_id != -1) {
+    active_wc = get_warpcluster(active_wc_id);
+  }
+  return active_wc;
+}
 
+
+warpcluster_entry_t* velma_table_t::get_warpcluster(warp_id_t wid){
+  warpcluster_entry_t* target = nullptr;
+  //TODO range-based for, check warp_id, return. ez. 
+  return target;
+}
 
 
 

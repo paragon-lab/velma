@@ -97,17 +97,14 @@ bool warpcluster_entry_t::contains_velma_id(velma_id_t vid){
 /* Decrement the killtimer for the velma_entry at the top of this entry's queue. 
  * If it reaches zero, return the velma_id. Otherwise, return -1.  
  */
-velma_id_t warpcluster_entry_t::decr_top_killtimer(){
-  velma_id_t vid = -1;
+unsigned warpcluster_entry_t::decr_top_killtimer(){
   //no segfaults, please. 
   if (!velma_entries.empty()){ 
     //decrement the killtimer of the first element in the queue. 
     //if it's zero, we return that element's velma_id. 
-    if(velma_entries.begin()->decr_killtimer() <= 0){
-      vid = velma_entries.begin()->velma_id;
-    }
+    return velma_entries.begin()->decr_killtimer();
   }
-  return vid;
+  else return VELMA_KILLTIMER_START + 1;
 }
 
 //reports the set of velma ids this cluster is tracking. 
@@ -271,14 +268,6 @@ void velma_table_t::set_active_warpcluster(warp_id_t wcid){
   active_wc_id = wcid; 
 }
 
-//returns a pointer to the active warpcluster (the one being prioritized) 
-warpcluster_entry_t* velma_table_t::get_active_warpcluster(){
-  warpcluster_entry_t* active_wc = nullptr;
-  if (active_wc_id != -1) {
-    active_wc = get_warpcluster(active_wc_id);
-  }
-  return active_wc;
-}
 
 //returns a pointer to a given warpcluster.  
 warpcluster_entry_t* velma_table_t::get_warpcluster(warp_id_t wcid){
@@ -287,6 +276,45 @@ warpcluster_entry_t* velma_table_t::get_warpcluster(warp_id_t wcid){
     target = warpclusters.find(wcid);
   }
   return target;
+}
+
+
+//returns a pointer to the active warpcluster (the one being prioritized) 
+warpcluster_entry_t* velma_table_t::get_active_warpcluster(){
+  warpcluster_entry_t* active_wc_ = nullptr;
+  if (active_wc_id != -1) {
+    active_wc_ = get_warpcluster(active_wc_id);
+  }
+  return active_wc_;
+}
+
+/* Cycles through the active velma ids (presently only one),
+ * noting all ids whose killtimers are reduced to zero. 
+ */ 
+velma_id_t velma_table_t::active_killtimer_cycle(){
+  if (active_wc == nullptr) return -1; 
+
+  velma_id_t expiring_velma_id = -1;
+  if (active_wc->decr_top_killtimer() <= 0){ 
+    expiring_velma_id = active_wc->active_velma_id(); 
+  }  
+  return expiring_velma_id;
+}
+
+/* Cycles the velma_table. 
+ * -killtimer decrementing
+ * -dead velma_entry removal 
+ * -dead warpcluster removal 
+ * -set the active_velma_id to active_wc->active_velma_id;
+ *
+ *
+ *
+ *
+ */ 
+velma_id_t velma_table_t::cycle(){
+
+  
+
 }
 
 

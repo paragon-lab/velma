@@ -54,7 +54,7 @@ struct warpcluster_entry_t{
   //need both pop_front() and pop_back(), so we keep our entries in a deque.
   std::deque<velma_entry_t> velma_entries; 
   warp_id_t cluster_id; 
-  std::map<velma_id_t, bool> velma_ids_flags;
+  std::map<velma_id_t, bool> velma_ids_flags;//TODO: change to ptr, move object to velma_table_t!
 
 
 
@@ -74,6 +74,8 @@ struct warpcluster_entry_t{
    * this warpcluster's scheduling decisions on? 
    */ 
   velma_id_t active_velma_id();
+  velma_id_t set_active_velma_id(velma_id_t vid); //TODO 
+  
 
   /* Checks this cluster's subtable for the pc in question.
    * We only care about the first instance.
@@ -88,7 +90,7 @@ struct warpcluster_entry_t{
   bool contains_velma_id(velma_id_t vid);
 
   //decrements the top killtimer and returns the associated vid. 
-  velma_id_t decr_top_killtimer();
+  unsigned decr_top_killtimer();
 
   //reports the set of velma ids this cluster is tracking. 
   std::set<velma_id_t> report_velma_ids();
@@ -121,7 +123,11 @@ class velma_table_t{
   
   std::map<warp_id_t, warpcluster_entry_t> warpclusters; 
   std::map<velma_id_t, bool> velma_ids_flags;
-  warp_id_t active_wc_id = -1; 
+
+  warpcluster_entry_t* active_wc = nullptr; 
+
+  warp_id_t active_wc_id = (unsigned)-1; 
+  velma_id_t active_velma_id = -1;  
 
   bool free_velma_id(velma_id_t vid);
   velma_id_t get_free_velma_id();
@@ -133,10 +139,13 @@ class velma_table_t{
   warpcluster_entry_t* add_warpcluster(warp_id_t wid);
   velma_id_t record_access(warp_id_t wid, velma_pc_t pc);
 
-  //TODO:something to decrement the active cluster's killtimer.
-  void set_active_warpcluster(warp_id_t wcid);
+  void set_active_warpcluster(warp_id_t wcid); 
+
   warpcluster_entry_t* get_active_warpcluster();
   warpcluster_entry_t* get_warpcluster(warp_id_t wcid);
+
+  velma_id_t active_killtimer_cycle();
+  velma_id_t cycle();
 };
 
 

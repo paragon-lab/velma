@@ -172,47 +172,11 @@ class velma_table_t{
 
 class velma_scheduler : public scheduler_unit {
  public:
-  /* We need to map velma ids to warp clusters and vice versa. 
-   * One velma id will correspond to one and only one warpcluster id/pc combo. 
-   * A warpcluster id can correspond to 0 or more velma_ids. 
-   */
-
-
-
-  using velma_warp_pc_pair_t = std::pair<warp_id_t, velma_pc_t>;
-  std::map<velma_id_t, velma_warp_pc_pair_t> velma_ids_pairs;
-  std::map<velma_warp_pc_pair_t, velma_id_t> velma_pairs_ids;
-  std::map<velma_id_t, unsigned> velma_ids_killtimers; 
-
-  //SCHEDULING BITMASKS  
-  using vid_wc_bitmask_pair_t = std::pair<velma_id_t, std::bitset<VELMA_WARPCLUSTER_SIZE>>;
-  using vid_bitmask_queue_t = std::deque<vid_wc_bitmask_pair_t>;
-
-  using wc_bitmask_queue_t = std::deque<std::bitset<VELMA_WARPCLUSTER_SIZE>>;
-  using wc_pc_queue_t = std::deque<velma_pc_t>;
-  
-
-  /* We need to limit the number of velma ids we allow. 
-   * To do so, we create a pool of ids, each of which is 
-   * associated with a flag indicating whether or not 
-   * the velma id is currently in use. False indicates that
-   * the velma_id is unoccupied!
-   */
-  using vid_flag_pair_t = std::pair<velma_id_t, bool>;
-  std::vector<vid_flag_pair_t>  velma_id_pool;
-
-  /* We need to keep a pointer to the velma_tag_array so that 
-   * the velma scheduler has direct control over the tag_array's
-   * data structures. 
-   */
   class ldst_unit* ldstu; 
   l1_cache* mL1D; 
   tag_array* tag_arr;
   velma_table_t velma_table;  
     
-
- 
-  int velma_id_ctr; 
   
   velma_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
                 Scoreboard *scoreboard, simt_stack **simt,

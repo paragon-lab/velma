@@ -177,7 +177,7 @@ bool velma_table_t::free_velma_id(velma_id_t vid){
 //looks for a free velma_id. that's it. 
 velma_id_t velma_table_t::find_free_velma_id(){
   velma_id_t free_id = -1;
-  for (std::pair<velma_id_t, bool>& id_flag : velma_ids_flags){
+  for (auto& id_flag : velma_ids_flags){
     if (id_flag.second == true){
       free_id = id_flag.first;
       break;
@@ -188,7 +188,7 @@ velma_id_t velma_table_t::find_free_velma_id(){
 
 //marks a velma_id as not free. 
 void velma_table_t::mark_velma_id_taken(velma_id_t vid){
-  for (std::pair<velma_id_t, bool>& id_flag : velma_ids_flags){
+  for (auto& id_flag : velma_ids_flags){
     if (id_flag.first == vid){
       id_flag.second = false; 
     }
@@ -200,7 +200,7 @@ void velma_table_t::mark_velma_id_taken(velma_id_t vid){
 //finds a free velma_id, marks it as not free, and returns it. 
 velma_id_t velma_table_t::get_free_velma_id(){
   velma_id_t free_id = -1;
-  for (std::pair<velma_id_t, bool>& id_flag : velma_ids_flags){
+  for (auto& id_flag : velma_ids_flags){
     if (id_flag.second == true){
       free_id = id_flag.first;
       id_flag.second = false; 
@@ -232,7 +232,7 @@ velma_id_t velma_table_t::record_warp_access(warp_id_t wid, velma_pc_t pc){
   velma_id_t access_vid = -1; 
   warpcluster_entry_t* wc = nullptr;  
   //first: check if we're tracking the warp 
-  for (std::pair<warp_id_t, warpcluster_entry_t>& wc_entry : warpclusters){
+  for (auto wc_entry : warpclusters){
     if (wc_entry.first/VELMA_WARPCLUSTER_SIZE == wid) 
       wc = &(wc_entry.second); //nute gunray has a question 
   }
@@ -286,7 +286,7 @@ void velma_table_t::set_active_warpcluster(warp_id_t wcid){
 warpcluster_entry_t* velma_table_t::get_warpcluster(warp_id_t wcid){
   warpcluster_entry_t* target = nullptr;
   if (warpclusters.find(wcid) != warpclusters.end()){
-    target = warpclusters.find(wcid);
+    target = &(warpclusters.find(wcid)->second);
   }
   return target;
 }
@@ -348,7 +348,7 @@ void velma_table_t::cycle(){
   }
 
   //have the tag array label all the lines for this cycle. 
-  for (std::pair<velma_id_t, velma_addr_t>&  id_addr : cycle_accumulated_vids_addrs){
+  for (auto&  id_addr : cycle_accumulated_vids_addrs){
     tag_arr->label_velma_line(id_addr.first, id_addr.second);
   }
   cycle_accumulated_vids_addrs.clear();
@@ -820,13 +820,13 @@ void velma_scheduler::order_velma_lrr(std::vector<shd_warp_t*> &reordered,
     //velma checks. 
     warp_id_t wid = (*warps_itr)->get_warp_id();
     warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE; 
-    warpcluster_entry_t* wc = get_warpcluster(wcid);
-    warpcluster_entry_t* awc = get_active_warpcluster(); 
+    warpcluster_entry_t* wc = velma_table.get_warpcluster(wcid);
+    warpcluster_entry_t* awc = velma_table.get_active_warpcluster(); 
     
     //1. check for active velma warps. 
-    if (warp_active(wid)){
+    if (velma_table.warp_active(wid)){
       //if the warp has not reached yet in the current vid, push it to the active list. 
-      if (warp_unmarked_for_active_vid(wid)) 
+      if (velma_table.warp_unmarked_for_active_vid(wid)) 
         active_velma_warps.push_back(*warps_itr);
       else //otherwise, push it to the inactive velma list. 
         inactive_velma_warps.push_back(*warps_itr);
@@ -856,11 +856,6 @@ velma_scheduler::velma_scheduler(shader_core_stats *stats, shader_core_ctx *shad
     : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out,
                      sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
 { 
-  //Create our pool of velma ids!  
-  for (int i = 0; i < MAX_VELMA_IDS; i++){
-    vid_flag_pair_t vid_pool_entry = {i, false};
-    velma_id_pool.push_back(vid_pool_entry);
-  }
 
   //initialize pointers to structures in L1 
   ldstu = m_shader->m_ldst_unit;

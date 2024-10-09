@@ -248,9 +248,8 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
 }
 
 
-unsigned tag_array::clear_expired_velma_ids(){
-    clear_expired_velma_ids(just_expired_velma_ids); 
-  }
+
+
 
 
 //probe just checks the status of a $line without actually affecting LRU behavior

@@ -71,11 +71,13 @@ struct warpcluster_entry_t{
   }
 
 
+
+  //bool remove_entry(velma_id_t vid);
+
   /* Which velma_id is the one we're currently basing
    * this warpcluster's scheduling decisions on? 
    */ 
   velma_id_t active_velma_id();
-  velma_id_t set_active_velma_id(velma_id_t vid); //TODO 
   
 
   /* Checks this cluster's subtable for the pc in question.
@@ -99,13 +101,12 @@ struct warpcluster_entry_t{
   /* Pops the top velma entry, advancing the queue.
    * also returns the velma id of that element,
    * or -1 if the list is empty. */
-  velma_id_t pop_front_velma_entry();
+  velma_id_t advance_queue();
   
   /* Marks the first velma entry with a matching pc in 
    * which the warp has not been marked, mark it, and 
    * return the velma id of that entry. Returns -1 if 
-   * pc isn't being tracked. TODO: extend to try to add 
-   * a new entry if there isn't an appropriate one.
+   * pc isn't being tracked.  
    */
   velma_id_t mark_warp_reached_pc(warp_id_t wid, velma_pc_t pc);
 
@@ -149,7 +150,9 @@ class velma_table_t{
   warpcluster_entry_t* get_warpcluster(warp_id_t wcid);
 
   velma_id_t active_killtimer_cycle();
-  velma_id_t cycle();
+  void cycle();
+
+  velma_id_t pop_dead_entry(warp_id_t wcid, velma_id_t vid);
 };
 
 

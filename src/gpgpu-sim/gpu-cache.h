@@ -990,6 +990,7 @@ class l2_cache_config : public cache_config {
 class tag_array {
  public:
   friend class velma_scheduler;
+  friend class velma_table;
 
   //WE CALL THIS CONSTRUCTOR TO BUILD A TAG ARRAY.
   //IT TAKES AS AN ARGUMENT A CACHE_CONFIG. 
@@ -1086,16 +1087,17 @@ class tag_array {
 
   //////////////////////    VELMA METHODS /////////////////////////////////////
 
-  unsigned clear_expired_velma_ids(std::set<velma_id_t> expired){
-    unsigned released = 0;
-    velma_ids_linerefs.erase(-1); 
-    for (velma_id_t exp : expired){
-      released += release_velma_id_lines(exp);
-    }
-    return released; 
-  }
 
-  unsigned clear_expired_velma_ids();
+  unsigned clear_expired_velma_ids(std::set<velma_id_t> expired){
+      unsigned released = 0;
+      velma_ids_linerefs.erase(-1); 
+      for (velma_id_t exp : expired){
+        released += release_velma_id_lines(exp);
+      }
+      return released; 
+    }
+
+
 
   //returns count of relinquished lines 
   unsigned release_velma_id_lines(velma_id_t expired_velma_id){

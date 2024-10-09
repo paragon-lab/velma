@@ -14,7 +14,6 @@
 #include "icnt_wrapper.h"
 #include "mem_fetch.h"
 #include "mem_latency_stat.h"
-#include "shader.h"
 #include "shader_trace.h"
 #include "stat-tool.h"
 #include "traffic_breakdown.h"
@@ -314,11 +313,8 @@ velma_id_t velma_table_t::active_killtimer_cycle(){
 }
 
 
-//TODO: this! 
 /* Cycles the velma_table. 
  * -killtimer decrementing
- * -dead velma_entry removal TODO fun 
- * -dead warpcluster removal TODO fun 
  * -set the active_velma_id to active_wc->active_velma_id
  * -handle expired velma ids 
  *    1. push expired ids to tag_arr for delabeling
@@ -331,12 +327,14 @@ void velma_table_t::cycle(){
   
   //killtimer decrementing
   velma_id_t expiring_vid = active_killtimer_cycle();
+
   //if we have a dead vid, pop it, advance the queue, and clear the expired vid in cache. 
   if (expiring_vid == curr_active_vid and expiring_vid != -1){ 
     /* The active velma id has expired. Kill it. */
     next_active_vid = pop_dead_entry(active_wc->cluster_id, expiring_vid);
     //we've advanced the queue, clear the expired id in cache!
     tag_arr->clear_expired_velma_ids({expiring_vid});
+    
   }
   
   //if we have an expiration and the cluster still has entries 
@@ -346,17 +344,19 @@ void velma_table_t::cycle(){
   else {
     //empty cluster! nuke it.
     warpclusters.erase(active_wc->cluster_id);
-    //TODO: how do we choose the next cluster smartly? 
     if (!warpclusters.empty()){
       active_wc = &(warpclusters.begin()->second);
     }
   }
-  //TODO: BIG PROBLEM: record_velma_access will be called for EACH THREAD
-    //in velma_scheder::cycle(). I think.
+
+  //have the tag array label all the lines for this cycle. 
   for (std::pair<velma_id_t, velma_addr_t>&  id_addr : cycle_accumulated_vids_addrs){
     tag_arr->label_velma_line(id_addr.first, id_addr.second);
   }
   cycle_accumulated_vids_addrs.clear();
+
+  //now change the active velma_id. 
+  active_velma_id = active_wc->active_velma_id();
 }
 
 
@@ -364,15 +364,16 @@ void velma_table_t::cycle(){
 //this only sort of does what it says. really removes the ative entry. 
 //returns the velma_id of the next entry in the cluster, or -1. 
 velma_id_t velma_table_t::pop_dead_entry(warp_id_t wcid, velma_id_t vid){
-  velma_id_t new_front = -1;
+  velma_id_t new_front_vid = -1;
   //tracking the warpcluster? 
   if (warpclusters.find(wcid) != warpclusters.end()){
     warpcluster_entry_t& wc = warpclusters[wcid];
     //tracking the vid? 
     assert(vid == wc.active_velma_id()); //right now, with only one vid...  
-    new_front = wc.advance_queue();
+    new_front_vid = wc.advance_queue();
+    free_velma_id(vid);
   }
-  return new_front; 
+  return new_front_vid; 
 }
 
 
@@ -395,21 +396,10 @@ void velma_scheduler::order_warps() {
             m_last_supervised_issued, m_supervised_warps.size());
 }
 
-void velma_scheduler::velma_cycle()
-{
-  //decrement our pc killtimers. Dead timers yield bodies!
-  std::set<velma_id_t> expiring_velma_ids = decr_pc_killtimers();
-  //erase the velma entries corresponding to those velma_ids. 
-  for (velma_id_t exvid : expiring_velma_ids){
-    clear_velma_entry(exvid); 
-  }
-  just_expired_velma_ids = expiring_velma_ids; 
-}
 
 
 
-
-
+class scheduler_unit;
 void velma_scheduler::cycle(){
   SCHED_DPRINTF("scheduler_unit::cycle()\n");
   bool valid_inst =
@@ -421,7 +411,7 @@ void velma_scheduler::cycle(){
                              //
   //cycle here. this decrements the killtimers and cleans up as necessary before 
   //we order the warps. 
-  velma_cycle();
+  velma_cycle();//TODO: is this really where we want to call cycle? I think so.
 
 
   order_warps();
@@ -519,25 +509,26 @@ void velma_scheduler::cycle(){
                 issued_inst = true;
                 warp_inst_issued = true;
                 previous_issued_inst_exec_type = exec_unit_type_t::MEM;
-                ///////////////////////////////// some velma stuff //////////////////////////// 
-                // this is where we add the new warp_id/pc pair
-                //RECORD VELMA ACCESS HERE!
-                
+                //////////////////////////////////////////////////////////////////////////// 
+                ////////////    VELMA ACCESS RECORDING    //////////////////////////
+                /////////////////////////////////////////////////////
+              
+                /*record 
+                 * 1. the warp access
+                 * 2. the individual line accesses. 
+                 */ 
+                velma_id_t access_vid = velma_table.record_warp_access(warp_id, pc); 
+
                 //Get a list of addresses, record the entries.
                 std::set<new_addr_type> pI_lineaddrs = pI->get_lineaddrs();// = nc_pI.get_lineaddrs();
-                std::set<velma_addr_t> vaddrs;
+                //std::set<velma_addr_t> vaddrs;
                 for (new_addr_type lineaddr : pI_lineaddrs){
-                  velma_addr_t tvaddr = static_cast<velma_addr_t>(lineaddr);
-                  vaddrs.insert(tvaddr);
+                  velma_addr_t vaddr = static_cast<velma_addr_t>(lineaddr);
+                  if (access_vid != -1) velma_table.record_line_access(access_vid, vaddr);
                   //printf("velma addr in scheduler!\n");
                   //std::cout << "velma addr in scheduler!\n";
                   //fprintf(stderr, "velma addr in scheduler!\n");
                 }
-                   
-                velma_id_t new_vid = velma_table.record_warp_access(warp_id, pc); 
-                for (velma_addr_t vaddr : vaddrs){  
-                  if (new_vid != -1) velma_table.record_line_access(new_vid, vaddr);
-                }   
               }
             } 
             else 

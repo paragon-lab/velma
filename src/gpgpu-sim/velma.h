@@ -56,7 +56,6 @@ struct warpcluster_entry_t{
   //need both pop_front() and pop_back(), so we keep our entries in a deque.
   std::deque<velma_entry_t> velma_entries; 
   warp_id_t cluster_id; 
-  std::map<velma_id_t, bool> velma_ids_flags;//TODO: change to ptr, move object to velma_table_t!
 
 
 
@@ -66,14 +65,11 @@ struct warpcluster_entry_t{
     velma_entries.clear();
   }
 
-  //TODO: THIS CONSTRUCTOR!
   warpcluster_entry_t(velma_id_t wcid){
     cluster_id = wcid;
   }
 
 
-
-  //bool remove_entry(velma_id_t vid);
 
   /* Which velma_id is the one we're currently basing
    * this warpcluster's scheduling decisions on? 
@@ -227,151 +223,6 @@ class velma_scheduler : public scheduler_unit {
                       unsigned num_warps_to_add);
 
   
-//TODO
- bool is_velma_wid(warp_id_t wid){
-   warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;
-   return false;//velma_cluster_bitmasks.find(wcid) != velma_cluster_bitmasks.end();
- }
-//TODO 
- velma_id_t get_warp_pc_pair_vid(warp_id_t wcid, velma_pc_t vpc){
-   //make our pair for map indexing 
-  velma_warp_pc_pair_t wcid_vpc = {wcid, vpc};
-  //if we aren't tracking this velma id, just return 0.
-  return -1;//(velma_pairs_ids.find(wcid_vpc) != velma_pairs_ids.end()) ? velma_pairs_ids[wcid_vpc] : -1; 
-  }
- //TODO???
- velma_id_t get_free_velma_id(){
-    velma_id_t vid = -1; 
-    for (auto vfp : velma_id_pool){
-      if (vfp.second == false){
-        vid = vfp.first;
-        vfp.second = true;
-        break; 
-      }
-    }
-    return vid; 
- }
-
- //TODO???
- bool is_free_velma_id(velma_id_t vid){
-    return !velma_id_pool[vid].second; 
- }
-
- //TODO???
- //lots of room for optimization in velma_id_pool, but whatever.
- //keep it simple right now.
- void free_velma_id(velma_id_t vid){
-    if (vid < velma_id_pool.size() and vid >= 0){
-      //can just index using the vid. 
-      velma_id_pool[vid].second = false;
-    }
- }
-
- //TODO
- velma_id_t add_new_velma_entry(warp_id_t wcid, velma_pc_t vpc){
-    //fprintf(stdout, "\n\nVELMA ENTRY ADDED!\n\n");
-    //first thing's first: get our new vid! 
-    velma_id_t vid = get_free_velma_id();
-    //if there are none, we return -1. 
-    if (vid == -1) return vid; 
-    //make our warpid/pc pair 
-    velma_warp_pc_pair_t wcid_pc = {wcid, vpc};
-    //wcid_pc insertion.
-    velma_pairs_ids.insert({wcid_pc, vid});
-    //populate the inverse map 
-    velma_ids_pairs.insert({vid, wcid_pc});
-    //populate the killtimers 
-    velma_ids_killtimers.insert({vid, VELMA_KILLTIMER_START});
-
-    /* Processing the changes to our warpcluster_id->velma_id_ct map
-     * isn't the simplest thing. A new vid does not necessarily mean 
-     * a new warp, but the contrapositive applies*/ 
-    //auto widct_find = velma_wcids_vid_cts.find(wcid);
-    //if this wcid isn't present, create a row for it. 
-    //if (widct_find == velma_wcids_vid_cts.end()){
-    //  velma_wcids_vid_cts.insert({wcid, 0});
-    //}
-    //either way, now we increment the count. 
-    //velma_wcids_vid_cts[wcid]++;
-    return -1;//vid; 
-  }
-
-  //TODO  
-  bool clear_velma_entry(velma_id_t vid){
-    velma_warp_pc_pair_t wcid_pc = {0,0};
-    bool vid_was_cleared = true;
-    //erase pertinent entries in velma_ids_pairs
-    wcid_pc = velma_ids_pairs[vid]; 
-    velma_ids_pairs.erase(vid);
-
-    //erase pertinent entries in velma_pairs_ids
-    velma_pairs_ids.erase(wcid_pc);
-
-    //erase pertinent entries in velma_ids_killtimers 
-    velma_ids_killtimers.erase(vid);
-    
-    unsigned wcid = wcid_pc.first; 
-   /*
-    if (velma_wcids_vid_cts.find(wcid) != velma_wcids_vid_cts.end()){
-      //does this warpid still correspond to any velma ids? 
-      if (velma_wcids_vid_cts[wcid] <= 1){  
-        //no? stop counting it. 
-        velma_wcids_vid_cts.erase(wcid);
-      }
-      else {
-        //yes? decrement it. 
-        velma_wcids_vid_cts[wcid]--;
-      }
-    }*/
-
-    //free the velma_id in the velma_id_pool
-    free_velma_id(vid);
-
-    //finally, free the corresponding lines in the tag array. 
-    tag_arr->release_velma_id_lines(vid);
-
-    return vid_was_cleared;
-  }
-  
-  
-  void reset_vid_killtimer(velma_id_t vid){
-    auto findres = velma_ids_killtimers.find(vid);
-    if (findres != velma_ids_killtimers.end()){
-      velma_ids_killtimers[vid] = VELMA_KILLTIMER_START; 
-    }
-    else { //i don't think this branch will ever be taken.
-      velma_ids_killtimers.insert({vid,VELMA_KILLTIMER_START});
-    }
-  }
-
-
-  //TODO  
-  /* Big stuff here. This is how we will process ld/st instructions isssued.
-   * First: Calculate the warpcluster id from the warp id. 
-   * Second: check if velma already knows this warpcluster and pc. 
-   * If so, great! Use the velma ID to reset the appropriate killtimer. 
-   * If not, we create a new velma entry. This function is also where we 
-   * arbitrate the generation and distribution of velma_ids. 
-   */
-  velma_id_t record_velma_access(warp_id_t wid, velma_pc_t pc, velma_addr_t addr);
-
-
-  //TODO
-  std::set<velma_id_t> decr_pc_killtimers(){
-    std::set<velma_id_t> expiring;
-    for (auto& vid_kt : velma_ids_killtimers){
-      //is the killtimer 0 
-      if (vid_kt.second <= 0){ //yes? record the vid as expired.
-        expiring.insert(vid_kt.first);
-      }
-      else{ //no? decrement the timer. 
-        vid_kt.second--; 
-      }
-    }
-    return expiring; 
-  }
-
-  void velma_cycle();  
   void cycle();
 };
 

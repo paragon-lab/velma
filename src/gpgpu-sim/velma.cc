@@ -9,11 +9,13 @@
 #include "../statwrapper.h"
 #include "addrdec.h"
 #include "dram.h"
+#include "gpu-cache.h"
 #include "gpu-misc.h"
 #include "gpu-sim.h"
 #include "icnt_wrapper.h"
 #include "mem_fetch.h"
 #include "mem_latency_stat.h"
+#include "shader.h"
 #include "shader_trace.h"
 #include "stat-tool.h"
 #include "traffic_breakdown.h"
@@ -276,7 +278,7 @@ warpcluster_entry_t* velma_table_t::add_warpcluster(warp_id_t wid){
 
 
 void velma_table_t::set_active_warpcluster(warp_id_t wcid){
-  active_wc_id = wcid; 
+  active_wc = get_warpcluster(wcid); 
 }
 
 
@@ -292,11 +294,7 @@ warpcluster_entry_t* velma_table_t::get_warpcluster(warp_id_t wcid){
 
 //returns a pointer to the active warpcluster (the one being prioritized) 
 warpcluster_entry_t* velma_table_t::get_active_warpcluster(){
-  warpcluster_entry_t* active_wc_ = nullptr;
-  if (active_wc_id != -1) {
-    active_wc_ = get_warpcluster(active_wc_id);
-  }
-  return active_wc_;
+  return active_wc;
 }
 
 /* Cycles through the active velma ids (presently only one),
@@ -378,10 +376,43 @@ velma_id_t velma_table_t::pop_dead_entry(warp_id_t wcid, velma_id_t vid){
 
 
 
+bool velma_table_t::warp_active(warp_id_t wid){
+  warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE; //relies on integer floor divide 
+  warpcluster_entry_t* awc = get_active_warpcluster();
+  if (awc == nullptr) return false; 
+
+  if (wcid == awc->cluster_id) 
+    return true;
+  else 
+    return false; 
+}
 
 
+bool velma_table_t::warp_unmarked_for_active_vid(warp_id_t wid){
+  warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE; 
+  //get and check the active cluster's existence 
+  warpcluster_entry_t* awc = get_active_warpcluster(); 
+  if (awc == nullptr) return true;
+  //this cluster isn't the active one. 
+  if (awc->cluster_id != wcid) return true; 
+
+  //active vid for the cluster 
+  velma_id_t active_vid = awc->active_velma_id(); 
+  if (active_vid == -1) return true;
+  //finally, check to see if this warp has reached. 
+  return !(awc->velma_entries.begin()->has_warp_reached(wid));
+}
 
 
+velma_table_t::velma_table_t(tag_array* tag_arr_, int num_velma_ids){
+  //populate velma id table 
+  for (int i = 0; i < num_velma_ids; i++){
+    velma_ids_flags.insert({static_cast<velma_id_t>(i), true});
+  }
+
+  tag_arr = tag_arr_;
+
+}
 
 
 
@@ -409,9 +440,6 @@ void velma_scheduler::cycle(){
                              // waiting for pending register writes
   bool issued_inst = false;  // of these we issued one
                              //
-  //cycle here. this decrements the killtimers and cleans up as necessary before 
-  //we order the warps. 
-  velma_cycle();//TODO: is this really where we want to call cycle? I think so.
 
 
   order_warps();
@@ -708,6 +736,9 @@ void velma_scheduler::cycle(){
 
     if (issued) {
 
+      //cycle here. this decrements the killtimers and cleans up as necessary.  
+      velma_table.cycle();
+
       // This might be a bit inefficient, but we need to maintain
       // two ordered list for proper scheduler execution.
       // We could remove the need for this loop by associating a
@@ -751,6 +782,8 @@ void velma_scheduler::order_velma_lrr(std::vector<shd_warp_t*> &reordered,
                                       unsigned num_warps_to_add) 
 {
   reordered.clear(); //clean slate.
+  
+  //no segfaults, please. 
   if (num_warps_to_add > warps.size()){
     fprintf(stderr, 
           "Number of warps to add: %d Number of warps available: %d\n", 
@@ -758,55 +791,58 @@ void velma_scheduler::order_velma_lrr(std::vector<shd_warp_t*> &reordered,
           warps.size());
     abort();
   }
-  //
+  
 
-  /*We could model things in terms of iterations a bit more explicitly, but I think a different
-    strategy is better. After finding our current leader and prioritizing it first, we should then 
-    choose to prioritize other warps in the leader's cluster until the timer hits zero, over ALL OTHER WARPS.
-    Once the timer hits zero, we revert the cluster to being non-velma?
-
-    Either way, we fix this AFTER we know the lay of the land vis a vis configuration. 
-  */
+  std::vector<shd_warp_t *> active_velma_warps;
+  std::vector<shd_warp_t *> inactive_velma_warps;
   std::vector<shd_warp_t *> non_velma_warps;
-  //this probably causes the edge-case segfaults. (out of bounds) 
-  auto warps_itr = (just_issued != warps.end()) ? just_issued + 1 : warps.begin();  
+  
+
+  /* Iterate across all the warps, Prioritizing, in this order: 
+   * 1. the unmarked active velma warps 
+   * 2. marked and inactive velma warps 
+   * 3. non_velma_warps
+   */
+
+  //set up our warp iterator. 
+  auto warps_itr = just_issued;
+  if (warps_itr != warps.end() - 1){
+    ++warps_itr;
+  }
+  else {
+    warps_itr = warps.begin();
+  }
+  
   for (int warps_seen = 0; warps_seen < num_warps_to_add; warps_seen++, ++warps_itr){
+    //loop back. 
     warps_itr = (warps_itr != warps.end()) ? warps_itr : warps.begin(); 
-    //velma check. 
-    unsigned wid = (*warps_itr)->get_warp_id();
-    if (is_velma_wid(wid)){
-      reordered.push_back(*warps_itr);
+    
+    //velma checks. 
+    warp_id_t wid = (*warps_itr)->get_warp_id();
+    warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE; 
+    warpcluster_entry_t* wc = get_warpcluster(wcid);
+    warpcluster_entry_t* awc = get_active_warpcluster(); 
+    
+    //1. check for active velma warps. 
+    if (warp_active(wid)){
+      //if the warp has not reached yet in the current vid, push it to the active list. 
+      if (warp_unmarked_for_active_vid(wid)) 
+        active_velma_warps.push_back(*warps_itr);
+      else //otherwise, push it to the inactive velma list. 
+        inactive_velma_warps.push_back(*warps_itr);
     }
     else {
-      //non_velma_warps.push_back(*warps_itr);
+      non_velma_warps.push_back(*warps_itr);
     }
   }
-  //now push non_velma_warps to the back of reordered!
+  //now push!
+  reordered.insert(reordered.end(), active_velma_warps.begin(), active_velma_warps.end());
+  reordered.insert(reordered.end(), inactive_velma_warps.begin(), inactive_velma_warps.end());
   reordered.insert(reordered.end(), non_velma_warps.begin(), non_velma_warps.end());
+  //and clean up!
+  active_velma_warps.clear();
   non_velma_warps.clear();
-}
-
-velma_id_t velma_scheduler::record_velma_access(warp_id_t wid, velma_pc_t pc, velma_addr_t addr){
-  //primary conversion to warpcluster size 
-  warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;  
-  //get our velma id. 
-  /*velma_id_t vid = get_warp_pc_pair_vid(wcid,pc);
-  if (vid == -1) 
-  { //not tracking it? let's do that! 
-    vid = add_new_velma_entry(wcid, pc);
-  }
-
-   * Need to label the $line with velma ID!. We do so 
-   * by informing L1 of the new entry. Then, L1 will 
-   * mark the appropriate cache line. 
-   * First, though, we need access to the tag array.
-   *
-  //Have the cache label the line! 
-  if (vid != -1){
-    tag_arr->label_velma_line(vid,addr);
-  }
-  */ 
-  return wid;//was vid before dummification for make test :)
+  inactive_velma_warps.clear();
 }
 
 
@@ -831,6 +867,8 @@ velma_scheduler::velma_scheduler(shader_core_stats *stats, shader_core_ctx *shad
   mL1D = ldstu->m_L1D;
   tag_arr = mL1D->m_tag_array;
 
+  //construct velma_table 
+  velma_table = velma_table_t(tag_arr, MAX_VELMA_IDS);
 }
 
 

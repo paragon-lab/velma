@@ -120,6 +120,17 @@ class velma_table_t{
   friend class velma_scheduler; 
   
 
+  velma_table_t(){}
+
+  velma_table_t(tag_array* tag_arr_, int num_velma_ids);
+
+
+  ~velma_table_t(){
+    warpclusters.clear();
+    velma_ids_flags.clear();
+    cycle_accumulated_vids_addrs.clear();
+  }
+
   std::multimap<velma_id_t, velma_addr_t> cycle_accumulated_vids_addrs;
   
   std::map<warp_id_t, warpcluster_entry_t> warpclusters; 
@@ -127,7 +138,6 @@ class velma_table_t{
 
   warpcluster_entry_t* active_wc = nullptr; 
 
-  warp_id_t active_wc_id = (unsigned)-1; 
   velma_id_t active_velma_id = -1;  
   
   tag_array* tag_arr; 
@@ -149,10 +159,14 @@ class velma_table_t{
   warpcluster_entry_t* get_active_warpcluster();
   warpcluster_entry_t* get_warpcluster(warp_id_t wcid);
 
+  bool warp_active(warp_id_t wid);
+
   velma_id_t active_killtimer_cycle();
   void cycle();
 
   velma_id_t pop_dead_entry(warp_id_t wcid, velma_id_t vid);
+
+   bool warp_unmarked_for_active_vid(warp_id_t wid);
 };
 
 
@@ -164,9 +178,7 @@ class velma_scheduler : public scheduler_unit {
    */
 
 
-  velma_table_t velma_table;  
 
-  //
   using velma_warp_pc_pair_t = std::pair<warp_id_t, velma_pc_t>;
   std::map<velma_id_t, velma_warp_pc_pair_t> velma_ids_pairs;
   std::map<velma_warp_pc_pair_t, velma_id_t> velma_pairs_ids;
@@ -196,6 +208,7 @@ class velma_scheduler : public scheduler_unit {
   class ldst_unit* ldstu; 
   l1_cache* mL1D; 
   tag_array* tag_arr;
+  velma_table_t velma_table;  
     
 
  

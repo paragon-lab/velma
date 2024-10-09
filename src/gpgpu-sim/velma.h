@@ -24,6 +24,7 @@
 using velma_id_t = int64_t; 
 using warp_id_t = unsigned; 
 using velma_pc_t = unsigned; 
+using velma_addr_t = uint64_t; 
 
 
 //the individual velma entries in the warpcluster entry.
@@ -122,6 +123,8 @@ struct warpcluster_entry_t{
 class velma_table_t{
   friend class velma_scheduler; 
   
+
+  std::multimap<velma_id_t, velma_addr_t> cycle_accumulated_vids_addrs;
   
   std::map<warp_id_t, warpcluster_entry_t> warpclusters; 
   std::map<velma_id_t, bool> velma_ids_flags;
@@ -142,7 +145,8 @@ class velma_table_t{
 
   velma_id_t add_entry(warpcluster_entry_t* wc, velma_pc_t pc);
   warpcluster_entry_t* add_warpcluster(warp_id_t wid);
-  velma_id_t record_access(warp_id_t wid, velma_pc_t pc);
+  velma_id_t record_warp_access(warp_id_t wid, velma_pc_t pc);
+  void record_line_access(velma_id_t vid, velma_addr_t lineaddr);                                                                  //
 
   void set_active_warpcluster(warp_id_t wcid); 
 
@@ -162,6 +166,9 @@ class velma_scheduler : public scheduler_unit {
    * One velma id will correspond to one and only one warpcluster id/pc combo. 
    * A warpcluster id can correspond to 0 or more velma_ids. 
    */
+
+
+  velma_table_t velma_table;  
 
   //
   using velma_warp_pc_pair_t = std::pair<warp_id_t, velma_pc_t>;

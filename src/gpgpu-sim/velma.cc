@@ -211,6 +211,11 @@ velma_id_t velma_table_t::get_free_velma_id(){
 
 
 
+void velma_table_t::record_line_access(velma_id_t vid, velma_addr_t lineaddr){
+  cycle_accumulated_vids_addrs.insert({vid, lineaddr});
+}
+
+
 /* Records an access in the velma_table. In the case that a wcid/pc combo 
  * has already been assigned a velma id, just update the mask in the appropriate
  * velma entry and return its velma id. If the same wid/pc combo is assigned
@@ -222,13 +227,13 @@ velma_id_t velma_table_t::get_free_velma_id(){
  * IF there's space, create new velma and warpcluster entries as necessary,
  * returning the newly-assigned velma id. If there isn't space, return -1.
  */
-velma_id_t velma_table_t::record_access(warp_id_t wid, velma_pc_t pc){
+velma_id_t velma_table_t::record_warp_access(warp_id_t wid, velma_pc_t pc){
   velma_id_t access_vid = -1; 
   warpcluster_entry_t* wc = nullptr;  
   //first: check if we're tracking the warp 
   for (std::pair<warp_id_t, warpcluster_entry_t>& wc_entry : warpclusters){
     if (wc_entry.first/VELMA_WARPCLUSTER_SIZE == wid) 
-      wc = &wc_entry.second; //nute gunray has a question 
+      wc = &(wc_entry.second); //nute gunray has a question 
   }
 
   //if we aren't tracking the warp, do we have space to?
@@ -346,7 +351,12 @@ void velma_table_t::cycle(){
       active_wc = &(warpclusters.begin()->second);
     }
   }
-
+  //TODO: BIG PROBLEM: record_velma_access will be called for EACH THREAD
+    //in velma_scheder::cycle(). I think.
+  for (std::pair<velma_id_t, velma_addr_t>&  id_addr : cycle_accumulated_vids_addrs){
+    tag_arr->label_velma_line(id_addr.first, id_addr.second);
+  }
+  cycle_accumulated_vids_addrs.clear();
 }
 
 
@@ -523,11 +533,11 @@ void velma_scheduler::cycle(){
                   //std::cout << "velma addr in scheduler!\n";
                   //fprintf(stderr, "velma addr in scheduler!\n");
                 }
-                                                
+                   
+                velma_id_t new_vid = velma_table.record_warp_access(warp_id, pc); 
                 for (velma_addr_t vaddr : vaddrs){  
-                  record_velma_access(warp_id, pc, vaddr);
-                }
-                 
+                  if (new_vid != -1) velma_table.record_line_access(new_vid, vaddr);
+                }   
               }
             } 
             else 

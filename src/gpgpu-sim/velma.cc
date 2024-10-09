@@ -301,15 +301,16 @@ velma_id_t velma_table_t::active_killtimer_cycle(){
   return expiring_velma_id;
 }
 
+
+//TODO: this! 
 /* Cycles the velma_table. 
  * -killtimer decrementing
  * -dead velma_entry removal 
  * -dead warpcluster removal 
- * -set the active_velma_id to active_wc->active_velma_id;
- *
- *
- *
- *
+ * -set the active_velma_id to active_wc->active_velma_id
+ * -handle expired velma ids 
+ *    1. push expired ids to tag_arr for delabeling
+ *    2. free expired ids in the velma table. 
  */ 
 velma_id_t velma_table_t::cycle(){
 

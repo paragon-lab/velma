@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 #include <iostream>
+#include "gpu-cache.h"
 #include "shader.h"
 
 
@@ -58,13 +59,13 @@ struct warpcluster_entry_t{
 
 
 
-
   warpcluster_entry_t(){}
 
   ~warpcluster_entry_t(){
     velma_entries.clear();
   }
 
+  //TODO: THIS CONSTRUCTOR!
   warpcluster_entry_t(velma_id_t wcid){
     cluster_id = wcid;
   }
@@ -128,6 +129,9 @@ class velma_table_t{
 
   warp_id_t active_wc_id = (unsigned)-1; 
   velma_id_t active_velma_id = -1;  
+  
+  tag_array* tag_arr; 
+
 
   bool free_velma_id(velma_id_t vid);
   velma_id_t get_free_velma_id();

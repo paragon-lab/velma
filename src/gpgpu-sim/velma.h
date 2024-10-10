@@ -12,7 +12,6 @@
 #include <vector>
 #include <iostream>
 #include "gpu-cache.h"
-#include "shader.h"
 
 
 #define VELMA_WARPCLUSTER_SIZE 4
@@ -57,13 +56,9 @@ struct warpcluster_entry_t{
   std::deque<velma_entry_t> velma_entries; 
   warp_id_t cluster_id; 
 
-
-
   warpcluster_entry_t(){}
 
-  ~warpcluster_entry_t(){
-    velma_entries.clear();
-  }
+  ~warpcluster_entry_t(){}
 
   warpcluster_entry_t(velma_id_t wcid){
     cluster_id = wcid;
@@ -74,7 +69,7 @@ struct warpcluster_entry_t{
   /* Which velma_id is the one we're currently basing
    * this warpcluster's scheduling decisions on? 
    */ 
-  velma_id_t active_velma_id();
+  velma_id_t get_active_velma_id();
   
 
   /* Checks this cluster's subtable for the pc in question.
@@ -122,25 +117,23 @@ class velma_table_t{
 
   velma_table_t(){}
 
-  velma_table_t(tag_array* tag_arr_, int num_velma_ids);
+  //velma_table_t(tag_array* tag_arr_, int num_velma_ids);
+  velma_table_t(int num_velma_ids);
 
 
-  ~velma_table_t(){
-    warpclusters.clear();
-    velma_ids_flags.clear();
-    cycle_accumulated_vids_addrs.clear();
-  }
+  ~velma_table_t(){}
 
   std::multimap<velma_id_t, velma_addr_t> cycle_accumulated_vids_addrs;
   
   std::map<warp_id_t, warpcluster_entry_t> warpclusters; 
   std::map<velma_id_t, bool> velma_ids_flags;
-
-  warpcluster_entry_t* active_wc = nullptr; 
-
-  velma_id_t active_velma_id = -1;  
   
-  tag_array* tag_arr; 
+  warpcluster_entry_t* active_wc = nullptr; 
+  velma_id_t active_velma_id = -1;
+  
+  tag_array* tag_arr = nullptr; 
+
+  
 
 
   bool free_velma_id(velma_id_t vid);
@@ -166,42 +159,9 @@ class velma_table_t{
 
   velma_id_t pop_dead_entry(warp_id_t wcid, velma_id_t vid);
 
-   bool warp_unmarked_for_active_vid(warp_id_t wid);
-};
+  bool warp_unmarked_for_active_vid(warp_id_t wid);
 
-
-class velma_scheduler : public scheduler_unit {
- public:
-  class ldst_unit* ldstu; 
-  l1_cache* mL1D; 
-  tag_array* tag_arr;
-  velma_table_t velma_table;  
-    
+  void set_tag_array(tag_array* tag_arr); 
   
-  velma_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
-                Scoreboard *scoreboard, simt_stack **simt,
-                std::vector<shd_warp_t *> *warp, register_set *sp_out,
-                register_set *dp_out, register_set *sfu_out,
-                register_set *int_out, register_set *tensor_core_out,
-                std::vector<register_set *> &spec_cores_out,
-                register_set *mem_out, int id);
-
-  virtual ~velma_scheduler() {}
-  virtual void order_warps();
-  virtual void done_adding_supervised_warps() {
-    m_last_supervised_issued = m_supervised_warps.end();
-  }
-
-//replaced templated version wth shd_warp_t*. same functionality.
- void order_velma_lrr(std::vector<shd_warp_t *> &reordered, 
-                      const typename std::vector<shd_warp_t *> &warps,
-                      const typename std::vector<shd_warp_t *> 
-                                        ::const_iterator &just_issued,
-                      unsigned num_warps_to_add);
-
-  
-  void cycle();
 };
-
-
 

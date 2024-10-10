@@ -58,6 +58,7 @@
 #include "stack.h"
 #include "stats.h"
 #include "traffic_breakdown.h"
+#include "velma.h"
 
 #define NO_OP_FLAG 0xFF
 #define VELMA_WARPCLUSTER_SIZE 4
@@ -506,6 +507,41 @@ class scheduler_unit {  // this can be copied freely, so can be used in std
 
   int m_id;
 };
+
+
+class velma_scheduler : public scheduler_unit {
+ public:
+  velma_table_t velma_table;  
+      
+  
+  velma_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
+                Scoreboard *scoreboard, simt_stack **simt,
+                std::vector<shd_warp_t *> *warp, register_set *sp_out,
+                register_set *dp_out, register_set *sfu_out,
+                register_set *int_out, register_set *tensor_core_out,
+                std::vector<register_set *> &spec_cores_out,
+                register_set *mem_out, int id);
+
+  virtual ~velma_scheduler() {
+    //velma_table.~velma_table_t();
+  }
+  virtual void order_warps();
+  virtual void done_adding_supervised_warps() {
+    m_last_supervised_issued = m_supervised_warps.end();
+  }
+
+ template<class T>
+ void order_velma_lrr(std::vector<T> &reordered, 
+                      const typename std::vector<T> &warps,
+                      const typename std::vector<T> 
+                                        ::const_iterator &just_issued,
+                      unsigned num_warps_to_add);
+
+  
+  void cycle();
+};
+
+
 
 class lrr_scheduler : public scheduler_unit {
  public:
@@ -1430,7 +1466,7 @@ class ldst_unit : public pipelined_simd_unit {
   void get_L1C_sub_stats(struct cache_sub_stats &css) const;
   void get_L1T_sub_stats(struct cache_sub_stats &css) const;
   //public for velma 
-  l1_cache *m_L1D;         // data cache
+  l1_cache* m_L1D;         // data cache
 
  protected:
   ldst_unit(mem_fetch_interface *icnt,

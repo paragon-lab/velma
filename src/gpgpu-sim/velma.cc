@@ -408,6 +408,8 @@ velma_table_t::velma_table_t(int num_velma_ids){
 
 void velma_table_t::set_tag_array(tag_array* tag_arr_){
   tag_arr = tag_arr_;
+  if (tag_arr == nullptr) return;
+  tag_arr->velma_table = this; //give the tag array a pointer here so we flush when it does.
 }
 
 
@@ -431,5 +433,21 @@ velma_status velma_table_t::determine_warp_status(warp_id_t wid){
   }
   else {
     return NON_VELMA;
+  }
+}
+
+
+void velma_table_t::flush(){
+  //YEET ALL THE THINGS!
+  //delete all of our tracking 
+  warpclusters.clear();
+  cycle_accumulated_vids_addrs.clear();
+
+  //reset our variables 
+  active_wc = nullptr; 
+  active_velma_id = -1;
+  //free all of our velma ids 
+  for (auto& vid_flag : velma_ids_flags){
+    vid_flag.second = true;
   }
 }

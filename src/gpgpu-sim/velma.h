@@ -20,6 +20,7 @@
 #define MAX_VELMA_IDS_PER_CLUSTER 4
 #define MAX_VELMA_CLUSTERS 4
 
+
 using velma_id_t = int64_t; 
 using warp_id_t = unsigned; 
 using velma_pc_t = unsigned; 
@@ -54,12 +55,14 @@ struct velma_entry_t{
 struct warpcluster_entry_t{
   //need both pop_front() and pop_back(), so we keep our entries in a deque.
   std::deque<velma_entry_t> velma_entries; 
-  warp_id_t cluster_id; 
+  warp_id_t cluster_id = (unsigned)-1; 
   velma_id_t active_velma_id = -1;  
 
   warpcluster_entry_t(){}
   
-  ~warpcluster_entry_t(){}
+  ~warpcluster_entry_t(){
+    velma_entries.clear();
+  }
 
   warpcluster_entry_t(velma_id_t wcid){
     cluster_id = wcid;
@@ -81,7 +84,7 @@ struct warpcluster_entry_t{
   //decrements the killtimer for velma entry vid and 
   //returns the new value. 
   unsigned charge_timer(velma_id_t vid);
-unsigned record_inst_issue();
+  unsigned record_inst_issue();
 
 
   /* Pops the top velma entry, advancing the queue.
@@ -114,7 +117,7 @@ enum velma_status {
 
 class velma_table_t{
   friend class velma_scheduler; 
-  
+  friend class tag_array;
 
   velma_table_t(){}
 
@@ -170,6 +173,7 @@ class velma_table_t{
   
   bool warp_has_reached_nth_vid(int n, warp_id_t wid);
 
+  public: void flush();
   
 };
 

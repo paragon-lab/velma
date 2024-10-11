@@ -5274,13 +5274,8 @@ velma_scheduler::velma_scheduler(shader_core_stats *stats, shader_core_ctx *shad
               register_set *int_out, register_set *tensor_core_out,
               std::vector<register_set *> &spec_cores_out,
               register_set *mem_out, int id)
-    : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out,
-                     sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
+    : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out, sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
 { 
-
-
   //construct velma_table 
-  velma_table = velma_table_t(MAX_VELMA_IDS);
+  velma_table = velma_table_t(MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS);
 }
-
-

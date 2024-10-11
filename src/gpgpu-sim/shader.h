@@ -61,17 +61,12 @@
 #include "velma.h"
 
 #define NO_OP_FLAG 0xFF
-#define VELMA_WARPCLUSTER_SIZE 4
-//result from old histogramming. 
-#define VELMA_KILLTIMER_START 256
-#define MAX_VELMA_IDS 16
 
 
 /* Some Velma types, for clarity in nested std::container declarations */ 
 using velma_id_t = int64_t; 
 using warp_id_t = unsigned; 
 using velma_pc_t = unsigned; 
-using velma_warp_pc_pair_t = std::pair<warp_id_t, velma_pc_t>;
 using velma_addr_t = uint64_t; 
 
 

@@ -986,11 +986,11 @@ class l2_cache_config : public cache_config {
   linear_to_raw_address_translation *m_address_mapping;
 };
 
-
+class velma_table_t;
 class tag_array {
  public:
   friend class velma_scheduler;
-  friend class velma_table;
+  friend class velma_table_t;
 
   //WE CALL THIS CONSTRUCTOR TO BUILD A TAG ARRAY.
   //IT TAKES AS AN ARGUMENT A CACHE_CONFIG. 
@@ -1071,6 +1071,7 @@ class tag_array {
   typedef tr1_hash_map<new_addr_type, unsigned> line_table;
   line_table pending_lines;
 
+  velma_table_t* velma_table = nullptr; 
 
  public:
 
@@ -1083,6 +1084,7 @@ class tag_array {
   /*we don't yet pre-populate this in the constructor with N velma ids because
   . the value of N depends on simulation results */
   std::multimap<int64_t, cache_block_t&> velma_ids_linerefs;
+  
 
 
   //////////////////////    VELMA METHODS /////////////////////////////////////

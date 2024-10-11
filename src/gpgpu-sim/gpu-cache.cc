@@ -35,7 +35,6 @@
 #include "gpu-sim.h"
 #include "hashing.h"
 #include "stat-tool.h"
-#include "velma.h"
 // used to allocate memory that is large enough to adapt the changes in cache
 // size across kernels
 
@@ -515,8 +514,9 @@ void tag_array::flush() {
         m_lines[i]->set_status(INVALID, mem_access_sector_mask_t().set(j));
       }
     }
-
-  velma_table->flush();
+  if (velma_table != nullptr){
+    velma_table->flush();
+  }
   m_dirty = 0;
   is_used = false;
 }

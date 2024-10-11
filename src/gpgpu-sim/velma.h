@@ -11,7 +11,6 @@
 #include <utility>
 #include <vector>
 #include <iostream>
-#include "gpu-cache.h"
 
 
 #define VELMA_WARPCLUSTER_SIZE 4
@@ -104,6 +103,8 @@ struct warpcluster_entry_t{
   //simply just tells us if this cluster is tracking the pc in question
   bool tracking_pc(velma_pc_t pc);
 
+  std::vector<velma_id_t> report_expiring_vids();
+  velma_id_t remove_dead_entry(velma_id_t vid);
 
 };
 
@@ -114,6 +115,8 @@ enum velma_status {
     VELMA_REACHED,
     VELMA_ACTIVE_REACHED
   };
+
+class tag_array;
 
 class velma_table_t{
   friend class velma_scheduler; 
@@ -158,7 +161,6 @@ class velma_table_t{
 
   bool warp_active(warp_id_t wid);
 
-  velma_id_t active_killtimer_cycle();
   void cycle();
 
   velma_id_t pop_dead_entry(warp_id_t wcid, velma_id_t vid);
@@ -171,7 +173,10 @@ class velma_table_t{
   velma_status determine_warp_status(warp_id_t wid);
 
   
+  void free_vids(std::vector<velma_id_t> vids); 
   bool warp_has_reached_nth_vid(int n, warp_id_t wid);
+  std::vector<velma_id_t> evict_expiring_entries();
+  void clear_empty_clusters();
 
   public: void flush();
   

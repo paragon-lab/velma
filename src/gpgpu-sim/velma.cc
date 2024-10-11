@@ -1,8 +1,8 @@
 #include "velma.h"
+#include "gpu-cache.h"
 /*#include "../abstract_hardware_model.h"
 #include "addrdec.h"
 #include "dram.h"
-#include "gpu-cache.h"
 #include "shader_trace.h"
 */
 
@@ -51,9 +51,10 @@ velma_id_t warpcluster_entry_t::get_active_velma_id(){
 velma_entry_t* warpcluster_entry_t::get_velma_entry(velma_id_t vid){
   velma_entry_t* entry  = nullptr; 
   for (auto& ventry : velma_entries){
-    if (ventry.velma_id == vid and vid != -1)
+    if (ventry.velma_id == vid and vid != -1){
       entry = &ventry;
       break;
+    }
   }
   return entry; 
 }
@@ -68,6 +69,7 @@ unsigned warpcluster_entry_t::charge_timer(velma_id_t vid){
   return VELMA_KILLTIMER_START + 1;
 }
 
+//TODO: call this!!!
 unsigned warpcluster_entry_t::record_inst_issue(){
   velma_id_t vid = get_active_velma_id();
   return charge_timer(vid);
@@ -115,6 +117,43 @@ void warpcluster_entry_t::add_velma_entry_to_queue(velma_pc_t pc, velma_id_t vid
 
 
 
+/* Cycles through the active velma ids (presently only one),
+ * noting all ids whose killtimers are reduced to zero. 
+ */ 
+std::vector<velma_id_t> warpcluster_entry_t::report_expiring_vids(){
+  std::vector<velma_id_t> expiring_vids;
+  for (auto& entry : velma_entries){
+    if (entry.killtimer <= 0)
+      expiring_vids.push_back(entry.velma_id);
+  }
+  return expiring_vids;
+}
+
+
+velma_id_t warpcluster_entry_t::remove_dead_entry(velma_id_t vid){
+  if (velma_entries.empty()) return -1;
+
+  velma_id_t new_front_vid = -1; 
+  //is this entry the first in the queue? 
+  if (velma_entries.begin()->velma_id == vid){
+    //yes? advance the queue. 
+    new_front_vid = advance_queue();
+  }
+  else {               
+    //no? do a .erase on this velma entry 
+    velma_entry_t* entry = get_velma_entry(vid);
+    auto itr = velma_entries.begin() + (entry - &velma_entries[0]);
+    velma_entries.erase(itr);
+    
+    if (!velma_entries.empty()){
+      new_front_vid = velma_entries.begin()->velma_id;
+    }
+    else {
+      new_front_vid = -1;
+    }
+  }
+  return new_front_vid;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -254,52 +293,55 @@ warpcluster_entry_t* velma_table_t::get_active_warpcluster(){
   return active_wc;
 }
 
-/* Cycles through the active velma ids (presently only one),
- * noting all ids whose killtimers are reduced to zero. 
- */ 
-//TODO: MODIFY THIS!
-velma_id_t velma_table_t::active_killtimer_cycle(){
-  if (active_wc == nullptr) return -1; //-1 return to indicate no id found. 
-  
-  velma_id_t active_vid = active_wc->get_active_velma_id();
-  if (active_wc->decr_top_killtimer() > 0){ 
-    active_vid = -1; //negative 1 vid to indicate no expiration :)
-  }  
-  return active_vid; 
+
+std::vector<velma_id_t> velma_table_t::evict_expiring_entries(){
+  std::vector<velma_id_t> expiring; 
+  for (auto& wc : warpclusters){
+    std::vector<velma_id_t> wc_vids = wc.second.report_expiring_vids();
+    for (velma_id_t vid : wc_vids){
+      wc.second.remove_dead_entry(vid);
+      expiring.push_back(vid);
+    }
+  }
+  return expiring;
+}
+
+void velma_table_t::free_vids(std::vector<velma_id_t> vids){
+  for (auto& vid : vids)
+    free_velma_id(vid);
 }
 
 
 /* Cycles the velma_table. 
- * -killtimer decrementing
  * -set the active_velma_id to active_wc->active_velma_id
  * -handle expired velma ids 
  *    1. push expired ids to tag_arr for delabeling
  *    2. free expired ids in the velma table. 
  */ 
 void velma_table_t::cycle(){
+  //is the table empty? clear all the things. 
   if (warpclusters.empty()){
     active_wc = nullptr; 
     active_velma_id = -1; 
+    for (auto& vid_flag : velma_ids_flags){
+      vid_flag.second = true;
+    }
     return;
   }
 
-  velma_id_t curr_active_vid = -1; 
-  if (active_wc != nullptr) 
-    curr_active_vid = active_wc->get_active_velma_id();
+  //handle velma_id expirations 
+  std::vector<velma_id_t> expiring_vids = evict_expiring_entries();
+  free_vids(expiring_vids);
+  tag_arr->clear_expired_velma_ids(expiring_vids);    
+
+  //clear empty clusters 
+  clear_empty_clusters();
   
-  velma_id_t next_active_vid = -1;          
-  
-  //killtimer decrementing
-  velma_id_t expiring_vid = active_killtimer_cycle();
-  
-  //if we have a dead vid, pop it, advance the queue, and clear the expired vid in cache. 
-  if ((expiring_vid == curr_active_vid) and (expiring_vid != -1)){ 
-    // The active velma id has expired. Kill it. 
-    next_active_vid = pop_dead_entry(active_wc->cluster_id, expiring_vid);
-    //we've advanced the queue, clear the expired id in cache!
-    tag_arr->clear_expired_velma_ids({expiring_vid});
+
+  //with our table entries managed, we now assess if we should change the active_wc 
+  //and/or the active_vid.
     
-  }
+  
  //BEGIN SEGF REGION 
   //if we have an expiration and the cluster still has entries 
   if (active_wc == nullptr){
@@ -408,8 +450,7 @@ velma_table_t::velma_table_t(int num_velma_ids){
 
 void velma_table_t::set_tag_array(tag_array* tag_arr_){
   tag_arr = tag_arr_;
-  if (tag_arr == nullptr) return;
-  tag_arr->velma_table = this; //give the tag array a pointer here so we flush when it does.
+  tag_arr->velma_table = this;
 }
 
 
@@ -449,5 +490,20 @@ void velma_table_t::flush(){
   //free all of our velma ids 
   for (auto& vid_flag : velma_ids_flags){
     vid_flag.second = true;
+  }
+}
+
+
+void velma_table_t::clear_empty_clusters(){
+  std::vector<warp_id_t> empty_wc_ids; 
+  for (auto& wid_clust : warpclusters){
+    warp_id_t wcid = wid_clust.first;
+    warpcluster_entry_t* wc = &(wid_clust.second);
+    if (wc->velma_entries.empty()){
+      empty_wc_ids.push_back(wcid); 
+    }
+  }
+  for (warp_id_t wcid : empty_wc_ids){
+    warpclusters.erase(wcid);
   }
 }

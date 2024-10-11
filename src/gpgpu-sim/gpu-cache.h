@@ -39,6 +39,7 @@
 #include "../tr1_hash_map.h"
 #include "gpu-misc.h"
 #include "mem_fetch.h"
+#include "velma.h"
 //#include <numeric_limits>
 
 #include <iostream>
@@ -1090,7 +1091,7 @@ class tag_array {
   //////////////////////    VELMA METHODS /////////////////////////////////////
 
 
-  unsigned clear_expired_velma_ids(std::set<velma_id_t> expired){
+  unsigned clear_expired_velma_ids(std::vector<velma_id_t> expired){
       unsigned released = 0;
       velma_ids_linerefs.erase(-1); 
       for (velma_id_t exp : expired){

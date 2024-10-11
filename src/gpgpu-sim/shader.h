@@ -503,7 +503,6 @@ class scheduler_unit {  // this can be copied freely, so can be used in std
   int m_id;
 };
 
-
 class velma_scheduler : public scheduler_unit {
  public:
   velma_table_t velma_table;  

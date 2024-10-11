@@ -4916,7 +4916,7 @@ void velma_scheduler::cycle(){
           warp(warp_id).ibuffer_flush();
         } 
         else 
-        {
+        {//VELMA RECORD ISSUED CANDIDATE
           valid_inst = true;
           if (!m_scoreboard->checkCollision(warp_id, pI)) {
             SCHED_DPRINTF(
@@ -4940,6 +4940,8 @@ void velma_scheduler::cycle(){
                 issued_inst = true;
                 warp_inst_issued = true;
                 previous_issued_inst_exec_type = exec_unit_type_t::MEM;
+
+
                 //////////////////////////////////////////////////////////////////////////// 
                 ////////////    VELMA ACCESS RECORDING    //////////////////////////
                 /////////////////////////////////////////////////////
@@ -4959,6 +4961,10 @@ void velma_scheduler::cycle(){
                   //printf("velma addr in scheduler!\n");
                   //std::cout << "velma addr in scheduler!\n";
                   //fprintf(stderr, "velma addr in scheduler!\n");
+
+                ////////////////   VELMA TIMEOUT CHARGING //////////////////////////////////   
+                velma_table.charge_timer(warp_id, pc);
+                
                 }
               }
             } 
@@ -5023,7 +5029,10 @@ void velma_scheduler::cycle(){
                 if (execute_on_SP) {
                   m_shader->issue_warp(*m_sp_out, pI, active_mask, warp_id,
                                        m_id);
+                  //ANYTIME ISSUED IS INCREMENTED, WE WANT TO CHARGE THE WARP 
                   issued++;
+                  velma_table.charge_timer(warp_id, pc);
+                  //velma_table.charge_timer(warp_id, vid);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::SP;
@@ -5031,6 +5040,8 @@ void velma_scheduler::cycle(){
                   m_shader->issue_warp(*m_int_out, pI, active_mask, warp_id,
                                        m_id);
                   issued++;
+                  velma_table.charge_timer(warp_id, pc);
+                  //velma_table.charge_timer(warp_id, vid);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::INT;
@@ -5048,6 +5059,8 @@ void velma_scheduler::cycle(){
                   m_shader->issue_warp(*m_dp_out, pI, active_mask, warp_id,
                                        m_id);
                   issued++;
+                  //velma_table.charge_timer(warp_id, vid);
+                  velma_table.charge_timer(warp_id, pc);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::DP;
@@ -5067,7 +5080,9 @@ void velma_scheduler::cycle(){
                 if (sfu_pipe_avail) {
                   m_shader->issue_warp(*m_sfu_out, pI, active_mask, warp_id,
                                        m_id);
+                  //velma_table.charge_timer(warp_id, vid);
                   issued++;
+                  velma_table.charge_timer(warp_id, pc);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::SFU;
@@ -5084,6 +5099,8 @@ void velma_scheduler::cycle(){
                   m_shader->issue_warp(*m_tensor_core_out, pI, active_mask,
                                        warp_id, m_id);
                   issued++;
+                  //velma_table.charge_timer(warp_id, vid);
+                  velma_table.charge_timer(warp_id, pc);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::TENSOR;
@@ -5105,6 +5122,8 @@ void velma_scheduler::cycle(){
                   m_shader->issue_warp(*spec_reg_set, pI, active_mask, warp_id,
                                        m_id);
                   issued++;
+                  velma_table.charge_timer(warp_id, pc);
+                  //velma_table.charge_timer(warp_id, -1);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type =
@@ -5139,7 +5158,7 @@ void velma_scheduler::cycle(){
 
     if (issued) {
 
-      //cycle here. this decrements the killtimers and cleans up as necessary.  
+      //cycle here.  
       velma_table.cycle();
 
       // This might be a bit inefficient, but we need to maintain
@@ -5205,11 +5224,6 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
   std::vector<T> velma_reached;
   std::vector<T> active_wc_reached; 
 
-  
-
-  /* Iterate across all the warps, Prioritizing, in this order: 
-   *NEEDS UPDATING 
-   */
 
   //set up our warp iterator. 
   auto warps_itr = just_issued;
@@ -5220,12 +5234,10 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
     warps_itr = warps.begin();
   }
 
-  //TODO: DO NOT FORGET TO CHANGE HOW WE INCREMENT THE TIMER!!
   
   for (int warps_seen = 0; warps_seen < num_warps_to_add; warps_seen++, ++warps_itr){
     //loop back. 
     warps_itr = (warps_itr != warps.end()) ? warps_itr : warps.begin(); 
-//TODO: MAKE PER-WARP ACTIVE_VIDS FOR EACH CLUSTER? MAYBE, MAYBE NOT. 
     
     //velma checks. 
     warp_id_t wid = (*warps_itr)->get_warp_id();

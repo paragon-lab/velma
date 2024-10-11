@@ -7,6 +7,7 @@
 */
 
 
+
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////   velma_entry_t   /////////////////////////
 /////////////////////////////////////////////////////////////// 
@@ -15,7 +16,8 @@ velma_entry_t::velma_entry_t(velma_pc_t pc_, velma_id_t vid){
   pc = pc_; 
   velma_id = vid; 
   //initialize the warpcluster mask to all 1s! 
-  wc_mask = std::bitset<VELMA_WARPCLUSTER_SIZE>((1ULL << VELMA_WARPCLUSTER_SIZE) - 1); 
+  wc_mask = ~std::bitset<8>();
+  
   killtimer = VELMA_KILLTIMER_START;
 } 
 
@@ -69,11 +71,6 @@ unsigned warpcluster_entry_t::charge_timer(velma_id_t vid){
   return VELMA_KILLTIMER_START + 1;
 }
 
-//TODO: call this!!!
-unsigned warpcluster_entry_t::record_inst_issue(){
-  velma_id_t vid = get_active_velma_id();
-  return charge_timer(vid);
-}
 
 
  
@@ -463,7 +460,6 @@ void velma_table_t::flush(){
   //delete all of our tracking 
   warpclusters.clear();
   cycle_accumulated_vids_addrs.clear();
-
   //reset our variables 
   active_wc = nullptr; 
   active_velma_id = -1;
@@ -486,4 +482,31 @@ void velma_table_t::clear_empty_clusters(){
   for (warp_id_t wcid : empty_wc_ids){
     warpclusters.erase(wcid);
   }
+}
+
+
+void velma_table_t::charge_timer(warp_id_t wid, velma_id_t vid){
+  //vid currently unused 
+  velma_entry_t* entry; 
+  warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;
+  warpcluster_entry_t* wc = get_warpcluster(wcid);
+
+  //checks to avoid crash
+  if (wc == nullptr) return;
+  if (wc->velma_entries.empty()) return;
+  if (vid == -1) return;
+  
+  //actually charging the timer 
+  entry = wc->get_velma_entry(vid);
+  entry->charge_timer();
+}
+    
+//get a vid from wid and pc 
+void velma_table_t::charge_timer(warp_id_t wid, velma_pc_t pc){
+  warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE; 
+  warpcluster_entry_t* wc = get_warpcluster(wcid);
+  
+  if (wc == nullptr) return;
+  if (wc->velma_entries.empty()) return;
+  wc->velma_entries.begin()->charge_timer();
 }

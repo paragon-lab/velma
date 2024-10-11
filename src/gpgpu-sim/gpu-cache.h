@@ -39,7 +39,6 @@
 #include "../tr1_hash_map.h"
 #include "gpu-misc.h"
 #include "mem_fetch.h"
-#include "velma.h"
 //#include <numeric_limits>
 
 #include <iostream>

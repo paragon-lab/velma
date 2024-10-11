@@ -1,3 +1,5 @@
+#pragma once
+
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -11,6 +13,7 @@
 #include <utility>
 #include <vector>
 #include <iostream>
+
 
 
 #define VELMA_WARPCLUSTER_SIZE 4
@@ -30,7 +33,7 @@ using velma_addr_t = uint64_t;
 struct velma_entry_t{
     velma_pc_t pc;
     velma_id_t velma_id = -1; 
-    std::bitset<VELMA_WARPCLUSTER_SIZE> wc_mask;
+    std::bitset<8> wc_mask;
     unsigned killtimer;
      
     velma_entry_t(velma_pc_t pc_, velma_id_t vid);
@@ -178,7 +181,13 @@ class velma_table_t{
   std::vector<velma_id_t> evict_expiring_entries();
   void clear_empty_clusters();
 
-  public: void flush();
+  void charge_timer(warp_id_t wid, velma_id_t vid);
+  void charge_timer(warp_id_t wid, velma_pc_t pc);
+
+
+  public: 
+    void flush();
+    
   
 };
 

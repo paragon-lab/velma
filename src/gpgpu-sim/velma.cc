@@ -340,41 +340,21 @@ void velma_table_t::cycle(){
 
   //with our table entries managed, we now assess if we should change the active_wc 
   //and/or the active_vid.
-    
-  
- //BEGIN SEGF REGION 
-  //if we have an expiration and the cluster still has entries 
   if (active_wc == nullptr){
-    if (warpclusters.empty()) return;
-    else {
-      active_wc = &(warpclusters.begin()->second);
+    if (warpclusters.empty()){
+      active_velma_id = -1;
     }
   }
-
-  if (active_wc->velma_entries.begin() != active_wc->velma_entries.end()){
-    active_velma_id = next_active_vid;
-  }
-  
   else {
-    //empty cluster! nuke it.
-    warpclusters.erase(active_wc->cluster_id);
-    if (!warpclusters.empty()){
-      active_wc = &(warpclusters.begin()->second);
+    //now change the active velma_id. 
+    active_velma_id = active_wc->get_active_velma_id();
+    //have the tag array label all the lines for this cycle. 
+    for (auto&  id_addr : cycle_accumulated_vids_addrs){
+      tag_arr->label_velma_line(id_addr.first, id_addr.second);
     }
-    else active_wc = nullptr;
   }
-
-//END SEGF REGION
-  
-  //have the tag array label all the lines for this cycle. 
-  for (auto&  id_addr : cycle_accumulated_vids_addrs){
-    tag_arr->label_velma_line(id_addr.first, id_addr.second);
-  }
+    
   cycle_accumulated_vids_addrs.clear();
-
-  //now change the active velma_id. 
-  active_velma_id = active_wc->get_active_velma_id();
-  
 }
 
 

@@ -110,6 +110,13 @@ struct warpcluster_entry_t{
 
 };
 
+enum velma_status {
+    VELMA_ACTIVE_NOT_REACHED,
+    VELMA_NOT_REACHED,
+    NON_VELMA,
+    VELMA_REACHED,
+    VELMA_ACTIVE_REACHED
+  };
 
 class velma_table_t{
   friend class velma_scheduler; 
@@ -162,6 +169,13 @@ class velma_table_t{
   bool warp_unmarked_for_active_vid(warp_id_t wid);
 
   void set_tag_array(tag_array* tag_arr); 
+
+  
+  velma_status determine_warp_status(warp_id_t wid);
+
+  
+  bool warp_has_reached_nth_vid(int n, warp_id_t wid);
+
   
 };
 

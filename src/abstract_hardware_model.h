@@ -1213,13 +1213,22 @@ class warp_inst_t : public inst_t {
     return m_per_scalar_thread[n].memreqaddr[0];
   }
 
-  std::set<new_addr_type> get_lineaddrs() const{
+  new_addr_type get_line(unsigned n) const {
+    /*if (!m_per_scalar_thread_valid) {
+      return ~0x0;
+    }*/
+    return m_per_scalar_thread[n].memreqaddr[0] & ~0x7FUL;
+  }
+
+
+  std::set<new_addr_type> get_lineaddrs() const {
     assert(m_per_scalar_thread_valid);
     
     std::set<new_addr_type> lineaddrs;
-    for (int i = 0; i < m_per_scalar_thread.size(); i++){
-      new_addr_type addr = get_addr(i);
-      lineaddrs.insert(addr & ~0x7FUL);
+    for (int i = 0; i < 32; i++){
+      new_addr_type addr = get_line(i);
+      if (addr != ~0x0UL)
+        lineaddrs.insert(addr);
     }
     
     return lineaddrs; 

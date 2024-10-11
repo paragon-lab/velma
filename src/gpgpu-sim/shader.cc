@@ -1053,6 +1053,8 @@ void shader_core_ctx::issue_warp(register_set &pipe_reg_set,
   m_stats->shader_cycle_distro[2 + (*pipe_reg)->active_count()]++;
   func_exec_inst(**pipe_reg);
 
+  //TODO: VELMA TODO: RECORD ADDRESSES HERE!
+
   // Add LDGSTS instructions into a buffer
   unsigned int ldgdepbar_id = m_warp[warp_id]->m_ldgdepbar_id;
   if (next_inst->m_is_ldgsts) {
@@ -4884,6 +4886,7 @@ void velma_scheduler::cycle(){
     { //get the next instruction for this warp 
       const warp_inst_t *pI = warp(warp_id).ibuffer_next_inst();
       
+      
       // Jin: handle cdp latency;
       if (pI && pI->m_is_cdp && warp(warp_id).m_cdp_latency > 0) {
         assert(warp(warp_id).m_cdp_dummy);
@@ -5194,15 +5197,18 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
   }
   
 
-  std::vector<T> active_velma_warps;
-  std::vector<T> inactive_velma_warps;
-  std::vector<T> non_velma_warps;
+  //TODO: 
+  //Warp vectors listed in order of priority. 
+  std::vector<T> active_wc_not_reached;
+  std::vector<T> velma_not_reached;
+  std::vector<T> non_velma;
+  std::vector<T> velma_reached;
+  std::vector<T> active_wc_reached; 
+
   
 
   /* Iterate across all the warps, Prioritizing, in this order: 
-   * 1. the unmarked active velma warps 
-   * 2. marked and inactive velma warps 
-   * 3. non_velma_warps
+   *NEEDS UPDATING 
    */
 
   //set up our warp iterator. 
@@ -5214,40 +5220,50 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
     warps_itr = warps.begin();
   }
 
-  
+  //TODO: DO NOT FORGET TO CHANGE HOW WE INCREMENT THE TIMER!!
   
   for (int warps_seen = 0; warps_seen < num_warps_to_add; warps_seen++, ++warps_itr){
     //loop back. 
     warps_itr = (warps_itr != warps.end()) ? warps_itr : warps.begin(); 
-
-    
+//TODO: MAKE PER-WARP ACTIVE_VIDS FOR EACH CLUSTER? MAYBE, MAYBE NOT. 
     
     //velma checks. 
     warp_id_t wid = (*warps_itr)->get_warp_id();
     warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE; 
-    warpcluster_entry_t* wc = velma_table.get_warpcluster(wcid);
-    warpcluster_entry_t* awc = velma_table.get_active_warpcluster(); 
     
-    //1. check for active velma warps. 
-    if (velma_table.warp_active(wid)){
-      //if the warp has not reached yet in the current vid, push it to the active list. 
-      if (velma_table.warp_unmarked_for_active_vid(wid)) 
-        active_velma_warps.push_back(*warps_itr);
-      else //otherwise, push it to the inactive velma list. 
-        inactive_velma_warps.push_back(*warps_itr);
-    }
-    else {
-      non_velma_warps.push_back(*warps_itr);
-    }
+    
+    switch (velma_table.determine_warp_status(wid)){
+      case VELMA_ACTIVE_NOT_REACHED:
+        active_wc_not_reached.push_back(*warps_itr);
+        break;
+      case VELMA_NOT_REACHED:
+        velma_not_reached.push_back(*warps_itr);
+        break;
+      case NON_VELMA:
+        non_velma.push_back(*warps_itr);
+        break; 
+      case VELMA_REACHED:
+        velma_reached.push_back(*warps_itr);
+        break;
+      case VELMA_ACTIVE_REACHED:
+        active_wc_reached.push_back(*warps_itr);
+        break;
+    }   
   }
+
   //now push!
-  reordered.insert(reordered.end(), active_velma_warps.begin(), active_velma_warps.end());
-  reordered.insert(reordered.end(), inactive_velma_warps.begin(), inactive_velma_warps.end());
-  reordered.insert(reordered.end(), non_velma_warps.begin(), non_velma_warps.end());
+  reordered.insert(reordered.end(), active_wc_not_reached.begin(), active_wc_not_reached.end());
+  reordered.insert(reordered.end(), velma_not_reached.begin(), velma_not_reached.end());
+  reordered.insert(reordered.end(), non_velma.begin(), non_velma.end());
+  reordered.insert(reordered.end(), velma_reached.begin(), velma_reached.end());
+  reordered.insert(reordered.end(), active_wc_reached.begin(), active_wc_reached.end());
   //and clean up!
-  active_velma_warps.clear();
-  non_velma_warps.clear();
-  inactive_velma_warps.clear();
+  active_wc_not_reached.clear();
+  velma_not_reached.clear();
+  non_velma.clear();
+  velma_reached.clear();
+  active_wc_reached.clear(); 
+
 }
 
 

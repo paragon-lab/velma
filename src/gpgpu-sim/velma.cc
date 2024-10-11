@@ -336,7 +336,6 @@ void velma_table_t::cycle(){
     }
   }
 
-
   if (active_wc->velma_entries.begin() != active_wc->velma_entries.end()){
     active_velma_id = next_active_vid;
   }
@@ -394,6 +393,22 @@ bool velma_table_t::warp_active(warp_id_t wid){
 }
 
 
+bool velma_table_t::warp_has_reached_nth_vid(int n, warp_id_t wid){
+  warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;
+  //are we even tracking this warp?
+  if (warpclusters.find(wcid) == warpclusters.end()) return false; 
+  
+  warpcluster_entry_t* wc = &(warpclusters.begin()->second); 
+  //does this cluster HAVE n velma entries? 
+  if (wc->velma_entries.size() <= n) return false;
+
+  //is this warp's bitmask marked in the nth entry? 
+  if (wc->velma_entries[n].has_warp_reached(wid))
+    return true;
+  else 
+    return false; 
+}
+
 bool velma_table_t::warp_unmarked_for_active_vid(warp_id_t wid){
   warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE; 
   //get and check the active cluster's existence 
@@ -425,3 +440,24 @@ void velma_table_t::set_tag_array(tag_array* tag_arr_){
 
 
 
+velma_status velma_table_t::determine_warp_status(warp_id_t wid){
+  //is this warp in the active velma cluster? 
+  if (warp_active(wid)){
+    //has this warp seen the load in the bitmask? 
+    if (warp_unmarked_for_active_vid(wid)) 
+      return VELMA_ACTIVE_NOT_REACHED;
+    else      
+      return VELMA_ACTIVE_REACHED;
+  } //is this a velma warp? 
+  else if (warpclusters.find(wid / VELMA_WARPCLUSTER_SIZE) != warpclusters.end())
+  { 
+    //has this reached in its first velma entry? 
+    if (!warp_has_reached_nth_vid(0, wid))
+      return VELMA_NOT_REACHED; 
+    else 
+      return VELMA_REACHED;
+  }
+  else {
+    return NON_VELMA;
+  }
+}

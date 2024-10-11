@@ -47,36 +47,6 @@ velma_id_t warpcluster_entry_t::get_active_velma_id(){
   return retvid;
 }
 
-std::set<velma_id_t> warpcluster_entry_t::all_velma_ids_from_pc(velma_pc_t pc){
-  std::set<velma_id_t> vids;
-  for (velma_entry_t& velma_entry : velma_entries){
-    if (velma_entry.pc == pc){
-      vids.insert(velma_entry.velma_id);
-    }
-  }
-  return vids;
-}
-
-//Checks this cluster's subtable for the pc in question.
-//We only care about the first instance.
-velma_id_t warpcluster_entry_t::first_velma_id_from_pc(velma_pc_t pc){
-  for (velma_entry_t& velma_entry : velma_entries){
-    if (velma_entry.pc == pc){
-      return velma_entry.velma_id;
-    }
-  }
-  return -1;
-}
-
-//checks if a vid is present in this cluster's subtable
-bool warpcluster_entry_t::contains_velma_id(velma_id_t vid){
-  for (velma_entry_t& velma_entry : velma_entries){
-    if (velma_entry.velma_id == vid and vid != -1){
-      return true;
-    }
-  }
-  return false;
-}
 
 
 /* Decrement the killtimer for the velma_entry at the top of this entry's queue. 
@@ -92,14 +62,6 @@ unsigned warpcluster_entry_t::decr_top_killtimer(){
   else return VELMA_KILLTIMER_START + 1;
 }
 
-//reports the set of velma ids this cluster is tracking. 
-std::set<velma_id_t> warpcluster_entry_t::report_velma_ids(){
-  std::set<velma_id_t> vids;
-  for (auto velma_entry : velma_entries){
-    vids.insert(velma_entry.velma_id);
-  }
-  return vids;
-}
 
 /* Pops the top velma entry, advancing the queue.
  * also returns the velma id of the NEXT element 
@@ -216,9 +178,8 @@ velma_id_t velma_table_t::record_warp_access(warp_id_t wid, velma_pc_t pc){
   velma_id_t access_vid = -1; 
   warpcluster_entry_t* wc = nullptr;  
   //first: check if we're tracking the warp 
-  for (auto& wc_entry : warpclusters){
-    if (wc_entry.first/VELMA_WARPCLUSTER_SIZE == wid) 
-      wc = &(wc_entry.second); //nute gunray has a question 
+  if (warpclusters.find(wid/VELMA_WARPCLUSTER_SIZE) != warpclusters.end()){
+      wc = &(warpclusters[wid/VELMA_WARPCLUSTER_SIZE]); //nute gunray has a question 
   }
 
   //if we aren't tracking the warp, do we have space to?
@@ -232,7 +193,7 @@ velma_id_t velma_table_t::record_warp_access(warp_id_t wid, velma_pc_t pc){
     access_vid = wc->mark_warp_reached_pc(wid, pc);
     //if we don't find a corresponding entry:
     if (access_vid == -1){
-      access_vid = add_entry(wc, pc);
+      access_vid = add_velma_entry(wc, pc);
     }
   }  
   //if we touched a velma entry, return its velma_id. 
@@ -240,7 +201,7 @@ velma_id_t velma_table_t::record_warp_access(warp_id_t wid, velma_pc_t pc){
 }
 
 //if there's space, adds a new velma entry for pc to wc->velma_entries
-velma_id_t velma_table_t::add_entry(warpcluster_entry_t* wc, velma_pc_t pc){
+velma_id_t velma_table_t::add_velma_entry(warpcluster_entry_t* wc, velma_pc_t pc){
   velma_id_t free_vid = find_free_velma_id();
   //does this warpcluster have space for a new entry? did we get a velma_id? 
   if (free_vid > -1 and wc->velma_entries.size() < MAX_VELMA_IDS_PER_CLUSTER){
@@ -284,6 +245,7 @@ warpcluster_entry_t* velma_table_t::get_active_warpcluster(){
 /* Cycles through the active velma ids (presently only one),
  * noting all ids whose killtimers are reduced to zero. 
  */ 
+//TODO: MODIFY THIS!
 velma_id_t velma_table_t::active_killtimer_cycle(){
   if (active_wc == nullptr) return -1; //-1 return to indicate no id found. 
   
@@ -306,7 +268,6 @@ void velma_table_t::cycle(){
   if (warpclusters.empty()){
     active_wc = nullptr; 
     active_velma_id = -1; 
-
     return;
   }
 
@@ -372,7 +333,6 @@ velma_id_t velma_table_t::pop_dead_entry(warp_id_t wcid, velma_id_t vid){
   if (warpclusters.find(wcid) != warpclusters.end()){
     warpcluster_entry_t& wc = warpclusters[wcid];
     //tracking the vid? 
-    assert(vid == wc.get_active_velma_id()); //right now, with only one vid...  
     new_front_vid = wc.advance_queue();
     free_velma_id(vid);
   }

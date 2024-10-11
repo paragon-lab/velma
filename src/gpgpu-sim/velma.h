@@ -42,7 +42,7 @@ struct velma_entry_t{
     /* Decrements the killtimer. If the timer hits 0,
      * return the velma_id. Otherwise, return -1.
      */ 
-    inline unsigned decr_killtimer();
+    inline unsigned charge_timer();
 
     ~velma_entry_t(){}
   };
@@ -55,6 +55,7 @@ struct warpcluster_entry_t{
   //need both pop_front() and pop_back(), so we keep our entries in a deque.
   std::deque<velma_entry_t> velma_entries; 
   warp_id_t cluster_id; 
+  velma_id_t active_velma_id = -1;  
 
   warpcluster_entry_t(){}
   
@@ -66,14 +67,21 @@ struct warpcluster_entry_t{
 
 
 
+  velma_entry_t* get_velma_entry(velma_id_t vid);
+
+
   /* Which velma_id is the one we're currently basing
    * this warpcluster's scheduling decisions on? 
    */ 
   velma_id_t get_active_velma_id();
   
+  void set_active_velma_id(velma_id_t vid);
+  
 
-  //decrements the top killtimer and returns the associated vid. 
-  unsigned decr_top_killtimer();
+  //decrements the killtimer for velma entry vid and 
+  //returns the new value. 
+  unsigned charge_timer(velma_id_t vid);
+unsigned record_inst_issue();
 
 
   /* Pops the top velma entry, advancing the queue.

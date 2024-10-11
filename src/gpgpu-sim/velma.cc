@@ -30,7 +30,7 @@ inline bool velma_entry_t::has_warp_reached(warp_id_t wid){
 } 
 
 //decrements the killtimer of the entry. 
-inline unsigned velma_entry_t::decr_killtimer(){
+inline unsigned velma_entry_t::charge_timer(){
   return --killtimer;  
 }
 
@@ -39,30 +39,42 @@ inline unsigned velma_entry_t::decr_killtimer(){
 ////////////////////////////  warpcluster_entry_t  //////////////
 /////////////////////////////////////////////////////////
 
+void warpcluster_entry_t::set_active_velma_id(velma_id_t vid){
+  active_velma_id = vid;
+}
+
 velma_id_t warpcluster_entry_t::get_active_velma_id(){
-  velma_id_t retvid = -1;
-  if (!velma_entries.empty()){
-    retvid = velma_entries.begin()->velma_id;
-  }
-  return retvid;
+  return active_velma_id;
 }
 
 
-
-/* Decrement the killtimer for the velma_entry at the top of this entry's queue. 
- * If it reaches zero, return the velma_id. Otherwise, return -1.  
- */
-unsigned warpcluster_entry_t::decr_top_killtimer(){
-  //no segfaults, please. 
-  if (!velma_entries.empty()){ 
-    //decrement the killtimer of the first element in the queue. 
-    //if it's zero, we return that element's velma_id. 
-    return velma_entries.begin()->decr_killtimer();
+velma_entry_t* warpcluster_entry_t::get_velma_entry(velma_id_t vid){
+  velma_entry_t* entry  = nullptr; 
+  for (auto& ventry : velma_entries){
+    if (ventry.velma_id == vid and vid != -1)
+      entry = &ventry;
+      break;
   }
-  else return VELMA_KILLTIMER_START + 1;
+  return entry; 
 }
 
 
+unsigned warpcluster_entry_t::charge_timer(velma_id_t vid){
+  velma_entry_t* entry = nullptr;
+  entry = get_velma_entry(vid);
+  if (entry != nullptr){
+    return entry->charge_timer();
+  }
+  return VELMA_KILLTIMER_START + 1;
+}
+
+unsigned warpcluster_entry_t::record_inst_issue(){
+  velma_id_t vid = get_active_velma_id();
+  return charge_timer(vid);
+}
+
+
+ 
 /* Pops the top velma entry, advancing the queue.
  * also returns the velma id of the NEXT element 
  * or -1 if the list becomes empty.
@@ -98,7 +110,7 @@ velma_id_t warpcluster_entry_t::mark_warp_reached_pc(warp_id_t wid, velma_pc_t p
 
 
 void warpcluster_entry_t::add_velma_entry_to_queue(velma_pc_t pc, velma_id_t vid){
-    velma_entries.emplace_back(velma_entry_t(pc, vid)); 
+  velma_entries.emplace_back(velma_entry_t(pc, vid)); 
 }
 
 

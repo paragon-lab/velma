@@ -303,38 +303,55 @@ velma_id_t velma_table_t::active_killtimer_cycle(){
  *    2. free expired ids in the velma table. 
  */ 
 void velma_table_t::cycle(){
-  if (warpclusters.empty()) return;
+  if (warpclusters.empty()){
+    active_wc = nullptr; 
+    active_velma_id = -1; 
+
+    return;
+  }
 
   velma_id_t curr_active_vid = -1; 
-  if (active_wc != nullptr) //maybe here? probably here TODO segF 
-    active_wc->get_active_velma_id();
+  if (active_wc != nullptr) 
+    curr_active_vid = active_wc->get_active_velma_id();
   
   velma_id_t next_active_vid = -1;          
   
   //killtimer decrementing
   velma_id_t expiring_vid = active_killtimer_cycle();
-
+  
   //if we have a dead vid, pop it, advance the queue, and clear the expired vid in cache. 
-  if (expiring_vid == curr_active_vid and expiring_vid != -1){ 
-    /* The active velma id has expired. Kill it. */
+  if ((expiring_vid == curr_active_vid) and (expiring_vid != -1)){ 
+    // The active velma id has expired. Kill it. 
     next_active_vid = pop_dead_entry(active_wc->cluster_id, expiring_vid);
     //we've advanced the queue, clear the expired id in cache!
     tag_arr->clear_expired_velma_ids({expiring_vid});
     
   }
-  
+ //BEGIN SEGF REGION 
   //if we have an expiration and the cluster still has entries 
-  if (!active_wc->velma_entries.empty()){
+  if (active_wc == nullptr){
+    if (warpclusters.empty()) return;
+    else {
+      active_wc = &(warpclusters.begin()->second);
+    }
+  }
+
+
+  if (active_wc->velma_entries.begin() != active_wc->velma_entries.end()){
     active_velma_id = next_active_vid;
   }
+  
   else {
     //empty cluster! nuke it.
     warpclusters.erase(active_wc->cluster_id);
     if (!warpclusters.empty()){
       active_wc = &(warpclusters.begin()->second);
     }
+    else active_wc = nullptr;
   }
 
+//END SEGF REGION
+  
   //have the tag array label all the lines for this cycle. 
   for (auto&  id_addr : cycle_accumulated_vids_addrs){
     tag_arr->label_velma_line(id_addr.first, id_addr.second);
@@ -343,6 +360,7 @@ void velma_table_t::cycle(){
 
   //now change the active velma_id. 
   active_velma_id = active_wc->get_active_velma_id();
+  
 }
 
 
@@ -386,7 +404,7 @@ bool velma_table_t::warp_unmarked_for_active_vid(warp_id_t wid){
 
   //active vid for the cluster 
   velma_id_t active_vid = awc->get_active_velma_id(); 
-  if (active_vid == -1) return true;
+  if (active_vid == -1 or awc->velma_entries.empty()) return true;
   //finally, check to see if this warp has reached. 
   return !(awc->velma_entries.begin()->has_warp_reached(wid));
 }

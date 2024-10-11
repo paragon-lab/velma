@@ -1214,18 +1214,30 @@ class warp_inst_t : public inst_t {
   }
 
   std::set<new_addr_type> get_lineaddrs() const{
+    assert(m_per_scalar_thread_valid);
+    
+    std::set<new_addr_type> lineaddrs;
+    for (int i = 0; i < m_per_scalar_thread.size(); i++){
+      new_addr_type addr = get_addr(i);
+      lineaddrs.insert(addr & ~0x7FUL);
+    }
+    
+    return lineaddrs; 
+  }
+
+  /*std::set<new_addr_type> get_lineaddrs() const{
     if (!m_per_scalar_thread_valid) return {};
     
     std::set<new_addr_type> lineaddrs;
     const active_mask_t tmask = m_warp_active_mask; //this is a std::bitset
-    for (int i = 0; i < tmask.size(), i<=m_per_scalar_thread.size(); i++){
+    for (int i = 0; i < tmask.size(), i < m_per_scalar_thread.size(); i++){
       if (tmask[i] == 1){
         new_addr_type lineaddr = m_per_scalar_thread[i].memreqaddr[0] & ~0x7FUL;
         lineaddrs.insert(lineaddr); 
       }
     }
     return lineaddrs;
-  }
+  }*/
 
   bool isatomic() const { return m_isatomic; }
 

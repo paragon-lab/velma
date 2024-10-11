@@ -57,7 +57,7 @@ struct warpcluster_entry_t{
   warp_id_t cluster_id; 
 
   warpcluster_entry_t(){}
-
+  
   ~warpcluster_entry_t(){}
 
   warpcluster_entry_t(velma_id_t wcid){

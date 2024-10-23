@@ -4838,6 +4838,9 @@ void velma_scheduler::cycle(){
   class ldst_unit* ldstu = tshader->m_ldst_unit;
   l1_cache* mL1D = ldstu->m_L1D;
   tag_array* tagarr = mL1D->m_tag_array;
+  
+  //l2_cache* mL2D = ldstu->m_L2D;
+  //tag_array* tagarr = mL1D->m_tag_array;
 
   if (velma_table.tag_arr == nullptr){
     velma_table.set_tag_array(tagarr); 

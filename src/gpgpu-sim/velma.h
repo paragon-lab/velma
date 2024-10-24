@@ -85,9 +85,6 @@ struct warpcluster_entry_t{
   void set_active_velma_id(velma_id_t vid);
   
 
-  //decrements the killtimer for velma entry vid and 
-  //returns the new value. 
-  unsigned charge_timer(velma_id_t vid);
   unsigned record_inst_issue();
 
 

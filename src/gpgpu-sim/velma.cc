@@ -62,17 +62,6 @@ velma_entry_t* warpcluster_entry_t::get_velma_entry(velma_id_t vid){
 }
 
 
-unsigned warpcluster_entry_t::charge_timer(velma_id_t vid){
-  velma_entry_t* entry = nullptr;
-  entry = get_velma_entry(vid);
-  if (entry != nullptr){
-    return entry->charge_timer();
-  }
-  return VELMA_KILLTIMER_START + 1;
-}
-
-
-
  
 /* Pops the top velma entry, advancing the queue.
  * also returns the velma id of the NEXT element 
@@ -139,16 +128,14 @@ velma_id_t warpcluster_entry_t::remove_dead_entry(velma_id_t vid){
   else {               
     //no? do a .erase on this velma entry 
     velma_entry_t* entry = get_velma_entry(vid);
-    auto itr = velma_entries.begin() + (entry - &velma_entries[0]);
-    velma_entries.erase(itr);
-    
-    if (!velma_entries.empty()){
-      new_front_vid = velma_entries.begin()->velma_id;
+    if (entry != nullptr){
+      auto itr = velma_entries.begin() + (entry - &velma_entries[0]);
+      velma_entries.erase(itr);
+      if (!velma_entries.empty()){
+        new_front_vid = velma_entries.begin()->velma_id; 
+      }
     }
-    else {
-      new_front_vid = -1;
-    }
-  }
+  } 
   return new_front_vid;
 }
 
@@ -334,7 +321,6 @@ void velma_table_t::cycle(){
   //clear empty clusters 
   clear_empty_clusters();
   
-
   //with our table entries managed, we now assess if we should change the active_wc 
   //and/or the active_vid.
   if (active_wc == nullptr){
@@ -347,7 +333,7 @@ void velma_table_t::cycle(){
     active_velma_id = active_wc->get_active_velma_id();
     //have the tag array label all the lines for this cycle. 
     for (auto&  id_addr : cycle_accumulated_vids_addrs){
-      tag_arr->label_velma_line(id_addr.first, id_addr.second);
+      if (tag_arr != nullptr) tag_arr->label_velma_line(id_addr.first, id_addr.second);
     }
   }
     
@@ -487,7 +473,6 @@ void velma_table_t::clear_empty_clusters(){
 
 void velma_table_t::charge_timer(warp_id_t wid, velma_id_t vid){
   //vid currently unused 
-  velma_entry_t* entry; 
   warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;
   warpcluster_entry_t* wc = get_warpcluster(wcid);
 
@@ -497,8 +482,8 @@ void velma_table_t::charge_timer(warp_id_t wid, velma_id_t vid){
   if (vid == -1) return;
   
   //actually charging the timer 
-  entry = wc->get_velma_entry(vid);
-  entry->charge_timer();
+  velma_entry_t* entry = wc->get_velma_entry(vid);
+  if (entry != nullptr) entry->charge_timer();
 }
     
 //get a vid from wid and pc 

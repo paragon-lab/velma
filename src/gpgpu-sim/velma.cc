@@ -310,6 +310,11 @@ void velma_table_t::cycle(){
     for (auto& vid_flag : velma_ids_flags){
       vid_flag.second = true;
     }
+    
+    if (tag_arr != nullptr){
+      tag_arr->clear_all_velma_ids();
+    }
+
     return;
   }
 

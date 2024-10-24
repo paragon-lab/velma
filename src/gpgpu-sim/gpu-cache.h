@@ -1081,6 +1081,14 @@ class tag_array {
 ///////////////////////////     VELMA STUFF      //////////////////////////////// 
 /////////////////////////////////////////////////////////////////////
 
+  void clear_all_velma_ids(){
+    for (int idx = 0; idx < size(); idx++){
+      cache_block_t* line = m_lines[idx];
+      m_lines[idx]->clear_velma_id();
+    }
+  }
+
+
   /* The scheduler figures out the mapping between velma_ids, PCs, and warp clusters, then  
    * calls this to label the appropriate line with the velma_id in question. 
    */

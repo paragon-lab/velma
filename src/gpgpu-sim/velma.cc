@@ -316,7 +316,6 @@ void velma_table_t::cycle(){
   //handle velma_id expirations 
   std::vector<velma_id_t> expiring_vids = evict_expiring_entries();
   free_vids(expiring_vids);
-  tag_arr->clear_expired_velma_ids(expiring_vids);    
 
   //clear empty clusters 
   clear_empty_clusters();
@@ -413,7 +412,7 @@ velma_table_t::velma_table_t(int num_velma_ids){
 
 void velma_table_t::set_tag_array(tag_array* tag_arr_){
   tag_arr = tag_arr_;
-  tag_arr->velma_table = this;
+  if (tag_arr != nullptr) tag_arr->velma_table = this;
 }
 
 

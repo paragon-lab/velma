@@ -1081,41 +1081,6 @@ class tag_array {
 ///////////////////////////     VELMA STUFF      //////////////////////////////// 
 /////////////////////////////////////////////////////////////////////
 
-  ///////////////////////   VELMA MEMBERS  /////////////////////////////////////    
-
-  /*we don't yet pre-populate this in the constructor with N velma ids because
-  . the value of N depends on simulation results */
-  std::multimap<int64_t, cache_block_t&> velma_ids_linerefs;
-  
-
-
-  //////////////////////    VELMA METHODS /////////////////////////////////////
-
-
-  unsigned clear_expired_velma_ids(std::vector<velma_id_t> expired){
-      unsigned released = 0;
-      velma_ids_linerefs.erase(-1); 
-      for (velma_id_t exp : expired){
-        released += release_velma_id_lines(exp);
-      }
-      return released; 
-    }
-
-
-
-  //returns count of relinquished lines 
-  unsigned release_velma_id_lines(velma_id_t expired_velma_id){
-    //traverse multimap, clearing the velma_ids that correspond to the expired one. 
-    for (auto& v_id_lineref : velma_ids_linerefs){
-      if (v_id_lineref.first == expired_velma_id){ 
-        v_id_lineref.second.clear_velma_id(); 
-      }
-    }
-    //now we get rid of that velma_id in our multimap. 
-    unsigned num_lines_released = velma_ids_linerefs.erase(expired_velma_id);
-    return num_lines_released; 
-  }
-
   /* The scheduler figures out the mapping between velma_ids, PCs, and warp clusters, then  
    * calls this to label the appropriate line with the velma_id in question. 
    */

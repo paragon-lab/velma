@@ -13,8 +13,10 @@
 #include <utility>
 #include <vector>
 #include <iostream>
+//#include "shader.h"
 
-
+//forward declaration (to???) gpu-cache
+class tag_array;
 
 #define VELMA_WARPCLUSTER_SIZE 4
 //result from old histogramming. 
@@ -119,10 +121,10 @@ enum velma_status {
     VELMA_ACTIVE_REACHED
   };
 
-class tag_array;
 
 class velma_table_t{
   friend class velma_scheduler; 
+  friend class lrr_velma_table_scheduler;
   friend class tag_array;
 
   velma_table_t(){}

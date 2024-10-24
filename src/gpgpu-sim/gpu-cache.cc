@@ -39,7 +39,6 @@
 // used to allocate memory that is large enough to adapt the changes in cache
 // size across kernels
 
-std::set<velma_id_t> just_expired_velma_ids = {};
 
 
 const char *cache_request_status_str(enum cache_request_status status) {

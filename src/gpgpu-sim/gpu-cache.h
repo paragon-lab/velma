@@ -40,18 +40,20 @@
 #include "gpu-misc.h"
 #include "mem_fetch.h"
 //#include <numeric_limits>
-
 #include <iostream>
 #include "addrdec.h"
+//#include "shader.h"
 
 #define MAX_DEFAULT_CACHE_SIZE_MULTIBLIER 4
-#define VELMA_WARPCLUSTER_SIZE 8
 
-//forward declaration to shader.
+//forward declarations to shader.
+class velma_table_t;
 class velma_scheduler;
+class lrr_velma_table_scheduler;
+
+//velmaa types 
 using velma_id_t = int64_t; 
 
-extern std::set<velma_id_t> just_expired_velma_ids; 
 
 enum cache_block_state { INVALID = 0, RESERVED, VALID, MODIFIED };
 
@@ -986,10 +988,10 @@ class l2_cache_config : public cache_config {
   linear_to_raw_address_translation *m_address_mapping;
 };
 
-class velma_table_t;
 class tag_array {
  public:
   friend class velma_scheduler;
+  friend class lrr_velma_table_scheduler;
   friend class velma_table_t;
 
   //WE CALL THIS CONSTRUCTOR TO BUILD A TAG ARRAY.

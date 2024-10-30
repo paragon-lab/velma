@@ -1813,8 +1813,6 @@ class l2_cache : public data_cache {
 
   virtual ~l2_cache() {}
   
-  //have this tag array assigned to all the velma tables' l2 
-  //void announce_self_to_velma();
 
   virtual enum cache_request_status access(new_addr_type addr, mem_fetch *mf,
                                            unsigned time,

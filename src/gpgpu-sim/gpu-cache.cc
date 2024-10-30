@@ -1854,31 +1854,12 @@ enum cache_request_status l2_cache::access(new_addr_type addr, mem_fetch *mf,
   return data_cache::access(addr, mf, time, events);
 }
 
-/*
-//traverses the shader_core_ctx list, writing l2 tag array pointers to 
-//each velma_table. This is how we enable communication between the velma_tables and L2. 
-void l2_cache::announce_self_to_velma(){
-  for (simt_core_cluster* simt_cluster : gpu->getSIMTClusters()){
-    shader_core_ctx** core_contexts = simt_cluster->get_core_contexts(); 
-    for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; i++) {
-      std::vector<scheduler_unit*> schedulers = core_contexts[i]->get_schedulers();
-      //now, write a pointer to this l2 to the velma table for each scheduler 
-      for (scheduler_unit* sched : schedulers){
-        sched->velma_table.add_l2_link(this);
-      }
-    }
-  }
-}
-*/
 
 l2_cache::l2_cache(const char *name, cache_config &config, int core_id, int type_id,
                   mem_fetch_interface *memport, mem_fetch_allocator *mfcreator,
                   enum mem_fetch_status status, class gpgpu_sim *gpu)
                   : data_cache(name, config, core_id, type_id, memport, 
                               mfcreator, status, L2_WR_ALLOC_R, L2_WRBK_ACC, gpu){
-  //if (config.m_replacement_policy == VELRU){ 
-  //  announce_self_to_velma();
-  //}
 }
 
 

@@ -21,7 +21,7 @@
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SeECIAL, EXEMPLARY, OR
 // CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
 // SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 // INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
@@ -43,7 +43,6 @@
 #include "gpu-cache.h"
 #include "l2cache.h"
 #include "shader.h"
-#include "velma.h"
 
 // constants for statistics printouts
 #define GPU_RSTAT_SHD_INFO 0x1
@@ -515,9 +514,7 @@ class watchpoint_event {
   const ptx_thread_info *m_thread;
   const ptx_instruction *m_inst;
 };
-class velma_table_t;
 class gpgpu_sim : public gpgpu_t {
-  friend class velma_table_t;
  public:
   gpgpu_sim(const gpgpu_sim_config &config, gpgpu_context *ctx);
 

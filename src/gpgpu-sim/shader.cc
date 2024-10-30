@@ -2363,6 +2363,9 @@ void ldst_unit::fill(mem_fetch *mf) {
 void ldst_unit::flush() {
   // Flush L1D cache
   m_L1D->flush();
+  // Flush velma table if using velma caching 
+  if (m_L1D->m_replacement_policy == VELRU and m_L1D->velma_table != nullptr)
+    m_L1D->m_tag_array->velma_table->flush();
 }
 
 void ldst_unit::invalidate() {

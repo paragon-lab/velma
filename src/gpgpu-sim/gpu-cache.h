@@ -993,6 +993,7 @@ class tag_array {
   friend class velma_scheduler;
   friend class lrr_velma_table_scheduler;
   friend class velma_table_t;
+  friend class ldst_unit;
 
   //WE CALL THIS CONSTRUCTOR TO BUILD A TAG ARRAY.
   //IT TAKES AS AN ARGUMENT A CACHE_CONFIG. 

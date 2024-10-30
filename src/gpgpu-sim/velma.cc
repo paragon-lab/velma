@@ -338,12 +338,14 @@ void velma_table_t::cycle(){
   else {
     //now change the active velma_id. 
     active_velma_id = active_wc->get_active_velma_id();
-    //have the tag array label all the lines for this cycle. 
+    //have this shader's l1 tag array and all the l2 tag arrays label all the lines for this cycle. 
     for (auto&  id_addr : cycle_accumulated_vids_addrs){
       if (tag_arr != nullptr) tag_arr->label_velma_line(id_addr.first, id_addr.second);
+      
+      for (tag_array* l2_tag_arr : l2_tag_arrays){
+        if (l2_tag_arr != nullptr) l2_tag_arr->label_velma_line(id_addr.first, id_addr.second);
+      }
     }
-
-    //TODO: have the l2 tag array lavel all the lines for this cycle 
   }
     
   cycle_accumulated_vids_addrs.clear();

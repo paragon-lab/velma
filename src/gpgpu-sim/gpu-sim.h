@@ -41,7 +41,9 @@
 #include "../trace.h"
 #include "addrdec.h"
 #include "gpu-cache.h"
+#include "l2cache.h"
 #include "shader.h"
+#include "velma.h"
 
 // constants for statistics printouts
 #define GPU_RSTAT_SHD_INFO 0x1
@@ -513,8 +515,9 @@ class watchpoint_event {
   const ptx_thread_info *m_thread;
   const ptx_instruction *m_inst;
 };
-
+class velma_table_t;
 class gpgpu_sim : public gpgpu_t {
+  friend class velma_table_t;
  public:
   gpgpu_sim(const gpgpu_sim_config &config, gpgpu_context *ctx);
 
@@ -595,7 +598,11 @@ class gpgpu_sim : public gpgpu_t {
    * Returning the cluster of of the shader core, used by the functional
    * simulation so far
    */
-  simt_core_cluster *getSIMTCluster();
+  simt_core_cluster* getSIMTCluster();
+
+
+  std::pair<memory_sub_partition**, int> getSubPartitions();
+
 
   void hit_watchpoint(unsigned watchpoint_num, ptx_thread_info *thd,
                       const ptx_instruction *pI);

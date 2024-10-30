@@ -2652,6 +2652,7 @@ class shader_core_ctx : public core_t {
   bool occupy_shader_resource_1block(kernel_info_t &kernel, bool occupy);
   void release_shader_resource_1block(unsigned hw_ctaid, kernel_info_t &kernel);
   int find_available_hwtid(unsigned int cta_size, bool occupy);
+  std::vector<scheduler_unit*> get_schedulers(){return schedulers;}
 
  private:
   unsigned int m_occupied_n_threads;
@@ -2727,6 +2728,7 @@ class simt_core_cluster {
   unsigned get_n_active_cta() const;
   unsigned get_n_active_sms() const;
   gpgpu_sim *get_gpu() { return m_gpu; }
+  shader_core_ctx** get_core_contexts(){ return m_core;}
 
   void display_pipeline(unsigned sid, FILE *fout, int print_mem, int mask);
   void print_cache_stats(FILE *fp, unsigned &dl1_accesses,
@@ -2749,7 +2751,7 @@ class simt_core_cluster {
   const shader_core_config *m_config;
   shader_core_stats *m_stats;
   memory_stats_t *m_memory_stats;
-  shader_core_ctx **m_core;
+  shader_core_ctx **m_core; //this is an array of shader_core_ctx.
   const memory_config *m_mem_config;
 
   unsigned m_cta_issue_next_core;

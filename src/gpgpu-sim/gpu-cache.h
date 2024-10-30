@@ -1088,6 +1088,10 @@ class tag_array {
     }
   }
 
+  void clear_velma_id(new_addr_type lineaddr){
+    label_velma_line(-1, lineaddr); 
+  }
+
 
   /* The scheduler figures out the mapping between velma_ids, PCs, and warp clusters, then  
    * calls this to label the appropriate line with the velma_id in question. 
@@ -1805,11 +1809,12 @@ class l2_cache : public data_cache {
  public:
   l2_cache(const char *name, cache_config &config, int core_id, int type_id,
            mem_fetch_interface *memport, mem_fetch_allocator *mfcreator,
-           enum mem_fetch_status status, class gpgpu_sim *gpu)
-      : data_cache(name, config, core_id, type_id, memport, mfcreator, status,
-                   L2_WR_ALLOC_R, L2_WRBK_ACC, gpu) {}
+           enum mem_fetch_status status, class gpgpu_sim *gpu);
 
   virtual ~l2_cache() {}
+  
+  //have this tag array assigned to all the velma tables' l2 
+  //void announce_self_to_velma();
 
   virtual enum cache_request_status access(new_addr_type addr, mem_fetch *mf,
                                            unsigned time,

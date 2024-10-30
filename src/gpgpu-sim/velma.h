@@ -118,11 +118,15 @@ enum velma_status {
     VELMA_ACTIVE_REACHED
   };
 
-
+class gpgpu_sim;
+class l2_cache;
 class velma_table_t{
   friend class velma_scheduler; 
   friend class lrr_velma_table_scheduler;
   friend class tag_array;
+  
+  gpgpu_sim* gpu;
+  
 
   velma_table_t(){}
 
@@ -140,10 +144,11 @@ class velma_table_t{
   warpcluster_entry_t* active_wc = nullptr; 
   velma_id_t active_velma_id = -1;
   
+  //pointer to the tag array for this shader's L1
   tag_array* tag_arr = nullptr; 
-
-  
-
+  //array of pointers to tag_arrays for our global L2 
+  std::set<tag_array*> l2_tag_arrays;
+  void add_l2_links();
 
   bool free_velma_id(velma_id_t vid);
   velma_id_t get_free_velma_id();
@@ -169,7 +174,8 @@ class velma_table_t{
 
   bool warp_unmarked_for_active_vid(warp_id_t wid);
 
-  void set_tag_array(tag_array* tag_arr); 
+  void set_l1_tag_array(tag_array* tag_arr); 
+  void set_L2_tag_array(); 
 
   
   velma_status determine_warp_status(warp_id_t wid);

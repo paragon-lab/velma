@@ -1,8 +1,11 @@
 #include "velma.h"
+#include "gpu-sim.h"
 #include "gpu-cache.h"
+#include "l2cache.h"
 /*#include "../abstract_hardware_model.h"
 #include "addrdec.h"
 #include "dram.h"
+#include "l2cache.h"
 #include "shader_trace.h"
 */
 
@@ -339,6 +342,8 @@ void velma_table_t::cycle(){
     for (auto&  id_addr : cycle_accumulated_vids_addrs){
       if (tag_arr != nullptr) tag_arr->label_velma_line(id_addr.first, id_addr.second);
     }
+
+    //TODO: have the l2 tag array lavel all the lines for this cycle 
   }
     
   cycle_accumulated_vids_addrs.clear();
@@ -413,9 +418,17 @@ velma_table_t::velma_table_t(int num_velma_ids){
   }
 }
 
+void velma_table_t::add_l2_links(){
+  //first, pointer to memory subpartition array 
+  std::pair<memory_sub_partition**, int> sub_partitions = gpu->getSubPartitions();
+  for (int x = 0; x < sub_partitions.second; x++){
+    l2_cache* an_l2 = sub_partitions.first[x]->get_l2();
+    tag_array* l2_tagarr = an_l2->m_tag_array;
+    l2_tag_arrays.insert(l2_tagarr);
+  }
+}
 
-
-void velma_table_t::set_tag_array(tag_array* tag_arr_){
+void velma_table_t::set_l1_tag_array(tag_array* tag_arr_){
   tag_arr = tag_arr_;
   if (tag_arr != nullptr) tag_arr->velma_table = this;
 }
@@ -499,3 +512,8 @@ void velma_table_t::charge_timer(warp_id_t wid, velma_pc_t pc){
   if (wc->velma_entries.empty()) return;
   wc->velma_entries.begin()->charge_timer();
 }
+
+void velma_table_t::add_l2_link(l2_cache* l2){
+  l2_tag_arrays.insert(l2->m_tag_array);
+}
+

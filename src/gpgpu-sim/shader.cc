@@ -4854,8 +4854,6 @@ void velma_scheduler::cycle(){
   l1_cache* mL1D = ldstu->m_L1D;
   tag_array* tagarr = mL1D->m_tag_array;
   
-  //l2_cache* mL2D = ldstu->m_L2D;
-  //tag_array* tagarr = mL1D->m_tag_array;
 
   if (velma_table.tag_arr == nullptr){
     velma_table.set_tag_array(tagarr); 
@@ -4976,9 +4974,6 @@ void velma_scheduler::cycle(){
                 for (new_addr_type lineaddr : pI_lineaddrs){
                   velma_addr_t vaddr = static_cast<velma_addr_t>(lineaddr);
                   if (access_vid != -1) velma_table.record_line_access(access_vid, vaddr);
-                  //printf("velma addr in scheduler!\n");
-                  //std::cout << "velma addr in scheduler!\n";
-                  //fprintf(stderr, "velma addr in scheduler!\n");
 
                 ////////////////   VELMA TIMEOUT CHARGING //////////////////////////////////   
                 velma_table.charge_timer(warp_id, pc);
@@ -5334,17 +5329,6 @@ void lrr_velma_table_scheduler::cycle(){
                              // waiting for pending register writes
   bool issued_inst = false;  // of these we issued one
   
-  class shader_core_ctx* tshader = this->m_shader;
-  class ldst_unit* ldstu = tshader->m_ldst_unit;
-  l1_cache* mL1D = ldstu->m_L1D;
-  tag_array* tagarr = mL1D->m_tag_array;
-  
-
-  if (velma_table.tag_arr == nullptr){
-    velma_table.set_tag_array(tagarr); 
-  }
-
-
   order_warps();
   for (std::vector<shd_warp_t *>::const_iterator iter =
            m_next_cycle_prioritized_warps.begin();

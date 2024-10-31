@@ -371,7 +371,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
   } 
   else if (velma_valid_line != (unsigned)-1 and m_config.m_replacement_policy == VELRU){
     idx = velma_valid_line; 
-    cache_block_t *line = m_lines[idx];
+    cache_block_t* line = m_lines[idx];
     line->clear_velma_id();
   }
   else abort(); // if an unreserved block exists, it MUST be 
@@ -1203,6 +1203,10 @@ void baseline_cache::display_state(FILE *fp) const {
 
 tag_array* l2_cache::get_tag_array(){
   return m_tag_array;
+}
+
+enum replacement_policy_t baseline_cache::get_replacement_policy(){
+  return m_config.m_replacement_policy;
 }
 
 /// Read miss handler without writeback

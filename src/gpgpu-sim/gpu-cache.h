@@ -1390,6 +1390,8 @@ class baseline_cache : public cache_t {
 
   virtual ~baseline_cache() { delete m_tag_array; }
 
+  enum replacement_policy_t get_replacement_policy();
+
   void update_cache_parameters(cache_config &config) {
     m_config = config;
     m_tag_array->update_cache_parameters(config);

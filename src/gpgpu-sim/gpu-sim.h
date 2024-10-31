@@ -732,6 +732,7 @@ class exec_gpgpu_sim : public gpgpu_sim {
  public:
   exec_gpgpu_sim(const gpgpu_sim_config &config, gpgpu_context *ctx)
       : gpgpu_sim(config, ctx) {
+    //this gets called after subpartition creation! 
     createSIMTCluster();
   }
 

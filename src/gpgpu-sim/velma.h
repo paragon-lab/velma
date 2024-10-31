@@ -130,10 +130,10 @@ class velma_table_t{
 
 
   //velma_table_t(tag_array* tag_arr_, int num_velma_ids);
-  velma_table_t(gpgpu_sim* gpu_, int num_velma_ids);
+  velma_table_t(gpgpu_sim* gpu_, int num_velma_ids); 
 
   velma_table_t(){}
-  ~velma_table_t(){}
+  ~velma_table_t();
 
   std::multimap<velma_id_t, velma_addr_t> cycle_accumulated_vids_addrs;
   

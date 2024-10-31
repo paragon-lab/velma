@@ -35,7 +35,6 @@
 #include "../abstract_hardware_model.h"
 #include "dram.h"
 #include "gpu-cache.h"
-#include "velma.h"
 
 #include <list>
 #include <queue>

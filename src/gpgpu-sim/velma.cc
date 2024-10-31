@@ -419,6 +419,7 @@ velma_table_t::velma_table_t(gpgpu_sim* gpu_, int num_velma_ids){
     velma_ids_flags.insert({static_cast<velma_id_t>(i), true});
   }
   gpu = gpu_;
+  add_l2_links();
 }
 
 void velma_table_t::add_l2_links(){
@@ -437,6 +438,9 @@ void velma_table_t::set_l1_tag_array(tag_array* tag_arr_){
   if (tag_arr != nullptr) tag_arr->velma_table = this; 
 }
 
+velma_table_t::~velma_table_t(){
+  if (tag_arr != nullptr) tag_arr->velma_table = nullptr;
+}
 
 
 velma_status velma_table_t::determine_warp_status(warp_id_t wid){

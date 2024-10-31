@@ -2364,7 +2364,7 @@ void ldst_unit::flush() {
   // Flush L1D cache
   m_L1D->flush();
   // Flush velma table if using velma caching 
-  if (m_L1D->m_replacement_policy == VELRU and m_L1D->velma_table != nullptr)
+  if (m_L1D->m_config.m_replacement_policy == VELRU and m_L1D->m_tag_array->velma_table != nullptr)
     m_L1D->m_tag_array->velma_table->flush();
 }
 
@@ -4859,7 +4859,7 @@ void velma_scheduler::cycle(){
   
 
   if (velma_table.tag_arr == nullptr){
-    velma_table.set_tag_array(tagarr); 
+    velma_table.set_l1_tag_array(tagarr); 
   }
 
 
@@ -5305,7 +5305,7 @@ velma_scheduler::velma_scheduler(shader_core_stats *stats, shader_core_ctx *shad
     : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out, sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
 { 
   //construct velma_table 
-  velma_table = velma_table_t(MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS);
+  velma_table = velma_table_t(shader->m_gpu, MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS);
 }
 
 lrr_velma_table_scheduler::lrr_velma_table_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
@@ -5318,7 +5318,7 @@ lrr_velma_table_scheduler::lrr_velma_table_scheduler(shader_core_stats *stats, s
     : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out, sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
 { 
   //construct velma_table 
-  velma_table = velma_table_t(MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS);
+  velma_table = velma_table_t(shader->m_gpu, MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS);
 }
 
 

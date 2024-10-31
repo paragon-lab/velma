@@ -34,6 +34,7 @@
 
 #include "../abstract_hardware_model.h"
 #include "dram.h"
+#include "gpu-cache.h"
 #include "velma.h"
 
 #include <list>
@@ -159,7 +160,6 @@ class memory_partition_unit {
   class gpgpu_sim *m_gpu;
 };
 
-class velma_table_t;
 class memory_sub_partition {
  public:
   memory_sub_partition(unsigned sub_partition_id, const memory_config *config,
@@ -239,7 +239,6 @@ class memory_sub_partition {
   std::set<mem_fetch *> m_request_tracker;
 
   friend class L2interface;
-  friend class velma_table_t;
 
   std::vector<mem_fetch *> breakdown_request_to_sector_requests(mem_fetch *mf);
 

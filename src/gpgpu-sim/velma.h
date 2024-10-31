@@ -125,15 +125,14 @@ class velma_table_t{
   friend class lrr_velma_table_scheduler;
   friend class tag_array;
   
-  gpgpu_sim* gpu;
+  gpgpu_sim* gpu = nullptr;
   
 
-  velma_table_t(){}
 
   //velma_table_t(tag_array* tag_arr_, int num_velma_ids);
-  velma_table_t(int num_velma_ids);
+  velma_table_t(gpgpu_sim* gpu_, int num_velma_ids);
 
-
+  velma_table_t(){}
   ~velma_table_t(){}
 
   std::multimap<velma_id_t, velma_addr_t> cycle_accumulated_vids_addrs;

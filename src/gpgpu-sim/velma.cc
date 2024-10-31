@@ -148,14 +148,14 @@ velma_id_t warpcluster_entry_t::remove_dead_entry(velma_id_t vid){
 //////////////////////////////////////////////////
 
 bool velma_table_t::free_velma_id(velma_id_t vid){
-  bool insertion_completed = false;
+  bool freed = false;
   if (vid != -1){
     assert(velma_ids_flags.find(vid) != velma_ids_flags.end());
     assert(velma_ids_flags[vid] == false); //should not duplicate frees 
     velma_ids_flags[vid] = true; 
-    insertion_completed = true;
+    freed = true;
   }
-  return insertion_completed;
+  return freed;
 }
 
 //looks for a free velma_id. that's it. 
@@ -413,26 +413,28 @@ bool velma_table_t::warp_unmarked_for_active_vid(warp_id_t wid){
 }
 
 
-velma_table_t::velma_table_t(int num_velma_ids){
+velma_table_t::velma_table_t(gpgpu_sim* gpu_, int num_velma_ids){
   //populate velma id table 
   for (int i = 0; i < num_velma_ids; i++){
     velma_ids_flags.insert({static_cast<velma_id_t>(i), true});
   }
+  gpu = gpu_;
 }
 
 void velma_table_t::add_l2_links(){
   //first, pointer to memory subpartition array 
+  if (gpu == nullptr) return;
   std::pair<memory_sub_partition**, int> sub_partitions = gpu->getSubPartitions();
   for (int x = 0; x < sub_partitions.second; x++){
     l2_cache* an_l2 = sub_partitions.first[x]->get_l2();
-    tag_array* l2_tagarr = an_l2->m_tag_array;
+    tag_array* l2_tagarr = an_l2->get_tag_array();
     l2_tag_arrays.insert(l2_tagarr);
   }
 }
 
 void velma_table_t::set_l1_tag_array(tag_array* tag_arr_){
   tag_arr = tag_arr_;
-  if (tag_arr != nullptr) tag_arr->velma_table = this;
+  if (tag_arr != nullptr) tag_arr->velma_table = this; 
 }
 
 
@@ -515,7 +517,4 @@ void velma_table_t::charge_timer(warp_id_t wid, velma_pc_t pc){
   wc->velma_entries.begin()->charge_timer();
 }
 
-void velma_table_t::add_l2_link(l2_cache* l2){
-  l2_tag_arrays.insert(l2->m_tag_array);
-}
 

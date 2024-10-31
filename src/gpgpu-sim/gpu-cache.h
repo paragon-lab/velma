@@ -891,6 +891,7 @@ class cache_config {
 
 
   ////////////////// VELMA STUFF ///////////////////////////// 
+  enum replacement_policy_t m_replacement_policy;  // 'L' = LRU, 'F' = FIFO
 
  protected:
   void exit_parse_error() {
@@ -911,7 +912,6 @@ class cache_config {
   unsigned original_m_assoc;
   bool m_is_streaming;
 
-  enum replacement_policy_t m_replacement_policy;  // 'L' = LRU, 'F' = FIFO
   enum write_policy_t
       m_write_policy;  // 'T' = write through, 'B' = write back, 'R' = read only
   enum allocation_policy_t
@@ -995,11 +995,6 @@ class tag_array {
   friend class velma_table_t;
   friend class ldst_unit;
 
-  //WE CALL THIS CONSTRUCTOR TO BUILD A TAG ARRAY.
-  //IT TAKES AS AN ARGUMENT A CACHE_CONFIG. 
-  //BY ALTERING THE CACHE_CONFIG, WE CAN HAVE THE TAG ARRAY CONFIGURED 
-  //WITH VELMA FUNCTIONALITY 
-  // Use this constructor
   tag_array(cache_config &config, int core_id, int type_id);
   ~tag_array();
 
@@ -1074,7 +1069,7 @@ class tag_array {
   typedef tr1_hash_map<new_addr_type, unsigned> line_table;
   line_table pending_lines;
 
-  velma_table_t* velma_table = nullptr; 
+  velma_table_t* velma_table = nullptr;   
 
  public:
 
@@ -1474,9 +1469,9 @@ class baseline_cache : public cache_t {
 
  protected:
   std::string m_name;
-  cache_config &m_config;
  public:
-  tag_array *m_tag_array; //public for velma 
+  tag_array* m_tag_array; //public for velma 
+  cache_config &m_config;
  protected:
   mshr_table m_mshrs;
   std::list<mem_fetch *> m_miss_queue;
@@ -1814,6 +1809,7 @@ class l2_cache : public data_cache {
 
   virtual ~l2_cache() {}
   
+  tag_array* get_tag_array();
 
   virtual enum cache_request_status access(new_addr_type addr, mem_fetch *mf,
                                            unsigned time,

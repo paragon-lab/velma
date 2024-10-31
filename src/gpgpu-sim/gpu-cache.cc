@@ -513,14 +513,10 @@ void tag_array::flush() {
     if (m_lines[i]->is_modified_line()) {
       for (unsigned j = 0; j < SECTOR_CHUNCK_SIZE; j++) {
         m_lines[i]->set_status(INVALID, mem_access_sector_mask_t().set(j));
+        m_lines[i]->clear_velma_id();
       }
     }
-  //note: moved velma table flushing to ldst_unit, so we only flush velma on L1 flushes. 
-  //if (velma_table != nullptr){
-  //  velma_table->flush();
-  //}
-
-
+  
   m_dirty = 0;
   is_used = false;
 }
@@ -529,8 +525,10 @@ void tag_array::invalidate() {
   if (!is_used) return;
 
   for (unsigned i = 0; i < m_config.get_num_lines(); i++)
-    for (unsigned j = 0; j < SECTOR_CHUNCK_SIZE; j++)
+    for (unsigned j = 0; j < SECTOR_CHUNCK_SIZE; j++){
       m_lines[i]->set_status(INVALID, mem_access_sector_mask_t().set(j));
+      m_lines[i]->clear_velma_id();
+    }
 
   m_dirty = 0;
   is_used = false;
@@ -1201,6 +1199,10 @@ void baseline_cache::display_state(FILE *fp) const {
   fprintf(fp, "Cache %s:\n", m_name.c_str());
   m_mshrs.display(fp);
   fprintf(fp, "\n");
+}
+
+tag_array* l2_cache::get_tag_array(){
+  return m_tag_array;
 }
 
 /// Read miss handler without writeback

@@ -422,8 +422,7 @@ l2_cache* memory_sub_partition::get_l2(){
   return m_L2cache;
 }
 
-//VELMA FIND 
-//memory_sub_partition.m_gpu->get_SIMTCluster()->
+
 memory_sub_partition::memory_sub_partition(unsigned sub_partition_id,
                                            const memory_config *config,
                                            class memory_stats_t *stats,

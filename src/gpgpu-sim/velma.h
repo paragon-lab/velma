@@ -120,17 +120,20 @@ enum velma_status {
 
 class gpgpu_sim;
 class l2_cache;
+class shader_core_ctx;
 class velma_table_t{
   friend class velma_scheduler; 
   friend class lrr_velma_table_scheduler;
   friend class tag_array;
   
+  shader_core_ctx* shader_ctx = nullptr; 
   gpgpu_sim* gpu = nullptr;
   
-
+  bool l1_velru;
+  bool l2_velru;
 
   //velma_table_t(tag_array* tag_arr_, int num_velma_ids);
-  velma_table_t(gpgpu_sim* gpu_, int num_velma_ids); 
+  velma_table_t(shader_core_ctx* shader_ctx, int num_velma_ids, bool l1_velru, bool l2_velru); 
 
   velma_table_t(){}
   ~velma_table_t();

@@ -5305,7 +5305,7 @@ velma_scheduler::velma_scheduler(shader_core_stats *stats, shader_core_ctx *shad
     : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out, sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
 { 
   //construct velma_table 
-  velma_table = velma_table_t(shader->m_gpu, MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS);
+  velma_table = velma_table_t(shader, MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS, true, false);
 }
 
 lrr_velma_table_scheduler::lrr_velma_table_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
@@ -5318,7 +5318,7 @@ lrr_velma_table_scheduler::lrr_velma_table_scheduler(shader_core_stats *stats, s
     : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out, sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
 { 
   //construct velma_table 
-  velma_table = velma_table_t(shader->m_gpu, MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS);
+  velma_table = velma_table_t(shader, MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS, false, false);
 }
 
 

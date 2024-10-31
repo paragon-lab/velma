@@ -6,6 +6,7 @@
 #include "addrdec.h"
 #include "dram.h"
 #include "l2cache.h"
+#include "shader.h"
 #include "shader_trace.h"
 */
 
@@ -340,7 +341,7 @@ void velma_table_t::cycle(){
     active_velma_id = active_wc->get_active_velma_id();
     //have this shader's l1 tag array and all the l2 tag arrays label all the lines for this cycle. 
     for (auto&  id_addr : cycle_accumulated_vids_addrs){
-      if (tag_arr != nullptr) tag_arr->label_velma_line(id_addr.first, id_addr.second);
+      if (tag_arr != nullptr and l1_velru) tag_arr->label_velma_line(id_addr.first, id_addr.second);
       
       for (tag_array* l2_tag_arr : l2_tag_arrays){
         if (l2_tag_arr != nullptr) l2_tag_arr->label_velma_line(id_addr.first, id_addr.second);
@@ -413,13 +414,20 @@ bool velma_table_t::warp_unmarked_for_active_vid(warp_id_t wid){
 }
 
 
-velma_table_t::velma_table_t(gpgpu_sim* gpu_, int num_velma_ids){
+velma_table_t::velma_table_t(shader_core_ctx* shader_ctx, int num_velma_ids, bool l1_velru, bool l2_velru){
   //populate velma id table 
   for (int i = 0; i < num_velma_ids; i++){
     velma_ids_flags.insert({static_cast<velma_id_t>(i), true});
   }
-  gpu = gpu_;
-  add_l2_links();
+  gpu = shader_ctx->get_gpu();
+  l1_velru = l1_velru;
+  l2_velru = l2_velru;
+  if (l1_velru){ 
+    tag_array* tagarr = shader_ctx->m_ldst_unit->m_L1D->m_tag_array;
+    set_l1_tag_array(tagarr);
+  } else set_l1_tag_array(nullptr);
+
+  if (l2_velru) add_l2_links();
 }
 
 void velma_table_t::add_l2_links(){

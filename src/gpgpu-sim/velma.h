@@ -129,11 +129,15 @@ class velma_table_t{
   shader_core_ctx* shader_ctx = nullptr; 
   gpgpu_sim* gpu = nullptr;
   
-  bool l1_velru;
-  bool l2_velru;
+  bool l1_velru = false;
+  bool l2_velru = false;
+  bool velma_rr = false;
+  
+
 
   //velma_table_t(tag_array* tag_arr_, int num_velma_ids);
-  velma_table_t(shader_core_ctx* shader_ctx, int num_velma_ids, bool l1_velru, bool l2_velru); 
+  velma_table_t(shader_core_ctx* shader_ctx, int num_velma_ids, 
+                bool velma_rr, bool l1_velru, bool l2_velru); 
 
   velma_table_t(){}
   ~velma_table_t();

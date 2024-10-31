@@ -413,8 +413,9 @@ bool velma_table_t::warp_unmarked_for_active_vid(warp_id_t wid){
   return !(awc->velma_entries.begin()->has_warp_reached(wid));
 }
 
-
-velma_table_t::velma_table_t(shader_core_ctx* shader_ctx, int num_velma_ids, bool l1_velru, bool l2_velru){
+//TODO: change this so that velma_rr, l1_velru, and l2_velru are deduced BY THE SCHEDULER.
+velma_table_t::velma_table_t(shader_core_ctx* shader_ctx, int num_velma_ids, 
+                            bool velma_rr, bool l1_velru, bool l2_velru){
   //populate velma id table 
   for (int i = 0; i < num_velma_ids; i++){
     velma_ids_flags.insert({static_cast<velma_id_t>(i), true});

@@ -518,7 +518,7 @@ class velma_scheduler : public scheduler_unit {
                 register_set *dp_out, register_set *sfu_out,
                 register_set *int_out, register_set *tensor_core_out,
                 std::vector<register_set *> &spec_cores_out,
-                register_set *mem_out, int id);
+                register_set *mem_out, int id, bool velma_rr);
 
   virtual ~velma_scheduler() {
     //velma_table.~velma_table_t();

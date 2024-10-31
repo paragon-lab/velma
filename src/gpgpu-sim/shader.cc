@@ -4835,11 +4835,18 @@ void exec_shader_core_ctx::checkExecutionStatusAndUpdate(warp_inst_t &inst,
 //////////////////////////////////////////////////////////////////////////////////
 ///////////////////////// VELMA SCHEDULER       /////////////////////////
 //////////////////////////////////////////////////////////////
+// TODO : add bool field to velma_scheduler constructor to set if lrr or velmarr!
+// this will let us remove the lrr_velma_table_scheduler class entirely. 
 void velma_scheduler::order_warps() {
-  order_velma_lrr(m_next_cycle_prioritized_warps, m_supervised_warps,
-            m_last_supervised_issued, m_supervised_warps.size());
+  if (velma_table.velma_rr == true){
+    order_velma_lrr(m_next_cycle_prioritized_warps, m_supervised_warps,
+                    m_last_supervised_issued, m_supervised_warps.size());
+  }
+  else {
+    order_lrr(m_next_cycle_prioritized_warps, m_supervised_warps,
+                    m_last_supervised_issued, m_supervised_warps.size());
+  }
 }
-
 
 
 
@@ -5301,11 +5308,13 @@ velma_scheduler::velma_scheduler(shader_core_stats *stats, shader_core_ctx *shad
               register_set *dp_out, register_set *sfu_out,
               register_set *int_out, register_set *tensor_core_out,
               std::vector<register_set *> &spec_cores_out,
-              register_set *mem_out, int id)
+              register_set *mem_out, int id, bool velma_rr)
     : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out, sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
 { 
   //construct velma_table 
-  velma_table = velma_table_t(shader, MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS, true, false);
+  //shader->memory_config
+//TODO: change this so that velma_rr, l1_velru, and l2_velru are deduced BY THE SCHEDULER.
+  velma_table = velma_table_t(shader, MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS, velma_rr);
 }
 
 lrr_velma_table_scheduler::lrr_velma_table_scheduler(shader_core_stats *stats, shader_core_ctx *shader,

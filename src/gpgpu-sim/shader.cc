@@ -4972,6 +4972,7 @@ void velma_scheduler::cycle(){
                 velma_id_t access_vid = velma_table.record_warp_access(warp_id, pc); 
 
                 //Get a list of addresses, record the entries.
+                
                 std::set<new_addr_type> pI_lineaddrs = pI->get_lineaddrs();// = nc_pI.get_lineaddrs();
                 //std::set<velma_addr_t> vaddrs;
                 for (new_addr_type lineaddr : pI_lineaddrs){
@@ -5232,7 +5233,6 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
   }
   
 
-  //TODO: 
   //Warp vectors listed in order of priority. 
   std::vector<T> active_wc_not_reached;
   std::vector<T> velma_not_reached;
@@ -5285,13 +5285,6 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
   reordered.insert(reordered.end(), non_velma.begin(), non_velma.end());
   reordered.insert(reordered.end(), velma_reached.begin(), velma_reached.end());
   reordered.insert(reordered.end(), active_wc_reached.begin(), active_wc_reached.end());
-  //and clean up!
-  active_wc_not_reached.clear();
-  velma_not_reached.clear();
-  non_velma.clear();
-  velma_reached.clear();
-  active_wc_reached.clear(); 
-
 }
 
 

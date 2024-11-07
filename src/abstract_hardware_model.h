@@ -1138,17 +1138,6 @@ class warp_inst_t : public inst_t {
       }
     }
   }
-
-  //TODO: CONNOR VELMA NOTE USE THIS FOR ADDRESSES MAYBE 
-  std::set<new_addr_type> get_q_lineaddrs() const {
-    std::set<new_addr_type> lineaddrs;
-    for (mem_access_t axs : m_accessq){
-      new_addr_type lineaddr = axs.get_addr() & ~0x7FUL;
-      lineaddrs.insert(lineaddr);
-    }
-    return lineaddrs;
-  }
-
   struct transaction_info {
     std::bitset<4> chunks;  // bitmask: 32-byte chunks accessed
     mem_access_byte_mask_t bytes;
@@ -1226,48 +1215,22 @@ class warp_inst_t : public inst_t {
 
   new_addr_type get_line(unsigned n) const {
     if (!m_per_scalar_thread_valid) {
-      return ~0x0ULL;
+      return ~0x0;
     }
     return m_per_scalar_thread[n].memreqaddr[0] & ~0x7FUL;
   }
 
-  //TODO: next things u try 
-  //1. try making it a std::vector
-  //2. try initializing with dummy address 
-  //3. test q 
+
   std::set<new_addr_type> get_lineaddrs() const {
-    std::set<new_addr_type> lineaddrs;// = {~0x0ULL};
+    if (!m_per_scalar_thread_valid) return {};
     
-    if (m_per_scalar_thread_valid){
-      for (int tid = 0; tid < m_per_scalar_thread.size(); tid++){
-        new_addr_type addr = m_per_scalar_thread[tid].memreqaddr[0] & ~0x7FUL;
-        lineaddrs.insert(addr);
-      }
-    } 
-    //lineaddrs = get_q_lineaddrs();
-    return lineaddrs;
-  }
-
-  void get_lineaddrs(std::set<new_new_addr_type> lineaddrs) const {    
-    if (m_per_scalar_thread_valid){
-      for (int tid = 0; tid < m_per_scalar_thread.size(); tid++){
-        new_addr_type addr = m_per_scalar_thread[tid].memreqaddr[0] & ~0x7FUL;
-        lineaddrs.insert(addr);
-      }
-    } 
-  }
-
-
-
-  std::vector<new_addr_type> get_lineaddrs() const {
-    std::vector<new_addr_type> lineaddrs;// = {~0x0ULL};
-    if (m_per_scalar_thread_valid){
-      for (int tid = 0; tid < m_per_scalar_thread.size(); tid++){
-        new_addr_type addr = m_per_scalar_thread[tid].memreqaddr[0] & ~0x7FUL;
-        lineaddrs.push_back(addr);
-      }
-    } 
-    return lineaddrs;
+    std::set<new_addr_type> lineaddrs;
+    for (int i = 0; i < m_per_scalar_thread.size(); i++){
+      new_addr_type addr = m_per_scalar_thread[i].memreqaddr[0];
+      lineaddrs.insert(addr);
+    }
+    
+    return lineaddrs; 
   }
 
   /*std::set<new_addr_type> get_lineaddrs() const{

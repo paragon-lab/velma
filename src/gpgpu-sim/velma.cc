@@ -413,21 +413,20 @@ bool velma_table_t::warp_unmarked_for_active_vid(warp_id_t wid){
   return !(awc->velma_entries.begin()->has_warp_reached(wid));
 }
 
-//TODO: change this so that velma_rr, l1_velru, and l2_velru are deduced BY THE SCHEDULER.
+
+
+
 velma_table_t::velma_table_t(shader_core_ctx* shader_ctx, int num_velma_ids, 
-                            bool velma_rr, bool l1_velru, bool l2_velru){
+                            replacement_policy_t l1_replacement, 
+                            replacement_policy_t l2_replacement){
   //populate velma id table 
   for (int i = 0; i < num_velma_ids; i++){
     velma_ids_flags.insert({static_cast<velma_id_t>(i), true});
   }
   gpu = shader_ctx->get_gpu();
-  l1_velru = l1_velru;
-  l2_velru = l2_velru;
-  if (l1_velru){ 
-    tag_array* tagarr = shader_ctx->m_ldst_unit->m_L1D->m_tag_array;
-    set_l1_tag_array(tagarr);
-  } else set_l1_tag_array(nullptr);
-
+  l1_velru = l1_replacement == VELRU;
+  l2_velru = l2_replacement == VELRU;
+  //can do this now, i think.
   if (l2_velru) add_l2_links();
 }
 
@@ -506,7 +505,6 @@ void velma_table_t::clear_empty_clusters(){
 
 
 void velma_table_t::charge_timer(warp_id_t wid, velma_id_t vid){
-  //vid currently unused 
   warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;
   warpcluster_entry_t* wc = get_warpcluster(wcid);
 

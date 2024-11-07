@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 #include <iostream>
+#include "gpu-cache.h"
 //#include "shader.h"
 
 //forward declaration (to???) gpu-cache
@@ -131,13 +132,13 @@ class velma_table_t{
   
   bool l1_velru = false;
   bool l2_velru = false;
-  bool velma_rr = false;
   
 
 
   //velma_table_t(tag_array* tag_arr_, int num_velma_ids);
   velma_table_t(shader_core_ctx* shader_ctx, int num_velma_ids, 
-                bool velma_rr, bool l1_velru, bool l2_velru); 
+                replacement_policy_t l1_replacement, 
+                replacement_policy_t l2_replacement); 
 
   velma_table_t(){}
   ~velma_table_t();

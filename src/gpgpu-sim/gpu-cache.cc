@@ -266,11 +266,10 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
   unsigned invalid_line = (unsigned)-1;
   unsigned valid_line = (unsigned)-1;
   unsigned velma_valid_line = (unsigned)-1; 
-  unsigned long long valid_timestamp = (unsigned)-1;
-  unsigned long long velma_valid_timestamp = (unsigned)-1; 
+  unsigned long long valid_timestamp = (unsigned long long)-1;
+  unsigned long long velma_valid_timestamp = (unsigned long long)-1; 
 
   bool all_reserved = true;
-  bool all_nonres_velma = true;
 
   // check for hit or pending hit
   for (unsigned way = 0; way < m_config.m_assoc; way++) {
@@ -307,7 +306,6 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
 
 
     if (not line->is_reserved_line()) {
-      all_reserved = false;
       // number of dirty lines / total lines in the cache
       float dirty_line_percentage = ((float)m_dirty / (m_config.m_nset * m_config.m_assoc)) * 100;
       /* If the cacheline is from a load op (not modified),
@@ -318,7 +316,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
       */
       bool dirty_limit_hit = (dirty_line_percentage >= m_config.m_wr_percent);
       if (!line->is_modified_line() or dirty_limit_hit){
-        all_reserved = false; 
+        all_reserved = false;
         
         if (line->is_invalid_line()) {
           invalid_line = index;
@@ -347,7 +345,7 @@ enum cache_request_status tag_array::probe(new_addr_type addr, unsigned &idx,
                 velma_valid_timestamp = last_access_ts; 
                 velma_valid_line = index; 
               }
-              else if (last_access_ts < valid_timestamp){ 
+              else if (!line->is_velma_line() and last_access_ts < valid_timestamp){ 
                 valid_timestamp = last_access_ts; 
                 valid_line = index;
               }

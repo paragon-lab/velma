@@ -49,7 +49,6 @@
 //forward declarations to shader.
 class velma_table_t;
 class velma_scheduler;
-class lrr_velma_table_scheduler;
 
 //velmaa types 
 using velma_id_t = int64_t; 
@@ -991,7 +990,6 @@ class l2_cache_config : public cache_config {
 class tag_array {
  public:
   friend class velma_scheduler;
-  friend class lrr_velma_table_scheduler;
   friend class velma_table_t;
   friend class ldst_unit;
 
@@ -1079,7 +1077,6 @@ class tag_array {
 
   void clear_all_velma_ids(){
     for (int idx = 0; idx < size(); idx++){
-      cache_block_t* line = m_lines[idx];
       m_lines[idx]->clear_velma_id();
     }
   }
@@ -1472,8 +1469,8 @@ class baseline_cache : public cache_t {
  protected:
   std::string m_name;
  public:
-  tag_array* m_tag_array; //public for velma 
   cache_config &m_config;
+  tag_array* m_tag_array; //public for velma 
  protected:
   mshr_table m_mshrs;
   std::list<mem_fetch *> m_miss_queue;

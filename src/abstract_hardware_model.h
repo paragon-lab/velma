@@ -1214,7 +1214,9 @@ class warp_inst_t : public inst_t {
   }
 
   new_addr_type get_line(unsigned n) const {
-    if (m_per_scalar_thread_valid and n < m_per_scalar_thread.size()) {
+    if (m_per_scalar_thread_valid and 
+        static_cast<int32_t>(n) <= static_cast<int32_t>(m_per_scalar_thread.size()) - 1 and 
+        active(n)) {
       return m_per_scalar_thread[n].memreqaddr[0] & ~0x7FUL;
     }
 

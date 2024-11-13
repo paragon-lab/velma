@@ -1234,7 +1234,6 @@ class warp_inst_t : public inst_t {
   }
 
   /*std::set<new_addr_type> get_lineaddrs() const{
-    if (!m_per_scalar_thread_valid) return {};
     
     std::set<new_addr_type> lineaddrs;
     const active_mask_t tmask = m_warp_active_mask; //this is a std::bitset

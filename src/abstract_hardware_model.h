@@ -1208,16 +1208,19 @@ class warp_inst_t : public inst_t {
     return m_warp_active_mask[n] && m_per_scalar_thread_valid &&
            (m_per_scalar_thread[n].callback.function != NULL);
   }
+
   new_addr_type get_addr(unsigned n) const {
     assert(m_per_scalar_thread_valid);
     return m_per_scalar_thread[n].memreqaddr[0];
   }
 
   new_addr_type get_line(int n) const {
-    if (m_per_scalar_thread_valid and n <= (int)m_per_scalar_thread.size() - 1){
-          if (active(n)) {
-            return m_per_scalar_thread[n].memreqaddr[0] & ~0x7FUL;
-          }
+    if (m_per_scalar_thread_valid 
+        and !m_empty 
+        and (n <= (int)m_per_scalar_thread.size() - 1)){
+        if (active(n)) {
+          return m_per_scalar_thread[n].memreqaddr[0] & ~0x7FUL;
+        }
     }
     return ~0x0;
   }

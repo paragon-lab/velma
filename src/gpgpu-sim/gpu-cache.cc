@@ -516,7 +516,8 @@ void tag_array::flush() {
       }
     }
   if (velma_table != nullptr){
-    velma_table->flush();
+    velma_table->flush(); //forgetting to clear velma ids above may be 
+                          //*the* secret sauce. 
   }
   m_dirty = 0;
   is_used = false;

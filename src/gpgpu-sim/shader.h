@@ -199,9 +199,10 @@ class shd_warp_t {
 
   unsigned get_n_completed() const { return n_completed; }
   void set_completed(unsigned lane) {
-    assert(m_active_threads.test(lane));
-    m_active_threads.reset(lane);
-    n_completed++;
+    if(m_active_threads.test(lane)){
+      m_active_threads.reset(lane);
+      n_completed++;
+    }
   }
 
   void set_last_fetch(unsigned long long sim_cycle) {

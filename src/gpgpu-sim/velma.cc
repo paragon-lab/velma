@@ -326,10 +326,11 @@ void velma_table_t::cycle(){
     return;
   }
 
+
   //handle velma_id expirations 
   std::vector<velma_id_t> expiring_vids = evict_expiring_entries();
   free_vids(expiring_vids);
-  tag_arr->clear_expired_velma_ids(expiring_vids);    
+  if (tag_arr != nullptr and velru_l1) tag_arr->clear_expired_velma_ids(expiring_vids);    
 
   //clear empty clusters 
   clear_empty_clusters();
@@ -347,7 +348,7 @@ void velma_table_t::cycle(){
     active_velma_id = active_wc->get_active_velma_id();
     //have the tag array label all the lines for this cycle. 
     for (auto&  id_addr : cycle_accumulated_vids_addrs){
-      tag_arr->label_velma_line(id_addr.first, id_addr.second);
+      if (tag_arr != nullptr and velru_l1) tag_arr->label_velma_line(id_addr.first, id_addr.second);
     }
   }
     
@@ -416,16 +417,18 @@ bool velma_table_t::warp_unmarked_for_active_vid(warp_id_t wid){
 }
 
 
-velma_table_t::velma_table_t(int num_velma_ids){
+velma_table_t::velma_table_t(int num_velma_ids, bool velru_l1){
   //populate velma id table 
   for (int i = 0; i < num_velma_ids; i++){
     velma_ids_flags.insert({static_cast<velma_id_t>(i), true});
   }
+  velru_l1 = velru_l1;
 }
 
 
 
 void velma_table_t::set_tag_array(tag_array* tag_arr_){
+  if (!velru_l1) return;
   tag_arr = tag_arr_;
   tag_arr->velma_table = this;
 }

@@ -123,12 +123,14 @@ class tag_array;
 
 class velma_table_t{
   friend class velma_scheduler; 
+  friend class velma_nocache_scheduler;
   friend class tag_array;
+  bool velru_l1;
 
   velma_table_t(){}
 
   //velma_table_t(tag_array* tag_arr_, int num_velma_ids);
-  velma_table_t(int num_velma_ids);
+  velma_table_t(int num_velma_ids, bool velru_l1);
 
 
   ~velma_table_t(){}

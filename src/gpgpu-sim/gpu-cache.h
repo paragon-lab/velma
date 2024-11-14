@@ -989,6 +989,7 @@ class velma_table_t;
 class tag_array {
  public:
   friend class velma_scheduler;
+  friend class velru_scheduler;
   friend class velma_table_t;
 
   //WE CALL THIS CONSTRUCTOR TO BUILD A TAG ARRAY.

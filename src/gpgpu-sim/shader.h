@@ -386,6 +386,7 @@ enum concrete_scheduler {
   CONCRETE_SCHEDULER_OLDEST_FIRST,
   CONCRETE_SCHEDULER_VELMARR,
   CONCRETE_SCHEDULER_NOCACHING_VELMA,
+  CONCRETE_SCHEDULER_VELRU,
   NUM_CONCRETE_SCHEDULERS
 };
 
@@ -572,6 +573,35 @@ class velma_nocache_scheduler : public scheduler_unit {
   
   void cycle();
 };
+
+class velru_scheduler : public scheduler_unit {
+ public:
+  velma_table_t velma_table;  
+      
+  
+  velru_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
+                Scoreboard *scoreboard, simt_stack **simt,
+                std::vector<shd_warp_t *> *warp, register_set *sp_out,
+                register_set *dp_out, register_set *sfu_out,
+                register_set *int_out, register_set *tensor_core_out,
+                std::vector<register_set *> &spec_cores_out,
+                register_set *mem_out, int id);
+
+
+  virtual ~velru_scheduler() {
+    //velma_table.~velma_table_t();
+  }
+  virtual void order_warps();
+  virtual void done_adding_supervised_warps() {
+    m_last_supervised_issued = m_supervised_warps.end();
+  } 
+  
+
+  
+  void cycle();
+};
+
+
 
 
 
@@ -2115,6 +2145,7 @@ class shader_core_stats : public shader_core_stats_pod {
   friend class LooseRoundRobbinScheduler;
   friend class velma_scheduler;
   friend class velma_nocache_scheduler;
+  friend class velru_scheduler;
 };
 
 class memory_config;
@@ -2540,6 +2571,7 @@ class shader_core_ctx : public core_t {
   friend class LooseRoundRobbinScheduler;
   friend class velma_scheduler;
   friend class velma_nocache_scheduler;
+  friend class velru_scheduler;
   virtual void issue_warp(register_set &warp, const warp_inst_t *pI,
                           const active_mask_t &active_mask, unsigned warp_id,
                           unsigned sch_id);

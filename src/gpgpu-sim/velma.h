@@ -124,6 +124,7 @@ class tag_array;
 class velma_table_t{
   friend class velma_scheduler; 
   friend class velma_nocache_scheduler;
+  friend class velru_scheduler;
   friend class tag_array;
   bool velru_l1;
 

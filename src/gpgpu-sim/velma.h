@@ -126,12 +126,12 @@ class velma_table_t{
   friend class velma_nocache_scheduler;
   friend class velru_scheduler;
   friend class tag_array;
-  bool velru_l1;
 
+  public:
   velma_table_t(){}
 
   //velma_table_t(tag_array* tag_arr_, int num_velma_ids);
-  velma_table_t(int num_velma_ids, bool velru_l1);
+  velma_table_t(int num_velma_ids);
 
 
   ~velma_table_t(){}
@@ -147,7 +147,6 @@ class velma_table_t{
   tag_array* tag_arr = nullptr; 
 
   
-
 
   bool free_velma_id(velma_id_t vid);
   velma_id_t get_free_velma_id();
@@ -167,7 +166,78 @@ class velma_table_t{
 
   bool warp_active(warp_id_t wid);
 
-  void cycle();
+  virtual void cycle();
+
+  velma_id_t pop_dead_entry(warp_id_t wcid, velma_id_t vid);
+
+  bool warp_unmarked_for_active_vid(warp_id_t wid);
+
+  virtual void set_tag_array(tag_array* tag_arr); 
+
+  
+  velma_status determine_warp_status(warp_id_t wid);
+
+  
+  void free_vids(std::vector<velma_id_t> vids); 
+  bool warp_has_reached_nth_vid(int n, warp_id_t wid);
+  std::vector<velma_id_t> evict_expiring_entries();
+  void clear_empty_clusters();
+
+  void charge_timer(warp_id_t wid, velma_id_t vid);
+  void charge_timer(warp_id_t wid, velma_pc_t pc);
+
+
+  public: 
+    void flush();
+    
+};
+
+
+class nocache_velma_table_t : public velma_table_t{
+  friend class velma_scheduler; 
+  friend class velma_nocache_scheduler;
+  friend class velru_scheduler;
+  friend class tag_array;
+
+  nocache_velma_table_t() : velma_table_t(){}
+
+  //velma_table_t(tag_array* tag_arr_, int num_velma_ids);
+  nocache_velma_table_t(int num_velma_ids) : velma_table_t(num_velma_ids) {}
+
+
+  ~nocache_velma_table_t(){}
+
+  std::multimap<velma_id_t, velma_addr_t> cycle_accumulated_vids_addrs;
+  
+  std::map<warp_id_t, warpcluster_entry_t> warpclusters; 
+  std::map<velma_id_t, bool> velma_ids_flags;
+  
+  warpcluster_entry_t* active_wc = nullptr; 
+  velma_id_t active_velma_id = -1;
+  
+  tag_array* tag_arr = nullptr; 
+
+  
+
+  bool free_velma_id(velma_id_t vid);
+  velma_id_t get_free_velma_id();
+  velma_id_t find_free_velma_id();
+  void mark_velma_id_taken(velma_id_t vid);
+
+
+  velma_id_t add_velma_entry(warpcluster_entry_t* wc, velma_pc_t pc);
+  warpcluster_entry_t* add_warpcluster(warp_id_t wid);
+  velma_id_t record_warp_access(warp_id_t wid, velma_pc_t pc);
+  void record_line_access(velma_id_t vid, velma_addr_t lineaddr);                                                                  //
+
+  void set_active_warpcluster(warp_id_t wcid); 
+
+  warpcluster_entry_t* get_active_warpcluster();
+  warpcluster_entry_t* get_warpcluster(warp_id_t wcid);
+
+  bool warp_active(warp_id_t wid);
+
+  virtual void cycle();
 
   velma_id_t pop_dead_entry(warp_id_t wcid, velma_id_t vid);
 
@@ -191,6 +261,5 @@ class velma_table_t{
   public: 
     void flush();
     
-  
 };
 

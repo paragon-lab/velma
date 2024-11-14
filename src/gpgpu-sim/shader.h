@@ -542,7 +542,7 @@ class velma_scheduler : public scheduler_unit {
 
 class velma_nocache_scheduler : public scheduler_unit {
  public:
-  velma_table_t velma_table;  
+  nocache_velma_table_t velma_table;  
       
   
   velma_nocache_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
@@ -568,7 +568,6 @@ class velma_nocache_scheduler : public scheduler_unit {
                       const typename std::vector<T> 
                                         ::const_iterator &just_issued,
                       unsigned num_warps_to_add);
-
 
   
   void cycle();

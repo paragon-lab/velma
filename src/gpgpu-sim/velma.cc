@@ -348,7 +348,7 @@ void velma_table_t::cycle(){
     active_velma_id = active_wc->get_active_velma_id();
     //have the tag array label all the lines for this cycle. 
     for (auto&  id_addr : cycle_accumulated_vids_addrs){
-      if (tag_arr != nullptr and velru_l1) tag_arr->label_velma_line(id_addr.first, id_addr.second);
+      tag_arr->label_velma_line(id_addr.first, id_addr.second);
     }
   }
     
@@ -417,18 +417,16 @@ bool velma_table_t::warp_unmarked_for_active_vid(warp_id_t wid){
 }
 
 
-velma_table_t::velma_table_t(int num_velma_ids, bool velru_l1){
+velma_table_t::velma_table_t(int num_velma_ids){
   //populate velma id table 
   for (int i = 0; i < num_velma_ids; i++){
     velma_ids_flags.insert({static_cast<velma_id_t>(i), true});
   }
-  velru_l1 = velru_l1;
 }
 
 
 
 void velma_table_t::set_tag_array(tag_array* tag_arr_){
-  if (!velru_l1) return;
   tag_arr = tag_arr_;
   tag_arr->velma_table = this;
 }
@@ -513,3 +511,41 @@ void velma_table_t::charge_timer(warp_id_t wid, velma_pc_t pc){
   if (wc->velma_entries.empty()) return;
   wc->velma_entries.begin()->charge_timer();
 }
+
+//does nothing :)
+void nocache_velma_table_t::set_tag_array(tag_array* tag_arr){}
+
+
+void nocache_velma_table_t::cycle(){
+  //is the table empty? clear all the things. 
+  if (warpclusters.empty()){
+    active_wc = nullptr; 
+    active_velma_id = -1; 
+    for (auto& vid_flag : velma_ids_flags){
+      vid_flag.second = true;
+    }
+    return;
+  }
+
+  //handle velma_id expirations 
+  std::vector<velma_id_t> expiring_vids = evict_expiring_entries();
+  free_vids(expiring_vids);
+
+  //clear empty clusters 
+  clear_empty_clusters();
+  
+  //with our table entries managed, we now assess if we should change the active_wc 
+  //and/or the active_vid.
+  if (active_wc == nullptr){
+    if (warpclusters.empty()){
+      active_velma_id = -1;
+    }
+  }
+  else {
+    //now change the active velma_id. 
+    active_velma_id = active_wc->get_active_velma_id();
+    //have the tag array label all the lines for this cycle. 
+  }
+}
+
+

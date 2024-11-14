@@ -4987,9 +4987,6 @@ void velma_scheduler::cycle(){
                 for (new_addr_type lineaddr : pI_lineaddrs){
                   velma_addr_t vaddr = static_cast<velma_addr_t>(lineaddr);
                   if (access_vid != -1) velma_table.record_line_access(access_vid, vaddr);
-                  //printf("velma addr in scheduler!\n");
-                  //std::cout << "velma addr in scheduler!\n";
-                  //fprintf(stderr, "velma addr in scheduler!\n");
 
                 ////////////////   VELMA TIMEOUT CHARGING //////////////////////////////////   
                 velma_table.charge_timer(warp_id, pc);
@@ -5399,7 +5396,7 @@ velma_scheduler::velma_scheduler(shader_core_stats *stats, shader_core_ctx *shad
     : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out, sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
 { 
   //construct velma_table 
-  velma_table = velma_table_t(MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS, true);
+  velma_table = velma_table_t(MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS);
 }
 
 velma_nocache_scheduler::velma_nocache_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
@@ -5412,7 +5409,7 @@ velma_nocache_scheduler::velma_nocache_scheduler(shader_core_stats *stats, shade
     : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out, sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
 { 
   //construct velma_table 
-  velma_table = velma_table_t(MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS, false);
+  velma_table = nocache_velma_table_t(MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS);
 }
 
 velru_scheduler::velru_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
@@ -5425,7 +5422,7 @@ velru_scheduler::velru_scheduler(shader_core_stats *stats, shader_core_ctx *shad
     : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out, sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
 { 
   //construct velma_table 
-  velma_table = velma_table_t(MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS, true);
+  velma_table = velma_table_t(MAX_VELMA_IDS_PER_CLUSTER * MAX_VELMA_CLUSTERS);
 }
 
 

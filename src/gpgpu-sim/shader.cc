@@ -494,10 +494,11 @@ shader_core_ctx::shader_core_ctx(class gpgpu_sim *gpu,
                                  const memory_config *mem_config,
                                  shader_core_stats *stats)
     : core_t(gpu, NULL, config->warp_size, config->n_thread_per_shader),
-      m_barriers(this, config->max_warps_per_shader, config->max_cta_per_core,
-                 config->max_barriers_per_cta, config->warp_size),
-      m_active_warps(0),
-      m_dynamic_warp_id(0) {
+            m_barriers(this, config->max_warps_per_shader, config->max_cta_per_core,
+                      config->max_barriers_per_cta, config->warp_size),
+            m_active_warps(0),
+            m_dynamic_warp_id(0)
+            velma_table(VELMA_IDS_PER_SM){
   m_cluster = cluster;
   m_config = config;
   m_memory_config = mem_config;

@@ -505,8 +505,14 @@ void velma_table_t::charge_timer(warp_id_t wid, velma_id_t vid){
   entry->charge_timer();
 }
     
+
+/////////////////////////////////////////////////////////////////////////////////
+/////////     THIS IS THE ONE WE USE //////////////////////// 
+////////////////////////////////////////////////
+
 //get a vid from wid and pc 
 void velma_table_t::charge_timer(warp_id_t wid, velma_pc_t pc){
+  if (determine_warp_status(wid) != VELMA_NOT_REACHED) return;
   warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE; 
   warpcluster_entry_t* wc = get_warpcluster(wcid);
   

@@ -2193,7 +2193,7 @@ class shader_core_ctx : public core_t {
   //////////////   TODO: VELMA THINGS!!!
 
   // V E L M A 
-  velma_table_t velma_table(BRUH IDK WHAT GOES IN THIS CONSTRUCTOR); 
+  velma_table_t velma_table(VELMA_IDS_PER_SM); 
 
   // used by simt_core_cluster:
   // modifiers

@@ -3,6 +3,7 @@
 /*#include "../abstract_hardware_model.h"
 #include "addrdec.h"
 #include "dram.h"
+#include "shader.h"
 #include "shader_trace.h"
 */
 
@@ -231,7 +232,7 @@ velma_id_t velma_table_t::record_warp_access(warp_id_t wid, velma_pc_t pc){
   }
 
   //if we aren't tracking the warp, do we have space to?
-  if (wc == nullptr and warpclusters.size() < MAX_VELMA_CLUSTERS){
+  if (wc == nullptr and warpclusters.size() < VELMA_CLUSTERS_PER_SM){
     //we do! let's add a new warp 
     wc = add_warpcluster(wid);
   }
@@ -252,7 +253,7 @@ velma_id_t velma_table_t::record_warp_access(warp_id_t wid, velma_pc_t pc){
 velma_id_t velma_table_t::add_velma_entry(warpcluster_entry_t* wc, velma_pc_t pc){
   velma_id_t free_vid = find_free_velma_id();
   //does this warpcluster have space for a new entry? did we get a velma_id? 
-  if (free_vid > -1 and wc->velma_entries.size() < MAX_VELMA_IDS_PER_CLUSTER){
+  if (free_vid > -1 and wc->velma_entries.size() < VELMA_IDS_PER_SM / VELMA_CLUSTERS_PER_SM){ //should ==4
     //add the new entry 
     wc->add_velma_entry_to_queue(pc, free_vid);
     //since we're actually using it, mark vid as taken. 
@@ -424,6 +425,23 @@ velma_table_t::velma_table_t(int num_velma_ids){
   }
 }
 
+velma_table_t::velma_table_t(shader_core_ctx* m_shader, tag_array* m_tag_arr) 
+                                : shader(m_shader), tag_arr(m_tag_arr)
+{
+  //populate velma id table 
+  for (int i = 0; i < VELMA_IDS_PER_SM; i++){
+    velma_ids_flags.insert({static_cast<velma_id_t>(i), true});
+  }
+}
+
+/*
+velma_table_t::velma_table_t(shader_core_ctx* shader) : shader(shader){
+  //populate velma id table 
+  for (int i = 0; i < VELMA_IDS_PER_SM; i++){
+    velma_ids_flags.insert({static_cast<velma_id_t>(i), true});
+  }
+}
+*/
 
 
 void velma_table_t::set_tag_array(tag_array* tag_arr_){
@@ -486,24 +504,9 @@ void velma_table_t::clear_empty_clusters(){
 }
 
 
-nocache_velma_table_t::nocache_velma_table_t(int num_velma_ids) : velma_table_t(num_velma_ids) {}
+//nocache_velma_table_t::nocache_velma_table_t(int num_velma_ids) : velma_table_t(num_velma_ids) {}
 
 
-void velma_table_t::charge_timer(warp_id_t wid, velma_id_t vid){
-  //vid currently unused 
-  velma_entry_t* entry; 
-  warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;
-  warpcluster_entry_t* wc = get_warpcluster(wcid);
-
-  //checks to avoid crash
-  if (wc == nullptr) return;
-  if (wc->velma_entries.empty()) return;
-  if (vid == -1) return;
-  
-  //actually charging the timer 
-  entry = wc->get_velma_entry(vid);
-  entry->charge_timer();
-}
     
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -521,6 +524,11 @@ void velma_table_t::charge_timer(warp_id_t wid, velma_pc_t pc){
   wc->velma_entries.begin()->charge_timer();
 }
 
+
+
+
+
+/*
 //does nothing :)
 void nocache_velma_table_t::set_tag_array(tag_array* tag_arr){}
 
@@ -557,4 +565,5 @@ void nocache_velma_table_t::cycle(){
   }
 }
 
+*/
 

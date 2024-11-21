@@ -13,16 +13,16 @@
 #include <utility>
 #include <vector>
 #include <iostream>
+#include "shader.h"
 
 
 
 #define VELMA_WARPCLUSTER_SIZE 8
-#define VELMA_IDS_PER_SM 64 
+#define VELMA_IDS_PER_SM 64  
 #define VELMA_CLUSTERS_PER_SM 16
 //result from old histogramming. 
 #define VELMA_KILLTIMER_START 256
 //#define MAX_VELMA_IDS_PER_CLUSTER 4
-//#define MAX_VELMA_CLUSTERS 4
 
 
 using velma_id_t = int64_t; 
@@ -122,7 +122,7 @@ enum velma_status {
   };
 
 class tag_array;
-
+class shader_core_ctx;
 class velma_table_t{
   friend class velma_scheduler; 
   friend class velma_nocache_scheduler;
@@ -130,13 +130,19 @@ class velma_table_t{
   friend class tag_array;
 
   public:
+
+  shader_core_ctx* shader;
+  tag_array* tag_arr = nullptr; 
+
   velma_table_t(){}
+  ~velma_table_t(){}
 
   //velma_table_t(tag_array* tag_arr_, int num_velma_ids);
   velma_table_t(int num_velma_ids);
+  velma_table_t(shader_core_ctx* shader); 
+  velma_table_t(shader_core_ctx* m_shader, tag_array* m_tag_arr);
 
 
-  ~velma_table_t(){}
 
   std::multimap<velma_id_t, velma_addr_t> cycle_accumulated_vids_addrs;
   
@@ -146,7 +152,6 @@ class velma_table_t{
   warpcluster_entry_t* active_wc = nullptr; 
   velma_id_t active_velma_id = -1;
   
-  tag_array* tag_arr = nullptr; 
 
   
 
@@ -185,7 +190,6 @@ class velma_table_t{
   std::vector<velma_id_t> evict_expiring_entries();
   void clear_empty_clusters();
 
-  void charge_timer(warp_id_t wid, velma_id_t vid);
   void charge_timer(warp_id_t wid, velma_pc_t pc);
 
 
@@ -197,90 +201,4 @@ class velma_table_t{
 
 
 
-
-
-
-
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////
-/////////////////// NOCACHE VELMA TABLE. ////////////////
-/////////////////////////////////////////////////
-
-
-
-
-
-class nocache_velma_table_t : public velma_table_t{
-  friend class velma_scheduler; 
-  friend class velma_nocache_scheduler;
-  friend class velru_scheduler;
-  friend class tag_array;
-
-  nocache_velma_table_t() : velma_table_t(){};
-  nocache_velma_table_t(int num_velma_ids);
-
-
-  //velma_table_t(tag_array* tag_arr_, int num_velma_ids);
-
-
-  ~nocache_velma_table_t(){}
-
-  std::multimap<velma_id_t, velma_addr_t> cycle_accumulated_vids_addrs;
-  
-  std::map<warp_id_t, warpcluster_entry_t> warpclusters; 
-  std::map<velma_id_t, bool> velma_ids_flags;
-  
-  warpcluster_entry_t* active_wc = nullptr; 
-  velma_id_t active_velma_id = -1;
-  
-  tag_array* tag_arr = nullptr; 
-
-  
-
-  bool free_velma_id(velma_id_t vid);
-  velma_id_t get_free_velma_id();
-  velma_id_t find_free_velma_id();
-  void mark_velma_id_taken(velma_id_t vid);
-
-
-  velma_id_t add_velma_entry(warpcluster_entry_t* wc, velma_pc_t pc);
-  warpcluster_entry_t* add_warpcluster(warp_id_t wid);
-  void record_line_access(velma_id_t vid, velma_addr_t lineaddr);                                                                  //
-
-  void set_active_warpcluster(warp_id_t wcid); 
-
-  warpcluster_entry_t* get_active_warpcluster();
-  warpcluster_entry_t* get_warpcluster(warp_id_t wcid);
-
-  bool warp_active(warp_id_t wid);
-
-  virtual void cycle();
-
-  velma_id_t pop_dead_entry(warp_id_t wcid, velma_id_t vid);
-
-  bool warp_unmarked_for_active_vid(warp_id_t wid);
-
-  void set_tag_array(tag_array* tag_arr); 
-
-  
-  //velma_status determine_warp_status(warp_id_t wid);
-
-  
-  //void free_vids(std::vector<velma_id_t> vids); 
-  bool warp_has_reached_nth_vid(int n, warp_id_t wid);
-  //std::vector<velma_id_t> evict_expiring_entries();
-  //void clear_empty_clusters();
-
-  //void charge_timer(warp_id_t wid, velma_id_t vid);
-  //void charge_timer(warp_id_t wid, velma_pc_t pc);
-
-
-  public: 
-    void flush();
-    
-};
 

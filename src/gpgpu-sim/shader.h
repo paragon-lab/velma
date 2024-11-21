@@ -385,8 +385,8 @@ enum concrete_scheduler {
   CONCRETE_SCHEDULER_WARP_LIMITING,
   CONCRETE_SCHEDULER_OLDEST_FIRST,
   CONCRETE_SCHEDULER_VELMARR,
-  CONCRETE_SCHEDULER_NOCACHING_VELMA,
-  CONCRETE_SCHEDULER_VELRU,
+  //CONCRETE_SCHEDULER_NOCACHING_VELMA,
+  //CONCRETE_SCHEDULER_VELRU,
   NUM_CONCRETE_SCHEDULERS
 };
 
@@ -508,7 +508,7 @@ class scheduler_unit {  // this can be copied freely, so can be used in std
 
 class velma_scheduler : public scheduler_unit {
  public:
-  velma_table_t velma_table;  
+  velma_table_t* velma_table;  
       
   
   velma_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
@@ -537,71 +537,6 @@ class velma_scheduler : public scheduler_unit {
   
   void cycle();
 };
-
-
-
-class velma_nocache_scheduler : public scheduler_unit {
- public:
-  nocache_velma_table_t velma_table;  
-      
-  
-  velma_nocache_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
-                Scoreboard *scoreboard, simt_stack **simt,
-                std::vector<shd_warp_t *> *warp, register_set *sp_out,
-                register_set *dp_out, register_set *sfu_out,
-                register_set *int_out, register_set *tensor_core_out,
-                std::vector<register_set *> &spec_cores_out,
-                register_set *mem_out, int id);
-
-
-  virtual ~velma_nocache_scheduler() {
-    //velma_table.~velma_table_t();
-  }
-  virtual void order_warps();
-  virtual void done_adding_supervised_warps() {
-    m_last_supervised_issued = m_supervised_warps.end();
-  } 
-  
-  template<class T>
-  void order_velma_lrr(std::vector<T> &reordered, 
-                      const typename std::vector<T> &warps,
-                      const typename std::vector<T> 
-                                        ::const_iterator &just_issued,
-                      unsigned num_warps_to_add);
-
-  
-  void cycle();
-};
-
-class velru_scheduler : public scheduler_unit {
- public:
-  velma_table_t velma_table;  
-      
-  
-  velru_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
-                Scoreboard *scoreboard, simt_stack **simt,
-                std::vector<shd_warp_t *> *warp, register_set *sp_out,
-                register_set *dp_out, register_set *sfu_out,
-                register_set *int_out, register_set *tensor_core_out,
-                std::vector<register_set *> &spec_cores_out,
-                register_set *mem_out, int id);
-
-
-  virtual ~velru_scheduler() {
-    //velma_table.~velma_table_t();
-  }
-  virtual void order_warps();
-  virtual void done_adding_supervised_warps() {
-    m_last_supervised_issued = m_supervised_warps.end();
-  } 
-  
-
-  
-  void cycle();
-};
-
-
-
 
 
 
@@ -2180,7 +2115,6 @@ class shader_core_mem_fetch_allocator : public mem_fetch_allocator {
   const memory_config *m_memory_config;
 };
 
-class velma_table_t;
 class shader_core_ctx : public core_t {
  public:
   // creator:
@@ -2189,11 +2123,7 @@ class shader_core_ctx : public core_t {
                   const shader_core_config *config,
                   const memory_config *mem_config, shader_core_stats *stats);
 
-  /////////////////////////////////////////////////////////////////
-  //////////////   TODO: VELMA THINGS!!!
 
-  // V E L M A 
-  velma_table_t velma_table(VELMA_IDS_PER_SM); 
 
   // used by simt_core_cluster:
   // modifiers
@@ -2576,8 +2506,8 @@ class shader_core_ctx : public core_t {
   friend class TwoLevelScheduler;
   friend class LooseRoundRobbinScheduler;
   friend class velma_scheduler;
-  friend class velma_nocache_scheduler;
-  friend class velru_scheduler;
+  //friend class velma_nocache_scheduler;
+  //friend class velru_scheduler;
   virtual void issue_warp(register_set &warp, const warp_inst_t *pI,
                           const active_mask_t &active_mask, unsigned warp_id,
                           unsigned sch_id);
@@ -2713,19 +2643,12 @@ class shader_core_ctx : public core_t {
 
 class exec_shader_core_ctx : public shader_core_ctx {
  public:
-  exec_shader_core_ctx(class gpgpu_sim *gpu, class simt_core_cluster *cluster,
-                       unsigned shader_id, unsigned tpc_id,
-                       const shader_core_config *config,
-                       const memory_config *mem_config,
-                       shader_core_stats *stats)
-      : shader_core_ctx(gpu, cluster, shader_id, tpc_id, config, mem_config,
-                        stats) {
-    create_front_pipeline();
-    create_shd_warp();
-    create_schedulers();
-    create_exec_pipeline();
-  }
 
+   exec_shader_core_ctx(class gpgpu_sim *gpu, class simt_core_cluster *cluster,
+                       unsigned shader_id, unsigned tpc_id, const shader_core_config *config,
+                       const memory_config *mem_config, shader_core_stats *stats);
+
+  velma_table_t velma_table;
   virtual void checkExecutionStatusAndUpdate(warp_inst_t &inst, unsigned t,
                                              unsigned tid);
   virtual void func_exec_inst(warp_inst_t &inst);

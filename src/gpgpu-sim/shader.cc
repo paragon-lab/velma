@@ -5107,7 +5107,7 @@ void velma_scheduler::cycle(){
                                        m_id);
                   //velma_table->charge_timer(warp_id, vid);
                   issued++;
-                  velma_table->charge_timer(warp_id, pc);
+                  m_shader->velma_table->charge_timer(warp_id, pc);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::SFU;
@@ -5125,7 +5125,7 @@ void velma_scheduler::cycle(){
                                        warp_id, m_id);
                   issued++;
                   //velma_table->charge_timer(warp_id, vid);
-                  velma_table->charge_timer(warp_id, pc);
+                  m_shader->velma_table->charge_timer(warp_id, pc);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::TENSOR;
@@ -5147,7 +5147,7 @@ void velma_scheduler::cycle(){
                   m_shader->issue_warp(*spec_reg_set, pI, active_mask, warp_id,
                                        m_id);
                   issued++;
-                  velma_table->charge_timer(warp_id, pc);
+                  m_shader->velma_table->charge_timer(warp_id, pc);
                   //velma_table->charge_timer(warp_id, -1);
                   issued_inst = true;
                   warp_inst_issued = true;
@@ -5183,8 +5183,6 @@ void velma_scheduler::cycle(){
 
     if (issued) {
 
-      //cycle here.  
-      velma_table->cycle();
 
       // This might be a bit inefficient, but we need to maintain
       // two ordered list for proper scheduler execution.
@@ -5269,7 +5267,7 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
     warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE; 
     
     
-    switch (velma_table->determine_warp_status(wid)){
+    switch (m_shader->velma_table->determine_warp_status(wid)){
       case VELMA_ACTIVE_NOT_REACHED:
         active_wc_not_reached.push_back(*warps_itr);
         break;

@@ -4965,6 +4965,7 @@ void velma_scheduler::cycle(){
                 //////////////////////////////////////////////////////////////////////////// 
                 ////////////    VELMA ACCESS RECORDING    //////////////////////////
                 /////////////////////////////////////////////////////
+                velma_table->charge_timer(warp_id, pc);
               
                 /*record 
                  * 1. the warp access
@@ -4975,13 +4976,13 @@ void velma_scheduler::cycle(){
                 //Get a list of addresses, record the entries.
                 std::set<new_addr_type> pI_lineaddrs = pI->get_lineaddrs();// = nc_pI.get_lineaddrs();
                 //std::set<velma_addr_t> vaddrs;
+                
                 for (new_addr_type lineaddr : pI_lineaddrs){
                   velma_addr_t vaddr = static_cast<velma_addr_t>(lineaddr);
                   if (access_vid != -1) velma_table->record_line_access(access_vid, vaddr);
 
                 ////////////////   VELMA TIMEOUT CHARGING //////////////////////////////////   
-                velma_table->charge_timer(warp_id, pc);
-                
+                //velma_table->charge_timer(warp_id, pc); no longer charging mreqs
                 }
               }
             } 
@@ -5306,8 +5307,7 @@ velma_scheduler::velma_scheduler(shader_core_stats *stats, shader_core_ctx *shad
               register_set *mem_out, int id)
     : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out, sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
 { 
-  //construct velma_table->
-  velma_table = &(shader->velma_table);
+  velma_table = shader->velma_table;
 }
 
 exec_shader_core_ctx::exec_shader_core_ctx(class gpgpu_sim *gpu, class simt_core_cluster *cluster,
@@ -5321,7 +5321,7 @@ exec_shader_core_ctx::exec_shader_core_ctx(class gpgpu_sim *gpu, class simt_core
     create_shd_warp();
     create_schedulers();
     create_exec_pipeline();
-    velma_table = velma_table_t(this, m_ldst_unit->m_L1D->m_tag_array);
+    velma_table = new velma_table_t(this, m_ldst_unit->m_L1D->m_tag_array);
     
   }
 

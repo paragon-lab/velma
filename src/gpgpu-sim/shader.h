@@ -2124,7 +2124,7 @@ class shader_core_ctx : public core_t {
                   const memory_config *mem_config, shader_core_stats *stats);
 
 
-
+  velma_table_t* velma_table;
   // used by simt_core_cluster:
   // modifiers
   void cycle();
@@ -2648,7 +2648,6 @@ class exec_shader_core_ctx : public shader_core_ctx {
                        unsigned shader_id, unsigned tpc_id, const shader_core_config *config,
                        const memory_config *mem_config, shader_core_stats *stats);
 
-  velma_table_t velma_table;
   virtual void checkExecutionStatusAndUpdate(warp_inst_t &inst, unsigned t,
                                              unsigned tid);
   virtual void func_exec_inst(warp_inst_t &inst);

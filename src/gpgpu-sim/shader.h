@@ -2180,6 +2180,7 @@ class shader_core_mem_fetch_allocator : public mem_fetch_allocator {
   const memory_config *m_memory_config;
 };
 
+class velma_table_t;
 class shader_core_ctx : public core_t {
  public:
   // creator:
@@ -2187,6 +2188,12 @@ class shader_core_ctx : public core_t {
                   unsigned shader_id, unsigned tpc_id,
                   const shader_core_config *config,
                   const memory_config *mem_config, shader_core_stats *stats);
+
+  /////////////////////////////////////////////////////////////////
+  //////////////   TODO: VELMA THINGS!!!
+
+  // V E L M A 
+  velma_table_t velma_table(BRUH IDK WHAT GOES IN THIS CONSTRUCTOR); 
 
   // used by simt_core_cluster:
   // modifiers

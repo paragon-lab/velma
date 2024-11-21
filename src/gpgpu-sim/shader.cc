@@ -5752,8 +5752,7 @@ void velma_nocache_scheduler::cycle(){
       // supervised_is index with each entry in the
       // m_next_cycle_prioritized_warps vector. For now, just run through until
       // you find the right warp_id
-      for (std::vector<shd_warp_t *>::const_iterator supervised_iter =
-               m_supervised_warps.begin();
+      for (std::vector<shd_warp_t *>::const_iterator supervised_iter = m_supervised_warps.begin();
            supervised_iter != m_supervised_warps.end(); ++supervised_iter) {
         if (*iter == *supervised_iter) {
           m_last_supervised_issued = supervised_iter;

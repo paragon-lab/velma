@@ -16,7 +16,7 @@ velma_entry_t::velma_entry_t(velma_pc_t pc_, velma_id_t vid){
   pc = pc_; 
   velma_id = vid; 
   //initialize the warpcluster mask to all 1s! 
-  wc_mask = ~std::bitset<8>();
+  wc_mask = ~std::bitset<VELMA_WARPCLUSTER_SIZE>();
   
   killtimer = VELMA_KILLTIMER_START;
 } 
@@ -484,6 +484,9 @@ void velma_table_t::clear_empty_clusters(){
     warpclusters.erase(wcid);
   }
 }
+
+
+nocache_velma_table_t::nocache_velma_table_t(int num_velma_ids) : velma_table_t(num_velma_ids) {}
 
 
 void velma_table_t::charge_timer(warp_id_t wid, velma_id_t vid){

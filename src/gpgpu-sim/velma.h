@@ -33,7 +33,7 @@ using velma_addr_t = uint64_t;
 struct velma_entry_t{
     velma_pc_t pc;
     velma_id_t velma_id = -1; 
-    std::bitset<8> wc_mask;
+    std::bitset<VELMA_WARPCLUSTER_SIZE> wc_mask;
     unsigned killtimer;
      
     velma_entry_t(velma_pc_t pc_, velma_id_t vid);
@@ -187,8 +187,7 @@ class velma_table_t{
   void charge_timer(warp_id_t wid, velma_pc_t pc);
 
 
-  public: 
-    void flush();
+  void flush();
     
 };
 
@@ -199,10 +198,11 @@ class nocache_velma_table_t : public velma_table_t{
   friend class velru_scheduler;
   friend class tag_array;
 
-  nocache_velma_table_t() : velma_table_t(){}
+  nocache_velma_table_t() : velma_table_t(){};
+  nocache_velma_table_t(int num_velma_ids);
+
 
   //velma_table_t(tag_array* tag_arr_, int num_velma_ids);
-  nocache_velma_table_t(int num_velma_ids) : velma_table_t(num_velma_ids) {}
 
 
   ~nocache_velma_table_t(){}
@@ -227,7 +227,6 @@ class nocache_velma_table_t : public velma_table_t{
 
   velma_id_t add_velma_entry(warpcluster_entry_t* wc, velma_pc_t pc);
   warpcluster_entry_t* add_warpcluster(warp_id_t wid);
-  velma_id_t record_warp_access(warp_id_t wid, velma_pc_t pc);
   void record_line_access(velma_id_t vid, velma_addr_t lineaddr);                                                                  //
 
   void set_active_warpcluster(warp_id_t wcid); 
@@ -246,16 +245,16 @@ class nocache_velma_table_t : public velma_table_t{
   void set_tag_array(tag_array* tag_arr); 
 
   
-  velma_status determine_warp_status(warp_id_t wid);
+  //velma_status determine_warp_status(warp_id_t wid);
 
   
-  void free_vids(std::vector<velma_id_t> vids); 
+  //void free_vids(std::vector<velma_id_t> vids); 
   bool warp_has_reached_nth_vid(int n, warp_id_t wid);
-  std::vector<velma_id_t> evict_expiring_entries();
-  void clear_empty_clusters();
+  //std::vector<velma_id_t> evict_expiring_entries();
+  //void clear_empty_clusters();
 
-  void charge_timer(warp_id_t wid, velma_id_t vid);
-  void charge_timer(warp_id_t wid, velma_pc_t pc);
+  //void charge_timer(warp_id_t wid, velma_id_t vid);
+  //void charge_timer(warp_id_t wid, velma_pc_t pc);
 
 
   public: 

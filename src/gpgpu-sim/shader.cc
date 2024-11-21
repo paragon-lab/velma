@@ -41,6 +41,7 @@
 #include "../statwrapper.h"
 #include "addrdec.h"
 #include "dram.h"
+#include "gpu-cache.h"
 #include "gpu-misc.h"
 #include "gpu-sim.h"
 #include "icnt_wrapper.h"
@@ -49,6 +50,7 @@
 #include "shader_trace.h"
 #include "stat-tool.h"
 #include "traffic_breakdown.h"
+#include "velma.h"
 #include "visualizer.h"
 
 #define PRIORITIZE_MSHR_OVER_WB 1
@@ -522,6 +524,9 @@ shader_core_ctx::shader_core_ctx(class gpgpu_sim *gpu,
   m_occupied_ctas = 0;
   m_occupied_hwtid.reset();
   m_occupied_cta_to_hwtid.clear();
+
+  velma_table = new velma_table_t(this, nullptr);
+
 }
 
 void shader_core_ctx::reinit(unsigned start_thread, unsigned end_thread,
@@ -548,6 +553,8 @@ void shader_core_ctx::reinit(unsigned start_thread, unsigned end_thread,
     m_warp[i]->reset();
     m_simt_stack[i]->reset();
   }
+
+  if (velma_table != nullptr) velma_table->reset();
 }
 
 void shader_core_ctx::init_warps(unsigned cta_id, unsigned start_thread,
@@ -4965,13 +4972,13 @@ void velma_scheduler::cycle(){
                 //////////////////////////////////////////////////////////////////////////// 
                 ////////////    VELMA ACCESS RECORDING    //////////////////////////
                 /////////////////////////////////////////////////////
-                velma_table->charge_timer(warp_id, pc);
+                m_shader->velma_table->charge_timer(warp_id, pc);
               
                 /*record 
                  * 1. the warp access
                  * 2. the individual line accesses. 
                  */ 
-                velma_id_t access_vid = velma_table->record_warp_access(warp_id, pc); 
+                velma_id_t access_vid = m_shader->velma_table->record_warp_access(warp_id, pc); 
 
                 //Get a list of addresses, record the entries.
                 std::set<new_addr_type> pI_lineaddrs = pI->get_lineaddrs();// = nc_pI.get_lineaddrs();
@@ -4979,7 +4986,7 @@ void velma_scheduler::cycle(){
                 
                 for (new_addr_type lineaddr : pI_lineaddrs){
                   velma_addr_t vaddr = static_cast<velma_addr_t>(lineaddr);
-                  if (access_vid != -1) velma_table->record_line_access(access_vid, vaddr);
+                  if (access_vid != -1) m_shader->velma_table->record_line_access(access_vid, vaddr);
 
                 ////////////////   VELMA TIMEOUT CHARGING //////////////////////////////////   
                 //velma_table->charge_timer(warp_id, pc); no longer charging mreqs
@@ -5049,7 +5056,7 @@ void velma_scheduler::cycle(){
                                        m_id);
                   //ANYTIME ISSUED IS INCREMENTED, WE WANT TO CHARGE THE WARP 
                   issued++;
-                  velma_table->charge_timer(warp_id, pc);
+                  m_shader->velma_table->charge_timer(warp_id, pc);
                   //velma_table->charge_timer(warp_id, vid);
                   issued_inst = true;
                   warp_inst_issued = true;
@@ -5058,7 +5065,7 @@ void velma_scheduler::cycle(){
                   m_shader->issue_warp(*m_int_out, pI, active_mask, warp_id,
                                        m_id);
                   issued++;
-                  velma_table->charge_timer(warp_id, pc);
+                  m_shader->velma_table->charge_timer(warp_id, pc);
                   //velma_table->charge_timer(warp_id, vid);
                   issued_inst = true;
                   warp_inst_issued = true;
@@ -5069,7 +5076,7 @@ void velma_scheduler::cycle(){
                          !(diff_exec_units && previous_issued_inst_exec_type ==
                                                   exec_unit_type_t::DP)) {
                 bool dp_pipe_avail =
-                    (m_shader->m_config->gpgpu_num_dp_units > 0) &&
+                    (m_shader->m_config->gpgpu_num_dp_units > 0) &&      
                     m_dp_out->has_free(m_shader->m_config->sub_core_model,
                                        m_id);
 
@@ -5078,7 +5085,7 @@ void velma_scheduler::cycle(){
                                        m_id);
                   issued++;
                   //velma_table->charge_timer(warp_id, vid);
-                  velma_table->charge_timer(warp_id, pc);
+                  m_shader->velma_table->charge_timer(warp_id, pc);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::DP;
@@ -5305,23 +5312,19 @@ velma_scheduler::velma_scheduler(shader_core_stats *stats, shader_core_ctx *shad
               register_set *int_out, register_set *tensor_core_out,
               std::vector<register_set *> &spec_cores_out,
               register_set *mem_out, int id)
-    : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out, sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id)
-{ 
-  velma_table = shader->velma_table;
-}
+    : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out, sfu_out, int_out, tensor_core_out, spec_cores_out, mem_out, id){}
 
 exec_shader_core_ctx::exec_shader_core_ctx(class gpgpu_sim *gpu, class simt_core_cluster *cluster,
                        unsigned shader_id, unsigned tpc_id,
                        const shader_core_config *config,
                        const memory_config *mem_config,
                        shader_core_stats *stats)
-      : shader_core_ctx(gpu, cluster, shader_id, tpc_id, config, mem_config,
-                        stats) {
+      : shader_core_ctx(gpu, cluster, shader_id, tpc_id, config, mem_config, stats){
     create_front_pipeline();
     create_shd_warp();
     create_schedulers();
     create_exec_pipeline();
-    velma_table = new velma_table_t(this, m_ldst_unit->m_L1D->m_tag_array);
+    velma_table->set_tag_array(this->m_ldst_unit->m_L1D->m_tag_array);
     
   }
 

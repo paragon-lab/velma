@@ -227,12 +227,12 @@ velma_id_t velma_table_t::record_warp_access(warp_id_t wid, velma_pc_t pc){
   velma_id_t access_vid = -1; 
   warpcluster_entry_t* wc = nullptr;  
   //first: check if we're tracking the warp 
-  if (warpclusters.find(wid/VELMA_WARPCLUSTER_SIZE) != warpclusters.end()){
-      wc = &(warpclusters[wid/VELMA_WARPCLUSTER_SIZE]); //nute gunray has a question 
+  if (warpclusters->find(wid/VELMA_WARPCLUSTER_SIZE) != warpclusters->end()){
+    wc = &((*warpclusters)[wid/VELMA_WARPCLUSTER_SIZE]);  
   }
 
   //if we aren't tracking the warp, do we have space to?
-  if (wc == nullptr and warpclusters.size() < VELMA_CLUSTERS_PER_SM){
+  if (wc == nullptr and warpclusters->size() < VELMA_CLUSTERS_PER_SM){
     //we do! let's add a new warp 
     wc = add_warpcluster(wid);
   }
@@ -265,8 +265,8 @@ velma_id_t velma_table_t::add_velma_entry(warpcluster_entry_t* wc, velma_pc_t pc
 //adds a new warpcluster_entry_t to warpclusters and returns a pointer to it.
 warpcluster_entry_t* velma_table_t::add_warpcluster(warp_id_t wid){
   warp_id_t wcid = wid/VELMA_WARPCLUSTER_SIZE;
-  warpclusters.insert({wcid, warpcluster_entry_t(wcid)});
-  warpcluster_entry_t* wc_ptr = &(warpclusters[wcid]);
+  warpclusters->insert({wcid, warpcluster_entry_t(wcid)});
+  warpcluster_entry_t* wc_ptr = &((* warpclusters)[wcid]);
   return wc_ptr;
 }
 
@@ -279,8 +279,8 @@ void velma_table_t::set_active_warpcluster(warp_id_t wcid){
 //returns a pointer to a given warpcluster.  
 warpcluster_entry_t* velma_table_t::get_warpcluster(warp_id_t wcid){
   warpcluster_entry_t* target = nullptr;
-  if (warpclusters.find(wcid) != warpclusters.end()){
-    target = &(warpclusters.find(wcid)->second);
+  if (warpclusters->find(wcid) != warpclusters->end()){
+    target = &(warpclusters->find(wcid)->second);
   }
   return target;
 }
@@ -288,13 +288,14 @@ warpcluster_entry_t* velma_table_t::get_warpcluster(warp_id_t wcid){
 
 //returns a pointer to the active warpcluster (the one being prioritized) 
 warpcluster_entry_t* velma_table_t::get_active_warpcluster(){
+
   return active_wc;
 }
 
 
 std::vector<velma_id_t> velma_table_t::evict_expiring_entries(){
   std::vector<velma_id_t> expiring; 
-  for (auto& wc : warpclusters){
+  for (auto& wc : *warpclusters){
     std::vector<velma_id_t> wc_vids = wc.second.report_expiring_vids();
     for (velma_id_t vid : wc_vids){
       wc.second.remove_dead_entry(vid);
@@ -318,7 +319,7 @@ void velma_table_t::free_vids(std::vector<velma_id_t> vids){
  */ 
 void velma_table_t::cycle(){
   //is the table empty? clear all the things. 
-  if (warpclusters.empty()){
+  if (warpclusters->empty()){
     active_wc = nullptr; 
     active_velma_id = -1; 
     for (auto& vid_flag : velma_ids_flags){
@@ -340,7 +341,7 @@ void velma_table_t::cycle(){
   //with our table entries managed, we now assess if we should change the active_wc 
   //and/or the active_vid.
   if (active_wc == nullptr){
-    if (warpclusters.empty()){
+    if (warpclusters->empty()){
       active_velma_id = -1;
     }
   }
@@ -363,8 +364,8 @@ void velma_table_t::cycle(){
 velma_id_t velma_table_t::pop_dead_entry(warp_id_t wcid, velma_id_t vid){
   velma_id_t new_front_vid = -1;
   //tracking the warpcluster? 
-  if (warpclusters.find(wcid) != warpclusters.end()){
-    warpcluster_entry_t& wc = warpclusters[wcid];
+  if (warpclusters->find(wcid) != warpclusters->end()){
+    warpcluster_entry_t& wc = (* warpclusters)[wcid];
     //tracking the vid? 
     new_front_vid = wc.advance_queue();
     free_velma_id(vid);
@@ -389,9 +390,9 @@ bool velma_table_t::warp_active(warp_id_t wid){
 bool velma_table_t::warp_has_reached_nth_vid(int n, warp_id_t wid){
   warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;
   //are we even tracking this warp?
-  if (warpclusters.find(wcid) == warpclusters.end()) return false; 
+  if (warpclusters->find(wcid) == warpclusters->end()) return false; 
   
-  warpcluster_entry_t* wc = &(warpclusters.begin()->second); 
+  warpcluster_entry_t* wc = &(warpclusters->begin()->second); 
   //does this cluster HAVE n velma entries? 
   if (wc->velma_entries.size() <= n) return false;
 
@@ -445,6 +446,7 @@ velma_table_t::velma_table_t(shader_core_ctx* shader) : shader(shader){
 
 
 void velma_table_t::set_tag_array(tag_array* tag_arr_){
+  assert(tag_arr_);
   tag_arr = tag_arr_;
   tag_arr->velma_table = this;
 }
@@ -460,7 +462,7 @@ velma_status velma_table_t::determine_warp_status(warp_id_t wid){
     else      
       return VELMA_ACTIVE_REACHED;
   } //is this a velma warp? 
-  else if (warpclusters.find(wid / VELMA_WARPCLUSTER_SIZE) != warpclusters.end())
+  else if (warpclusters->find(wid / VELMA_WARPCLUSTER_SIZE) != warpclusters->end())
   { 
     //has this reached in its first velma entry? 
     if (!warp_has_reached_nth_vid(0, wid))
@@ -476,8 +478,8 @@ velma_status velma_table_t::determine_warp_status(warp_id_t wid){
 
 void velma_table_t::flush(){
   //YEET ALL THE THINGS!
-  //delete all of our tracking 
-  warpclusters.clear();
+  //deleta all of our tracking 
+  if (warpclusters != nullptr) warpclusters->clear();
   cycle_accumulated_vids_addrs.clear();
   //reset our variables 
   active_wc = nullptr; 
@@ -491,7 +493,7 @@ void velma_table_t::flush(){
 
 void velma_table_t::clear_empty_clusters(){
   std::vector<warp_id_t> empty_wc_ids; 
-  for (auto& wid_clust : warpclusters){
+  for (auto& wid_clust : *warpclusters){
     warp_id_t wcid = wid_clust.first;
     warpcluster_entry_t* wc = &(wid_clust.second);
     if (wc->velma_entries.empty()){
@@ -499,7 +501,7 @@ void velma_table_t::clear_empty_clusters(){
     }
   }
   for (warp_id_t wcid : empty_wc_ids){
-    warpclusters.erase(wcid);
+    warpclusters->erase(wcid);
   }
 }
 
@@ -524,6 +526,18 @@ void velma_table_t::charge_timer(warp_id_t wid, velma_pc_t pc){
   wc->velma_entries.begin()->charge_timer();
 }
 
+
+void velma_table_t::reset(){
+  if (warpclusters != nullptr){
+    warpclusters->clear();
+  }
+  else warpclusters = new std::map<warp_id_t, warpcluster_entry_t>();
+  for (auto& id_fl : velma_ids_flags){
+    id_fl.second = 1;
+  }
+  active_wc = nullptr;
+  active_velma_id = -1;
+}
 
 
 

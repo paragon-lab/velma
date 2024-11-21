@@ -73,7 +73,6 @@ struct warpcluster_entry_t{
   }
 
 
-
   velma_entry_t* get_velma_entry(velma_id_t vid);
 
 
@@ -141,12 +140,13 @@ class velma_table_t{
   velma_table_t(int num_velma_ids);
   velma_table_t(shader_core_ctx* shader); 
   velma_table_t(shader_core_ctx* m_shader, tag_array* m_tag_arr);
+  void reset();
 
 
 
   std::multimap<velma_id_t, velma_addr_t> cycle_accumulated_vids_addrs;
   
-  std::map<warp_id_t, warpcluster_entry_t> warpclusters; 
+  std::map<warp_id_t, warpcluster_entry_t>* warpclusters = nullptr; 
   std::map<velma_id_t, bool> velma_ids_flags;
   
   warpcluster_entry_t* active_wc = nullptr; 

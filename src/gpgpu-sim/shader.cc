@@ -3700,6 +3700,7 @@ void shader_core_ctx::cycle() {
     decode();
     fetch();
   }
+
   velma_table->cycle();
 }
 

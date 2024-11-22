@@ -515,9 +515,7 @@ void tag_array::flush() {
         m_lines[i]->set_status(INVALID, mem_access_sector_mask_t().set(j));
       }
     }
-  if (velma_table != nullptr){
     velma_table->flush();  
-  }
   m_dirty = 0;
   is_used = false;
 }

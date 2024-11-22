@@ -17,12 +17,11 @@
 
 
 
-#define VELMA_WARPCLUSTER_SIZE 8
+#define VELMA_WARPCLUSTER_SIZE 4
 #define VELMA_IDS_PER_SM 64  
-#define VELMA_CLUSTERS_PER_SM 16
+#define VELMA_CLUSTERS_PER_SM 4
 //result from old histogramming. 
-#define VELMA_KILLTIMER_START 256
-//#define MAX_VELMA_IDS_PER_CLUSTER 4
+#define VELMA_KILLTIMER_START 512
 
 
 using velma_id_t = int64_t; 

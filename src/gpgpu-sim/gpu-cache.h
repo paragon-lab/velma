@@ -887,7 +887,6 @@ class cache_config {
   write_policy_t get_write_policy() { return m_write_policy; }
 
 
-  ////////////////// VELMA STUFF ///////////////////////////// 
 
  protected:
   void exit_parse_error() {

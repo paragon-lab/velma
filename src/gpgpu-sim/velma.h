@@ -40,7 +40,7 @@ using velma_addr_t = uint64_t;
 struct velma_entry_t{
     velma_pc_t pc;
     velma_id_t velma_id = -1; 
-    std::bitset<VELMA_WARPCLUSTER_SIZE> wc_mask;
+    std::vector<bool> wc_mask;
     velma_killtimer_t killtimer;
     short warpcluster_size;
     
@@ -51,7 +51,7 @@ struct velma_entry_t{
                   short warpcluster_size);
 
     inline void mark_warp_reached(warp_id_t wid);
-
+    inline bool all_reached();
     inline bool has_warp_reached(warp_id_t wid);
 
     /* Decrements the killtimer. If the timer hits 0,

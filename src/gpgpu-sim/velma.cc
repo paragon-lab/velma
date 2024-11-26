@@ -23,19 +23,27 @@ velma_entry_t::velma_entry_t(velma_pc_t pc_,
                                   warpcluster_size(warpcluster_size)
 {  
   velma_id = vid; 
-  //initialize the warpcluster mask to all 1s! 
-  wc_mask = std::bitset<VELMA_WARPCLUSTER_SIZE>();
+  //initialize the warpcluster mask to all 0s! 
+  for (int i = 0; i < warpcluster_size; i++)
+    wc_mask.push_back[false];
 } 
 
 inline void velma_entry_t::mark_warp_reached(warp_id_t wid){
   uint8_t warp_index = wid % warpcluster_size;  
-  wc_mask.set(warp_index); //should this be reset?
+  wc_mask[warp_index] = true; //should this be reset?
 }
 
 inline bool velma_entry_t::has_warp_reached(warp_id_t wid){
   uint8_t warp_index = wid % warpcluster_size;
-  return static_cast<bool>(wc_mask[warp_index]);
+  return wc_mask[warp_index];
 } 
+
+inline bool velma_entry_t::all_reached(){
+  bool all_reached = true;
+  for (bool reached : wc_mask)
+    all_reached &= reached;
+  return all_reached;
+}
 
 //decrements the killtimer of the entry. 
 inline unsigned velma_entry_t::charge_timer(){
@@ -121,7 +129,7 @@ velma_id_t warpcluster_entry_t::mark_warp_reached_pc(warp_id_t wid, velma_pc_t p
 std::vector<velma_id_t> warpcluster_entry_t::report_expiring_vids(){
   std::vector<velma_id_t> expiring_vids;
   for (auto& entry : velma_entries){
-    if (entry.killtimer <= 0 or entry.wc_mask.all())
+    if (entry.killtimer <= 0 or entry.all_reached())
       expiring_vids.push_back(entry.velma_id);
   }
   return expiring_vids;

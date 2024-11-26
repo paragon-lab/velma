@@ -24,7 +24,7 @@ velma_entry_t::velma_entry_t(velma_pc_t pc_,
 {  
   velma_id = vid; 
   //initialize the warpcluster mask to all 1s! 
-  wc_mask = ~std::bitset<VELMA_WARPCLUSTER_SIZE>();
+  wc_mask = std::bitset<VELMA_WARPCLUSTER_SIZE>();
 } 
 
 inline void velma_entry_t::mark_warp_reached(warp_id_t wid){
@@ -121,7 +121,7 @@ velma_id_t warpcluster_entry_t::mark_warp_reached_pc(warp_id_t wid, velma_pc_t p
 std::vector<velma_id_t> warpcluster_entry_t::report_expiring_vids(){
   std::vector<velma_id_t> expiring_vids;
   for (auto& entry : velma_entries){
-    if (entry.killtimer <= 0)
+    if (entry.killtimer <= 0 or entry.wc_mask.all())
       expiring_vids.push_back(entry.velma_id);
   }
   return expiring_vids;
@@ -161,8 +161,6 @@ velma_id_t warpcluster_entry_t::remove_dead_entry(velma_id_t vid){
 bool velma_table_t::free_velma_id(velma_id_t vid){
   bool insertion_completed = false;
   if (vid != -1){
-    assert(velma_ids_flags.find(vid) != velma_ids_flags.end());
-    assert(velma_ids_flags[vid] == false); //should not duplicate frees 
     velma_ids_flags[vid] = true; 
     insertion_completed = true;
   }

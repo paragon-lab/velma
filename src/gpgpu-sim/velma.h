@@ -24,10 +24,16 @@
 #define VELMA_KILLTIMER_START 1024
 
 
-using velma_id_t = int64_t; 
+using velma_id_t = int64_t;
+using velma_killtimer_t = uint16_t;
 using warp_id_t = unsigned; 
 using velma_pc_t = unsigned; 
 using velma_addr_t = uint64_t; 
+
+
+
+
+
 
 
 //the individual velma entries in the warpcluster entry.
@@ -35,9 +41,14 @@ struct velma_entry_t{
     velma_pc_t pc;
     velma_id_t velma_id = -1; 
     std::bitset<VELMA_WARPCLUSTER_SIZE> wc_mask;
-    unsigned killtimer;
+    velma_killtimer_t killtimer;
+    short warpcluster_size;
+    
      
-    velma_entry_t(velma_pc_t pc_, velma_id_t vid);
+    velma_entry_t(velma_pc_t pc_, 
+                  velma_id_t vid, 
+                  velma_killtimer_t killtimer_start, 
+                  short warpcluster_size);
 
     inline void mark_warp_reached(warp_id_t wid);
 
@@ -101,7 +112,6 @@ struct warpcluster_entry_t{
    */
   velma_id_t mark_warp_reached_pc(warp_id_t wid, velma_pc_t pc);
 
-  void add_velma_entry_to_queue(velma_pc_t pc, velma_id_t vid);
   
   //simply just tells us if this cluster is tracking the pc in question
   bool tracking_pc(velma_pc_t pc);

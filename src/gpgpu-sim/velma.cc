@@ -13,24 +13,27 @@
 /////////////////////////////   velma_entry_t   /////////////////////////
 /////////////////////////////////////////////////////////////// 
 
-velma_entry_t::velma_entry_t(velma_pc_t pc_, velma_id_t vid){
-  pc = pc_; 
+velma_entry_t::velma_entry_t(velma_pc_t pc_, 
+                            velma_id_t vid, 
+                            velma_killtimer_t killtimer_start, 
+                            short warpcluster_size) 
+                                : pc(pc_), 
+                                  velma_id(vid), 
+                                  killtimer(killtimer_start), 
+                                  warpcluster_size(warpcluster_size)
+{  
   velma_id = vid; 
   //initialize the warpcluster mask to all 1s! 
   wc_mask = ~std::bitset<VELMA_WARPCLUSTER_SIZE>();
-  
-  killtimer = VELMA_KILLTIMER_START;
 } 
 
-
-///these ones still don't get the warpcluster sizze. 
 inline void velma_entry_t::mark_warp_reached(warp_id_t wid){
-  uint8_t warp_index = wid % VELMA_WARPCLUSTER_SIZE;  
+  uint8_t warp_index = wid % warpcluster_size;  
   wc_mask.set(warp_index); //should this be reset?
 }
 
 inline bool velma_entry_t::has_warp_reached(warp_id_t wid){
-  uint8_t warp_index = wid % VELMA_WARPCLUSTER_SIZE;
+  uint8_t warp_index = wid % warpcluster_size;
   return static_cast<bool>(wc_mask[warp_index]);
 } 
 
@@ -71,7 +74,7 @@ unsigned warpcluster_entry_t::charge_timer(velma_id_t vid){
   if (entry != nullptr){
     return entry->charge_timer();
   }
-  return VELMA_KILLTIMER_START + 1;
+  return 0xdeadbeef;
 }
 
 
@@ -109,11 +112,6 @@ velma_id_t warpcluster_entry_t::mark_warp_reached_pc(warp_id_t wid, velma_pc_t p
   return marked_vid;
 }
 
-
-
-void warpcluster_entry_t::add_velma_entry_to_queue(velma_pc_t pc, velma_id_t vid){
-  velma_entries.emplace_back(velma_entry_t(pc, vid)); 
-}
 
 
 
@@ -255,9 +253,9 @@ velma_id_t velma_table_t::record_warp_access(warp_id_t wid, velma_pc_t pc){
 velma_id_t velma_table_t::add_velma_entry(warpcluster_entry_t* wc, velma_pc_t pc){
   velma_id_t free_vid = find_free_velma_id();
   //does this warpcluster have space for a new entry? did we get a velma_id? 
-  if (free_vid > -1 and wc->velma_entries.size() < ids_per_sm / clusters_per_sm){ //should ==4
+  if (free_vid > -1 and wc->velma_entries.size() < ids_per_sm / clusters_per_sm){  
     //add the new entry 
-    wc->add_velma_entry_to_queue(pc, free_vid);
+    wc->velma_entries.emplace_back(velma_entry_t(pc, free_vid, killtimer_start, warpcluster_size));
     //since we're actually using it, mark vid as taken. 
     mark_velma_id_taken(free_vid);
   }

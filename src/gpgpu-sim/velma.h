@@ -131,6 +131,10 @@ class velma_table_t{
 
   shader_core_ctx* shader;
   tag_array* tag_arr = nullptr; 
+  int ids_per_sm;
+  int warpcluster_size;
+  int clusters_per_sm;
+  int killtimer_start;
 
   velma_table_t(){}
   ~velma_table_t(){}
@@ -138,8 +142,15 @@ class velma_table_t{
   //velma_table_t(tag_array* tag_arr_, int num_velma_ids);
   velma_table_t(int num_velma_ids);
   velma_table_t(shader_core_ctx* shader); 
+
+  velma_table_t(shader_core_ctx* m_shader, tag_array* m_tag_arr, int velma_ids_per_sm,
+                            int warps_per_velma_cluster, int velma_clusters_per_sm, int velma_killtimer_start);
+
   velma_table_t(shader_core_ctx* m_shader, tag_array* m_tag_arr);
   void reset();
+
+
+
 
 
 

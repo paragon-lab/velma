@@ -623,9 +623,15 @@ void shader_core_config::reg_options(class OptionParser *opp) {
       opp, "-gpgpu_num_mem_units", OPT_UINT32, &gpgpu_num_mem_units,
       "Number if ldst units (default=1) WARNING: not hooked up to anything",
       "1");
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////   VELMA CONFIGURATION OPTIONS /////////////////////////// 
+///////////////////////////////////////////////////////
+
+////////////  scheduler ////////////////////// 
   option_parser_register(
       opp, "-gpgpu_scheduler", OPT_CSTR, &gpgpu_scheduler_string,
-      "Scheduler configuration: < lrr | gto | two_level_active > "
+      "Scheduler configuration: < lrr | gto | two_level_active | velma-rr | velma-table-rr > "
       "If "
       "two_level_active:<num_active_warps>:<inner_prioritization>:<outer_"
       "prioritization>"
@@ -633,6 +639,55 @@ void shader_core_config::reg_options(class OptionParser *opp) {
       "scheduler_prioritization_type"
       "Default: gto",
       "gto");
+
+/////////// warps per clue group  (per warpcluster)
+  option_parser_register(opp,
+                        "-warps_per_velma_cluster", 
+                        OPT_INT32, 
+                        &warps_per_velma_cluster, 
+                        "number of warps one velma cluster tracks", 
+                        "8");
+
+
+//////////  velma clusters per sm 
+  option_parser_register(opp, 
+                        "-velma_clusters_per_sm", 
+                        OPT_INT32,
+                        &velma_clusters_per_sm, 
+                        "number of clusters the velma table can track", 
+                        "2");
+
+
+  option_parser_register(opp, 
+                        "-velma_ids_per_sm", 
+                        OPT_INT32, 
+                        &velma_ids_per_sm, 
+                        "number of velma ids per sm. split evenly among clusters.", 
+                        "64");
+
+
+  option_parser_register(opp, 
+                        "-velma_killtimer_start", 
+                        OPT_INT32, 
+                        &velma_killtimer_start, 
+                        "timer before a velma id is cancelled", 
+                        "1024");
+
+
+
+
+//  option_parser_register(opp, 
+//                      const char *name, 
+//                      enum option_dtype type, 
+//                      void *variable, 
+//                      const char *desc, 
+//                      const char *defaultvalue)
+
+
+
+
+  ////////////// end  velma options 
+
 
   option_parser_register(
       opp, "-gpgpu_concurrent_kernel_sm", OPT_BOOL, &gpgpu_concurrent_kernel_sm,

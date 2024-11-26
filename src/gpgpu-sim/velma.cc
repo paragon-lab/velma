@@ -22,6 +22,8 @@ velma_entry_t::velma_entry_t(velma_pc_t pc_, velma_id_t vid){
   killtimer = VELMA_KILLTIMER_START;
 } 
 
+
+///these ones still don't get the warpcluster sizze. 
 inline void velma_entry_t::mark_warp_reached(warp_id_t wid){
   uint8_t warp_index = wid % VELMA_WARPCLUSTER_SIZE;  
   wc_mask.set(warp_index); //should this be reset?
@@ -227,12 +229,12 @@ velma_id_t velma_table_t::record_warp_access(warp_id_t wid, velma_pc_t pc){
   velma_id_t access_vid = -1; 
   warpcluster_entry_t* wc = nullptr;  
   //first: check if we're tracking the warp 
-  if (warpclusters->find(wid/VELMA_WARPCLUSTER_SIZE) != warpclusters->end()){
-    wc = &((*warpclusters)[wid/VELMA_WARPCLUSTER_SIZE]);  
+  if (warpclusters->find(wid/warpcluster_size) != warpclusters->end()){
+    wc = &((*warpclusters)[wid/warpcluster_size]);  
   }
 
   //if we aren't tracking the warp, do we have space to?
-  if (wc == nullptr and warpclusters->size() < VELMA_CLUSTERS_PER_SM){
+  if (wc == nullptr and warpclusters->size() < clusters_per_sm){
     //we do! let's add a new warp 
     wc = add_warpcluster(wid);
   }
@@ -253,7 +255,7 @@ velma_id_t velma_table_t::record_warp_access(warp_id_t wid, velma_pc_t pc){
 velma_id_t velma_table_t::add_velma_entry(warpcluster_entry_t* wc, velma_pc_t pc){
   velma_id_t free_vid = find_free_velma_id();
   //does this warpcluster have space for a new entry? did we get a velma_id? 
-  if (free_vid > -1 and wc->velma_entries.size() < VELMA_IDS_PER_SM / VELMA_CLUSTERS_PER_SM){ //should ==4
+  if (free_vid > -1 and wc->velma_entries.size() < ids_per_sm / clusters_per_sm){ //should ==4
     //add the new entry 
     wc->add_velma_entry_to_queue(pc, free_vid);
     //since we're actually using it, mark vid as taken. 
@@ -264,7 +266,7 @@ velma_id_t velma_table_t::add_velma_entry(warpcluster_entry_t* wc, velma_pc_t pc
 
 //adds a new warpcluster_entry_t to warpclusters and returns a pointer to it.
 warpcluster_entry_t* velma_table_t::add_warpcluster(warp_id_t wid){
-  warp_id_t wcid = wid/VELMA_WARPCLUSTER_SIZE;
+  warp_id_t wcid = wid/warpcluster_size;
   warpclusters->insert({wcid, warpcluster_entry_t(wcid)});
   warpcluster_entry_t* wc_ptr = &((* warpclusters)[wcid]);
   return wc_ptr;
@@ -376,7 +378,7 @@ velma_id_t velma_table_t::pop_dead_entry(warp_id_t wcid, velma_id_t vid){
 
 
 bool velma_table_t::warp_active(warp_id_t wid){
-  warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE; //relies on integer floor divide 
+  warp_id_t wcid = wid / warpcluster_size; //relies on integer floor divide 
   warpcluster_entry_t* awc = get_active_warpcluster();
   if (awc == nullptr) return false; 
 
@@ -388,7 +390,7 @@ bool velma_table_t::warp_active(warp_id_t wid){
 
 
 bool velma_table_t::warp_has_reached_nth_vid(int n, warp_id_t wid){
-  warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE;
+  warp_id_t wcid = wid / warpcluster_size;
   //are we even tracking this warp?
   if (warpclusters->find(wcid) == warpclusters->end()) return false; 
   
@@ -404,7 +406,7 @@ bool velma_table_t::warp_has_reached_nth_vid(int n, warp_id_t wid){
 }
 
 bool velma_table_t::warp_unmarked_for_active_vid(warp_id_t wid){
-  warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE; 
+  warp_id_t wcid = wid / warpcluster_size; 
   //get and check the active cluster's existence 
   warpcluster_entry_t* awc = get_active_warpcluster(); 
   if (awc == nullptr) return true;
@@ -426,23 +428,21 @@ velma_table_t::velma_table_t(int num_velma_ids){
   }
 }
 
-velma_table_t::velma_table_t(shader_core_ctx* m_shader, tag_array* m_tag_arr) 
-                                : shader(m_shader), tag_arr(m_tag_arr)
+velma_table_t::velma_table_t(shader_core_ctx* m_shader, tag_array* m_tag_arr, int velma_ids_per_sm,
+                            int warps_per_velma_cluster, int velma_clusters_per_sm, int velma_killtimer_start) 
+                                : shader(m_shader), 
+                                  tag_arr(m_tag_arr), 
+                                  ids_per_sm(velma_ids_per_sm),
+                                  warpcluster_size(warps_per_velma_cluster), 
+                                  clusters_per_sm(velma_clusters_per_sm),
+                                  killtimer_start(velma_killtimer_start)
 {
   //populate velma id table 
-  for (int i = 0; i < VELMA_IDS_PER_SM; i++){
+  for (int i = 0; i < velma_ids_per_sm; i++){
     velma_ids_flags.insert({static_cast<velma_id_t>(i), true});
   }
 }
 
-/*
-velma_table_t::velma_table_t(shader_core_ctx* shader) : shader(shader){
-  //populate velma id table 
-  for (int i = 0; i < VELMA_IDS_PER_SM; i++){
-    velma_ids_flags.insert({static_cast<velma_id_t>(i), true});
-  }
-}
-*/
 
 
 void velma_table_t::set_tag_array(tag_array* tag_arr_){
@@ -462,7 +462,7 @@ velma_status velma_table_t::determine_warp_status(warp_id_t wid){
     else      
       return VELMA_ACTIVE_REACHED;
   } //is this a velma warp? 
-  else if (warpclusters->find(wid / VELMA_WARPCLUSTER_SIZE) != warpclusters->end())
+  else if (warpclusters->find(wid / warpcluster_size) != warpclusters->end())
   { 
     //has this reached in its first velma entry? 
     if (!warp_has_reached_nth_vid(0, wid))
@@ -518,7 +518,7 @@ void velma_table_t::clear_empty_clusters(){
 //get a vid from wid and pc 
 void velma_table_t::charge_timer(warp_id_t wid, velma_pc_t pc){
   if (determine_warp_status(wid) != VELMA_NOT_REACHED) return;
-  warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE; 
+  warp_id_t wcid = wid / warpcluster_size; 
   warpcluster_entry_t* wc = get_warpcluster(wcid);
   
   if (wc == nullptr) return;

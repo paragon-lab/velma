@@ -1671,9 +1671,7 @@ class shader_core_config : public core_config {
   void set_pipeline_latency();
 
   // backward pointer
-  class gpgpu_context *gpgpu_ctx;
-  // data
-  char *gpgpu_shader_core_pipeline_opt;
+  class gpgpu_context *gpg"2"gpgpu_shader_core_pipeline_opt;
   bool gpgpu_perfect_mem;
   bool gpgpu_clock_gated_reg_file;
   bool gpgpu_clock_gated_lanes;
@@ -1685,6 +1683,17 @@ class shader_core_config : public core_config {
       max_cta_per_core;  // Limit on number of concurrent CTAs in shader core
   unsigned max_barriers_per_cta;
   char *gpgpu_scheduler_string;
+
+///////////////////////////////////////////////////////////////////////////////
+/////////////////      velma configuration items //////////////// 
+////////////////////////////////////////////////////////
+  int warps_per_velma_cluster;
+  int velma_clusters_per_sm;
+  int velma_ids_per_sm;
+  int velma_killtimer_start;
+
+
+
   unsigned gpgpu_shmem_per_block;
   unsigned gpgpu_registers_per_block;
   char *pipeline_widths_string;

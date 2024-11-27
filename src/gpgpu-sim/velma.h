@@ -58,7 +58,7 @@ struct clue_t{
     /* Decrements the temperature. If the timer hits 0,
      * return the velma_id. Otherwise, return -1.
      */ 
-    inline unsigned charge_timer();
+    inline unsigned decrease_temperature();
 
     ~clue_t(){}
   };
@@ -197,7 +197,7 @@ class velma_table_t{
   std::vector<velma_id_t> evict_cold_clues();
   void clear_empty_clusters();
 
-  void charge_timer(warp_id_t wid, velma_pc_t pc);
+  void cool_clue_temperature(warp_id_t wid, velma_pc_t pc);
 
 
   void flush();

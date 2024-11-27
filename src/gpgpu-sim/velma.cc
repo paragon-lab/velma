@@ -51,7 +51,7 @@ inline bool clue_t::is_cold(){
 }
 
 //decrements the temperature of the clue. 
-inline unsigned clue_t::charge_timer(){
+inline unsigned clue_t::decrease_temperature(){
   return --temperature;  
 }
 
@@ -458,14 +458,14 @@ void velma_table_t::clear_empty_clusters(){
 ////////////////////////////////////////////////
 
 //get a vid from wid and pc 
-void velma_table_t::charge_timer(warp_id_t wid, velma_pc_t pc){
+void velma_table_t::cool_clue_temperature(warp_id_t wid, velma_pc_t pc){
   if (determine_warp_status(wid) != VELMA_NOT_REACHED) return;
   warp_id_t wcid = wid / warps_per_cluster; 
   velma_cluster_t* wc = get_velma_cluster(wcid);
   
   if (wc == nullptr) return;
   if (wc->clues.empty()) return;
-  wc->clues.begin()->charge_timer();
+  wc->clues.begin()->decrease_temperature();
 }
 
 

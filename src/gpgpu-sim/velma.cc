@@ -42,13 +42,13 @@ inline bool clue_t::all_reached(){
 }
 
 inline bool clue_t::is_cold(){
-  bool is_cold = true;
+  bool full_mask = true;
   //check the bitmask, change is_cold to false if any
   //warps have not yet reached. 
   for (int i = 0; i < warps_per_cluster; i++)
-    is_cold = is_cold and reaching_bitmask[i];
+    full_mask = full_mask and reaching_bitmask[i];
   //now include the timer 
-  return is_cold and (temperature <= 0);
+  return full_mask or (temperature <= 0);
 }
 
 //decrements the temperature of the clue. 

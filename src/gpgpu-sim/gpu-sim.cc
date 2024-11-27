@@ -667,10 +667,10 @@ void shader_core_config::reg_options(class OptionParser *opp) {
 
 
   option_parser_register(opp, 
-                        "-velma_killtimer_start", 
+                        "-velma_temperature_start", 
                         OPT_INT32, 
-                        &velma_killtimer_start, 
-                        "timer before a velma id is cancelled", 
+                        &velma_temperature_start, 
+                        "how much a clue can cool before eviction", 
                         "1024");
 
 

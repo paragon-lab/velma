@@ -525,7 +525,12 @@ shader_core_ctx::shader_core_ctx(class gpgpu_sim *gpu,
   m_occupied_hwtid.reset();
   m_occupied_cta_to_hwtid.clear();
 
-  velma_table = new velma_table_t(this, nullptr);
+  velma_table = new velma_table_t(this, 
+                                  nullptr, 
+                                  config->velma_ids_per_sm, 
+                                  config->warps_per_velma_cluster,
+                                  config->velma_clusters_per_sm,
+                                  config->velma_temperature_start);
 
 }
 
@@ -4974,7 +4979,7 @@ void velma_scheduler::cycle(){
                 //////////////////////////////////////////////////////////////////////////// 
                 ////////////    VELMA ACCESS RECORDING    //////////////////////////
                 /////////////////////////////////////////////////////
-                m_shader->velma_table->charge_timer(warp_id, pc);
+                m_shader->velma_table->cool_clue_temperature(warp_id, pc);
               
                 /*record 
                  * 1. the warp access
@@ -4991,7 +4996,7 @@ void velma_scheduler::cycle(){
                   if (access_vid != -1) m_shader->velma_table->record_line_access(access_vid, vaddr);
 
                 ////////////////   VELMA TIMEOUT CHARGING //////////////////////////////////   
-                //velma_table->charge_timer(warp_id, pc); no longer charging mreqs
+                //velma_table->cool_clue_temperature(warp_id, pc); no longer charging mreqs
                 }
               }
             } 
@@ -5058,8 +5063,8 @@ void velma_scheduler::cycle(){
                                        m_id);
                   //ANYTIME ISSUED IS INCREMENTED, WE WANT TO CHARGE THE WARP 
                   issued++;
-                  m_shader->velma_table->charge_timer(warp_id, pc);
-                  //velma_table->charge_timer(warp_id, vid);
+                  m_shader->velma_table->cool_clue_temperature(warp_id, pc);
+                  //velma_table->cool_clue_temperature(warp_id, vid);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::SP;
@@ -5067,8 +5072,8 @@ void velma_scheduler::cycle(){
                   m_shader->issue_warp(*m_int_out, pI, active_mask, warp_id,
                                        m_id);
                   issued++;
-                  m_shader->velma_table->charge_timer(warp_id, pc);
-                  //velma_table->charge_timer(warp_id, vid);
+                  m_shader->velma_table->cool_clue_temperature(warp_id, pc);
+                  //velma_table->cool_clue_temperature(warp_id, vid);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::INT;
@@ -5086,8 +5091,8 @@ void velma_scheduler::cycle(){
                   m_shader->issue_warp(*m_dp_out, pI, active_mask, warp_id,
                                        m_id);
                   issued++;
-                  //velma_table->charge_timer(warp_id, vid);
-                  m_shader->velma_table->charge_timer(warp_id, pc);
+                  //velma_table->cool_clue_temperature(warp_id, vid);
+                  m_shader->velma_table->cool_clue_temperature(warp_id, pc);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::DP;
@@ -5107,9 +5112,9 @@ void velma_scheduler::cycle(){
                 if (sfu_pipe_avail) {
                   m_shader->issue_warp(*m_sfu_out, pI, active_mask, warp_id,
                                        m_id);
-                  //velma_table->charge_timer(warp_id, vid);
+                  //velma_table->cool_clue_temperature(warp_id, vid);
                   issued++;
-                  m_shader->velma_table->charge_timer(warp_id, pc);
+                  m_shader->velma_table->cool_clue_temperature(warp_id, pc);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::SFU;
@@ -5126,8 +5131,8 @@ void velma_scheduler::cycle(){
                   m_shader->issue_warp(*m_tensor_core_out, pI, active_mask,
                                        warp_id, m_id);
                   issued++;
-                  //velma_table->charge_timer(warp_id, vid);
-                  m_shader->velma_table->charge_timer(warp_id, pc);
+                  //velma_table->cool_clue_temperature(warp_id, vid);
+                  m_shader->velma_table->cool_clue_temperature(warp_id, pc);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::TENSOR;
@@ -5149,8 +5154,8 @@ void velma_scheduler::cycle(){
                   m_shader->issue_warp(*spec_reg_set, pI, active_mask, warp_id,
                                        m_id);
                   issued++;
-                  m_shader->velma_table->charge_timer(warp_id, pc);
-                  //velma_table->charge_timer(warp_id, -1);
+                  m_shader->velma_table->cool_clue_temperature(warp_id, pc);
+                  //velma_table->cool_clue_temperature(warp_id, -1);
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type =
@@ -5266,7 +5271,7 @@ void velma_scheduler::order_velma_lrr(std::vector<T> &reordered,
     
     //velma checks. 
     warp_id_t wid = (*warps_itr)->get_warp_id();
-    warp_id_t wcid = wid / VELMA_WARPCLUSTER_SIZE; 
+    warp_id_t wcid = m_shader->velma_table->warp_id_to_cluster_id(wid);
     
     
     switch (m_shader->velma_table->determine_warp_status(wid)){

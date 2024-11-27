@@ -175,7 +175,7 @@ class velma_table_t{
 
   void set_active_velma_cluster(warp_id_t wcid); 
 
-  velma_cluster_t* get_velma_cluster(warp_id_t wcid);
+  inline velma_cluster_t* get_velma_cluster(warp_id_t wcid);
 
   bool warp_active(warp_id_t wid);
 
@@ -199,6 +199,8 @@ class velma_table_t{
 
   void cool_clue_temperature(warp_id_t wid, velma_pc_t pc);
 
+
+  warp_id_t warp_id_to_cluster_id(warp_id_t wid);
 
   void flush();
     

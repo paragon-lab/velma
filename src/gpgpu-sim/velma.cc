@@ -19,7 +19,8 @@ clue_t::clue_t(velma_pc_t pc_,
               short warps_per_cluster) 
                   : pc(pc_), 
                     velma_id(vid), 
-                    temperature(temperature_start) 
+                    temperature(temperature_start),
+                    warps_per_cluster(warps_per_cluster)
 {  
   //initialize the velma_cluster mask to all 0s! 
   reaching_bitmask = std::vector<bool>(warps_per_cluster, false);
@@ -112,15 +113,14 @@ velma_id_t velma_cluster_t::mark_warp_reached_pc(warp_id_t wid, velma_pc_t pc){
 std::vector<velma_id_t> velma_cluster_t::evict_cold_clues(){
   std::vector<velma_id_t> cold_vids;
   std::vector<clue_t*> cold_clues; 
-  for (clue_t& clue : clues){
-    if (clue.is_cold()){
-      cold_clues.push_back(&clue);
-      cold_vids.push_back(clue.velma_id);
+  short clue_size = clues.size();
+  for (auto itr = clues.begin(); itr != clues.end();){
+    if (itr->is_cold()){
+      cold_vids.push_back(itr->velma_id); 
+      itr = clues.erase(itr);
     }
+    else itr++;
   }
-  for (int i = 0; i < cold_clues.size(); i++)
-    clues.erase(cold_clues[i]);
-
   return cold_vids;
 }
 
@@ -206,11 +206,7 @@ void velma_table_t::record_line_access(velma_id_t vid, velma_addr_t lineaddr){
  */
 velma_id_t velma_table_t::record_warp_access(warp_id_t wid, velma_pc_t pc){
   velma_id_t access_vid = -1; 
-  velma_cluster_t* wc = nullptr;  
-  //first: check if we're tracking the warp 
-  if (velma_clusters.find(wid/warps_per_cluster) != velma_clusters.end()){
-    wc = &(velma_clusters[wid/warps_per_cluster]);  
-  }
+  velma_cluster_t* wc = get_velma_cluster(wid / warps_per_cluster);
 
   //if we aren't tracking the warp, do we have space to?
   if (wc == nullptr and velma_clusters.size() < clusters_per_sm){
@@ -225,6 +221,7 @@ velma_id_t velma_table_t::record_warp_access(warp_id_t wid, velma_pc_t pc){
     if (access_vid == -1){
       access_vid = add_clue(wc, pc);
     }
+    if (active_cluster == nullptr) active_cluster = wc;
   }  
   //if we touched a velma clue, return its velma_id. 
   return access_vid;
@@ -258,7 +255,7 @@ void velma_table_t::set_active_velma_cluster(warp_id_t wcid){
 
 
 //returns a pointer to a given velma_cluster.  
-velma_cluster_t* velma_table_t::get_velma_cluster(warp_id_t wcid){
+inline velma_cluster_t* velma_table_t::get_velma_cluster(warp_id_t wcid){
   if (velma_clusters.find(wcid) != velma_clusters.end())
     return &(velma_clusters[wcid]);
   else return nullptr;
@@ -432,18 +429,21 @@ void velma_table_t::flush(){
   }
 }
 
+warp_id_t velma_table_t::warp_id_to_cluster_id(warp_id_t wid){
+  return wid / warps_per_cluster;
+}
+
 
 void velma_table_t::clear_empty_clusters(){
-  std::vector<warp_id_t> empty_wc_ids; 
-  for (auto& wid_clust : velma_clusters){
-    warp_id_t wcid = wid_clust.first;
-    velma_cluster_t* wc = &(wid_clust.second);
-    if (wc->clues.empty()){
-      empty_wc_ids.push_back(wcid); 
+  std::vector<warp_id_t> empty_wc_ids;
+  for (auto itr = velma_clusters.begin(); itr != velma_clusters.end();){    
+    if (itr->second.clues.empty()){ 
+      if (active_cluster == &(itr->second))
+        active_cluster = nullptr;
+
+      itr = velma_clusters.erase(itr);  
     }
-  }
-  for (warp_id_t wcid : empty_wc_ids){
-    velma_clusters.erase(wcid);
+    else itr++;
   }
 }
 
@@ -459,13 +459,17 @@ void velma_table_t::clear_empty_clusters(){
 
 //get a vid from wid and pc 
 void velma_table_t::cool_clue_temperature(warp_id_t wid, velma_pc_t pc){
-  if (determine_warp_status(wid) != VELMA_NOT_REACHED) return;
-  warp_id_t wcid = wid / warps_per_cluster; 
-  velma_cluster_t* wc = get_velma_cluster(wcid);
-  
-  if (wc == nullptr) return;
-  if (wc->clues.empty()) return;
-  wc->clues.begin()->decrease_temperature();
+  velma_status vstatus = determine_warp_status(wid);
+  velma_cluster_t* containing_cluster = get_velma_cluster(wid / warps_per_cluster);
+  switch (vstatus) {
+    case VELMA_ACTIVE_NOT_REACHED: 
+      active_cluster->clues.begin()->decrease_temperature();
+      break;
+    case VELMA_NOT_REACHED:
+      get_velma_cluster(wid / warps_per_cluster)->clues.begin()->decrease_temperature();
+    default: 
+      break;
+  }
 }
 
 

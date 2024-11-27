@@ -10,110 +10,98 @@
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////   velma_entry_t   /////////////////////////
+/////////////////////////////   clue_t   /////////////////////////
 /////////////////////////////////////////////////////////////// 
 
-velma_entry_t::velma_entry_t(velma_pc_t pc_, 
-                            velma_id_t vid, 
-                            velma_killtimer_t killtimer_start, 
-                            short warpcluster_size) 
-                                : pc(pc_), 
-                                  velma_id(vid), 
-                                  killtimer(killtimer_start), 
-                                  warpcluster_size(warpcluster_size)
+clue_t::clue_t(velma_pc_t pc_, 
+              velma_id_t vid, 
+              velma_temperature_t temperature_start, 
+              short warps_per_cluster) 
+                  : pc(pc_), 
+                    velma_id(vid), 
+                    temperature(temperature_start) 
 {  
-  velma_id = vid; 
-  //initialize the warpcluster mask to all 0s! 
-  for (int i = 0; i < warpcluster_size; i++)
-    wc_mask.push_back[false];
+  //initialize the velma_cluster mask to all 0s! 
+  reaching_bitmask = std::vector<bool>(warps_per_cluster, false);
 } 
 
-inline void velma_entry_t::mark_warp_reached(warp_id_t wid){
-  uint8_t warp_index = wid % warpcluster_size;  
-  wc_mask[warp_index] = true; //should this be reset?
+inline void clue_t::mark_warp_reached(warp_id_t wid){
+  reaching_bitmask[wid % warps_per_cluster] = true; //should this be reset?
 }
 
-inline bool velma_entry_t::has_warp_reached(warp_id_t wid){
-  uint8_t warp_index = wid % warpcluster_size;
-  return wc_mask[warp_index];
+inline bool clue_t::has_warp_reached(warp_id_t wid){
+  return reaching_bitmask[wid % warps_per_cluster];
 } 
 
-inline bool velma_entry_t::all_reached(){
+inline bool clue_t::all_reached(){
   bool all_reached = true;
-  for (bool reached : wc_mask)
-    all_reached &= reached;
+  for (bool reached : reaching_bitmask)
+    all_reached = all_reached and reached;
   return all_reached;
 }
 
-//decrements the killtimer of the entry. 
-inline unsigned velma_entry_t::charge_timer(){
-  return --killtimer;  
+inline bool clue_t::is_cold(){
+  bool is_cold = true;
+  //check the bitmask, change is_cold to false if any
+  //warps have not yet reached. 
+  for (int i = 0; i < warps_per_cluster; i++)
+    is_cold = is_cold and reaching_bitmask[i];
+  //now include the timer 
+  return is_cold and (temperature <= 0);
+}
+
+//decrements the temperature of the clue. 
+inline unsigned clue_t::charge_timer(){
+  return --temperature;  
 }
 
 
 //////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////  warpcluster_entry_t  //////////////
+////////////////////////////  velma_cluster_t  //////////////
 /////////////////////////////////////////////////////////
 
-void warpcluster_entry_t::set_active_velma_id(velma_id_t vid){
-  active_velma_id = vid;
-}
-
-velma_id_t warpcluster_entry_t::get_active_velma_id(){
-  return active_velma_id;
-}
 
 
-velma_entry_t* warpcluster_entry_t::get_velma_entry(velma_id_t vid){
-  velma_entry_t* entry  = nullptr; 
-  for (auto& ventry : velma_entries){
-    if (ventry.velma_id == vid and vid != -1){
-      entry = &ventry;
+
+clue_t* velma_cluster_t::get_clue(velma_id_t vid){
+  clue_t* clue  = nullptr; 
+  for (auto& vclue : clues){
+    if (vclue.velma_id == vid and vid != -1){
+      clue = &vclue;
       break;
     }
   }
-  return entry; 
+  return clue; 
 }
-
-
-unsigned warpcluster_entry_t::charge_timer(velma_id_t vid){
-  velma_entry_t* entry = nullptr;
-  entry = get_velma_entry(vid);
-  if (entry != nullptr){
-    return entry->charge_timer();
-  }
-  return 0xdeadbeef;
-}
-
-
 
  
-/* Pops the top velma entry, advancing the queue.
+/* Pops the top velma clue, advancing the queue.
  * also returns the velma id of the NEXT element 
  * or -1 if the list becomes empty.
  */
-velma_id_t warpcluster_entry_t::advance_queue(){
-  velma_id_t ret_vid = -1; 
-  
-  if(!velma_entries.empty()){
-    velma_entries.pop_front(); 
-  }
-  //check again if the list is empty. if it isn't return the next velma id in the queue
-  if(!velma_entries.empty()){
-    ret_vid = velma_entries.begin()->velma_id; 
+velma_id_t velma_cluster_t::advance_queue(){ 
+  velma_id_t ret_vid = -1;
+  switch(clues.size()){
+    case 0: 
+      break;
+    default: //want size >=2 to hit here and fall through. 
+      ret_vid = clues[1].velma_id;
+    case 1:
+      clues.pop_front();
+      break;
   }
   return ret_vid; 
 }
 
 
-velma_id_t warpcluster_entry_t::mark_warp_reached_pc(warp_id_t wid, velma_pc_t pc){
+velma_id_t velma_cluster_t::mark_warp_reached_pc(warp_id_t wid, velma_pc_t pc){
   velma_id_t marked_vid = -1;
-  for (velma_entry_t& entry : velma_entries){
-    //does this entry correspond to the pc we care about? 
-    if (entry.pc == pc and !entry.has_warp_reached(wid)){
+  for (clue_t& clue : clues){
+    //does this clue correspond to the pc we care about? 
+    if (clue.pc == pc and !clue.has_warp_reached(wid)){
       //if this warp isn't marked, mark it, and return the id!
-      entry.mark_warp_reached(wid);
-      marked_vid = entry.velma_id;
+      clue.mark_warp_reached(wid);
+      marked_vid = clue.velma_id;
       break;
     }
   }
@@ -121,94 +109,81 @@ velma_id_t warpcluster_entry_t::mark_warp_reached_pc(warp_id_t wid, velma_pc_t p
 }
 
 
+std::vector<velma_id_t> velma_cluster_t::evict_cold_clues(){
+  std::vector<velma_id_t> cold_vids;
+  std::vector<clue_t*> cold_clues; 
+  for (clue_t& clue : clues){
+    if (clue.is_cold()){
+      cold_clues.push_back(&clue);
+      cold_vids.push_back(clue.velma_id);
+    }
+  }
+  for (int i = 0; i < cold_clues.size(); i++)
+    clues.erase(cold_clues[i]);
+
+  return cold_vids;
+}
+
 
 
 /* Cycles through the active velma ids (presently only one),
- * noting all ids whose killtimers are reduced to zero. 
+ * noting all ids whose temperatures are reduced to zero. 
  */ 
-std::vector<velma_id_t> warpcluster_entry_t::report_expiring_vids(){
+std::vector<velma_id_t> velma_cluster_t::report_expiring_vids(){
   std::vector<velma_id_t> expiring_vids;
-  for (auto& entry : velma_entries){
-    if (entry.killtimer <= 0 or entry.all_reached())
-      expiring_vids.push_back(entry.velma_id);
+  for (auto& clue : clues){
+    if (clue.temperature <= 0 )
+      expiring_vids.push_back(clue.velma_id);
   }
   return expiring_vids;
 }
 
 
-velma_id_t warpcluster_entry_t::remove_dead_entry(velma_id_t vid){
-  if (velma_entries.empty()) return -1;
-
-  velma_id_t new_front_vid = -1; 
-  //is this entry the first in the queue? 
-  if (velma_entries.begin()->velma_id == vid){
-    //yes? advance the queue. 
-    new_front_vid = advance_queue();
+/*
+velma_id_t velma_cluster_t::evict_cold_clue(velma_id_t vid){
+  clue_t* cold_clue = get_clue(vid);
+  if (cold_clue != nullptr){
+    clues.erase(cold_clue);
   }
-  else {               
-    //no? do a .erase on this velma entry 
-    velma_entry_t* entry = get_velma_entry(vid);
-    auto itr = velma_entries.begin() + (entry - &velma_entries[0]);
-    velma_entries.erase(itr);
-    
-    if (!velma_entries.empty()){
-      new_front_vid = velma_entries.begin()->velma_id;
-    }
-    else {
-      new_front_vid = -1;
-    }
-  }
-  return new_front_vid;
+  if (!clues.empty())
+    return clues[0].velma_id;
+  else return -1;
 }
-
+*/
 
 /////////////////////////////////////////////////////////////////////////////////
 ////////////////////////    VELMA TABLE /////////////////////
 //////////////////////////////////////////////////
 
-bool velma_table_t::free_velma_id(velma_id_t vid){
-  bool insertion_completed = false;
-  if (vid != -1){
+void velma_table_t::free_velma_id(velma_id_t vid){
     velma_ids_flags[vid] = true; 
-    insertion_completed = true;
   }
-  return insertion_completed;
-}
 
 //looks for a free velma_id. that's it. 
 velma_id_t velma_table_t::find_free_velma_id(){
-  velma_id_t free_id = -1;
   for (auto& id_flag : velma_ids_flags){
     if (id_flag.second == true){
-      free_id = id_flag.first;
-      break;
+      return id_flag.first;
     }
   }
-  return free_id; 
+  return -1; //no vid found 
 }
 
 //marks a velma_id as not free. 
 void velma_table_t::mark_velma_id_taken(velma_id_t vid){
-  for (auto& id_flag : velma_ids_flags){
-    if (id_flag.first == vid){
-      id_flag.second = false; 
-    }
-  }
+  velma_ids_flags[vid] = false;
 }
     
 
 
 //finds a free velma_id, marks it as not free, and returns it. 
 velma_id_t velma_table_t::get_free_velma_id(){
-  velma_id_t free_id = -1;
   for (auto& id_flag : velma_ids_flags){
     if (id_flag.second == true){
-      free_id = id_flag.first;
       id_flag.second = false; 
-      break;
+      return id_flag.first;
     }
   }
-  return free_id; 
 }
 
 
@@ -220,96 +195,91 @@ void velma_table_t::record_line_access(velma_id_t vid, velma_addr_t lineaddr){
 
 /* Records an access in the velma_table. In the case that a wcid/pc combo 
  * has already been assigned a velma id, just update the mask in the appropriate
- * velma entry and return its velma id. If the same wid/pc combo is assigned
- * multiple velma_ids, we only mark the first entry in the queue in which 
+ * velma clue and return its velma id. If the same wid/pc combo is assigned
+ * multiple velma_ids, we only mark the first clue in the queue in which 
  * warp wid's bit is set high in the mask. 
  *
- * If either A. the warpcluster hasn't been tracked, B. the PC hasn't been 
+ * If either A. the velma_cluster hasn't been tracked, B. the PC hasn't been 
  * tracked, or C. no instance of the bit unset is present, do the following:
- * IF there's space, create new velma and warpcluster entries as necessary,
+ * IF there's space, create new velma and velma_cluster entries as necessary,
  * returning the newly-assigned velma id. If there isn't space, return -1.
  */
 velma_id_t velma_table_t::record_warp_access(warp_id_t wid, velma_pc_t pc){
   velma_id_t access_vid = -1; 
-  warpcluster_entry_t* wc = nullptr;  
+  velma_cluster_t* wc = nullptr;  
   //first: check if we're tracking the warp 
-  if (warpclusters->find(wid/warpcluster_size) != warpclusters->end()){
-    wc = &((*warpclusters)[wid/warpcluster_size]);  
+  if (velma_clusters.find(wid/warps_per_cluster) != velma_clusters.end()){
+    wc = &(velma_clusters[wid/warps_per_cluster]);  
   }
 
   //if we aren't tracking the warp, do we have space to?
-  if (wc == nullptr and warpclusters->size() < clusters_per_sm){
+  if (wc == nullptr and velma_clusters.size() < clusters_per_sm){
     //we do! let's add a new warp 
-    wc = add_warpcluster(wid);
+    wc = add_velma_cluster(wid);
   }
   
   if (wc != nullptr){ 
-    //find and mark the first suitable velma entry. will return -1 if there isn't one. 
+    //find and mark the first suitable velma clue. will return -1 if there isn't one. 
     access_vid = wc->mark_warp_reached_pc(wid, pc);
-    //if we don't find a corresponding entry:
+    //if we don't find a corresponding clue:
     if (access_vid == -1){
-      access_vid = add_velma_entry(wc, pc);
+      access_vid = add_clue(wc, pc);
     }
   }  
-  //if we touched a velma entry, return its velma_id. 
+  //if we touched a velma clue, return its velma_id. 
   return access_vid;
 }
 
-//if there's space, adds a new velma entry for pc to wc->velma_entries
-velma_id_t velma_table_t::add_velma_entry(warpcluster_entry_t* wc, velma_pc_t pc){
+//if there's space, adds a new velma clue for pc to wc->clues
+velma_id_t velma_table_t::add_clue(velma_cluster_t* wc, velma_pc_t pc){
   velma_id_t free_vid = find_free_velma_id();
-  //does this warpcluster have space for a new entry? did we get a velma_id? 
-  if (free_vid > -1 and wc->velma_entries.size() < ids_per_sm / clusters_per_sm){  
-    //add the new entry 
-    wc->velma_entries.emplace_back(velma_entry_t(pc, free_vid, killtimer_start, warpcluster_size));
+  //does this velma_cluster have space for a new clue? did we get a velma_id? 
+  if (free_vid > -1 and wc->clues.size() < ids_per_sm / clusters_per_sm){  
+    //add the new clue 
+    wc->clues.emplace_back(clue_t(pc, free_vid, temperature_start, warps_per_cluster));
     //since we're actually using it, mark vid as taken. 
     mark_velma_id_taken(free_vid);
   }
   return free_vid;
 }
 
-//adds a new warpcluster_entry_t to warpclusters and returns a pointer to it.
-warpcluster_entry_t* velma_table_t::add_warpcluster(warp_id_t wid){
-  warp_id_t wcid = wid/warpcluster_size;
-  warpclusters->insert({wcid, warpcluster_entry_t(wcid)});
-  warpcluster_entry_t* wc_ptr = &((* warpclusters)[wcid]);
+//adds a new velma_cluster_t to velma_clusters and returns a pointer to it.
+velma_cluster_t* velma_table_t::add_velma_cluster(warp_id_t wid){
+  warp_id_t wcid = wid/warps_per_cluster;
+  velma_clusters.insert({wcid, velma_cluster_t(wcid)});
+  velma_cluster_t* wc_ptr = &(velma_clusters[wcid]);
   return wc_ptr;
 }
 
 
-void velma_table_t::set_active_warpcluster(warp_id_t wcid){
-  active_wc = get_warpcluster(wcid); 
+void velma_table_t::set_active_velma_cluster(warp_id_t wcid){
+  active_cluster = get_velma_cluster(wcid); 
 }
 
 
-//returns a pointer to a given warpcluster.  
-warpcluster_entry_t* velma_table_t::get_warpcluster(warp_id_t wcid){
-  warpcluster_entry_t* target = nullptr;
-  if (warpclusters->find(wcid) != warpclusters->end()){
-    target = &(warpclusters->find(wcid)->second);
-  }
-  return target;
+//returns a pointer to a given velma_cluster.  
+velma_cluster_t* velma_table_t::get_velma_cluster(warp_id_t wcid){
+  if (velma_clusters.find(wcid) != velma_clusters.end())
+    return &(velma_clusters[wcid]);
+  else return nullptr;
 }
 
 
-//returns a pointer to the active warpcluster (the one being prioritized) 
-warpcluster_entry_t* velma_table_t::get_active_warpcluster(){
-
-  return active_wc;
-}
 
 
-std::vector<velma_id_t> velma_table_t::evict_expiring_entries(){
-  std::vector<velma_id_t> expiring; 
-  for (auto& wc : *warpclusters){
-    std::vector<velma_id_t> wc_vids = wc.second.report_expiring_vids();
-    for (velma_id_t vid : wc_vids){
-      wc.second.remove_dead_entry(vid);
-      expiring.push_back(vid);
+
+
+std::vector<velma_id_t> velma_table_t::evict_cold_clues(){
+  std::vector<velma_id_t> cold_ids; 
+  for (auto& wc : velma_clusters){
+    std::vector<velma_id_t> cl_cold_ids = wc.second.evict_cold_clues();
+    for (velma_id_t vid : cl_cold_ids){
+      cold_ids.push_back(vid);
     }
   }
-  return expiring;
+  return cold_ids;
 }
+ 
 
 void velma_table_t::free_vids(std::vector<velma_id_t> vids){
   for (auto& vid : vids)
@@ -318,25 +288,16 @@ void velma_table_t::free_vids(std::vector<velma_id_t> vids){
 
 
 /* Cycles the velma_table. 
- * -set the active_velma_id to active_wc->active_velma_id
+ * -set the active_velma_id to active_cluster->active_velma_id
  * -handle expired velma ids 
  *    1. push expired ids to tag_arr for delabeling
  *    2. free expired ids in the velma table. 
  */ 
 void velma_table_t::cycle(){
   //is the table empty? clear all the things. 
-  if (warpclusters->empty()){
-    active_wc = nullptr; 
-    active_velma_id = -1; 
-    for (auto& vid_flag : velma_ids_flags){
-      vid_flag.second = true;
-    }
-    return;
-  }
-
 
   //handle velma_id expirations 
-  std::vector<velma_id_t> expiring_vids = evict_expiring_entries();
+  std::vector<velma_id_t> expiring_vids = evict_cold_clues();
   free_vids(expiring_vids);
   tag_arr->clear_expired_velma_ids(expiring_vids);    
 
@@ -344,16 +305,7 @@ void velma_table_t::cycle(){
   clear_empty_clusters();
   
 
-  //with our table entries managed, we now assess if we should change the active_wc 
-  //and/or the active_vid.
-  if (active_wc == nullptr){
-    if (warpclusters->empty()){
-      active_velma_id = -1;
-    }
-  }
-  else {
-    //now change the active velma_id. 
-    active_velma_id = active_wc->get_active_velma_id();
+  if (!velma_clusters.empty()){
     //have the tag array label all the lines for this cycle. 
     for (auto&  id_addr : cycle_accumulated_vids_addrs){
       tag_arr->label_velma_line(id_addr.first, id_addr.second);
@@ -365,13 +317,13 @@ void velma_table_t::cycle(){
 
 
 
-//this only sort of does what it says. really removes the ative entry. 
-//returns the velma_id of the next entry in the cluster, or -1. 
-velma_id_t velma_table_t::pop_dead_entry(warp_id_t wcid, velma_id_t vid){
+//this only sort of does what it says. really removes the ative clue. 
+//returns the velma_id of the next clue in the cluster, or -1. 
+velma_id_t velma_table_t::pop_cold_clue(warp_id_t wcid, velma_id_t vid){
   velma_id_t new_front_vid = -1;
-  //tracking the warpcluster? 
-  if (warpclusters->find(wcid) != warpclusters->end()){
-    warpcluster_entry_t& wc = (* warpclusters)[wcid];
+  //tracking the velma_cluster? 
+  if (velma_clusters.find(wcid) != velma_clusters.end()){
+    velma_cluster_t& wc = velma_clusters[wcid];
     //tracking the vid? 
     new_front_vid = wc.advance_queue();
     free_velma_id(vid);
@@ -382,64 +334,51 @@ velma_id_t velma_table_t::pop_dead_entry(warp_id_t wcid, velma_id_t vid){
 
 
 bool velma_table_t::warp_active(warp_id_t wid){
-  warp_id_t wcid = wid / warpcluster_size; //relies on integer floor divide 
-  warpcluster_entry_t* awc = get_active_warpcluster();
-  if (awc == nullptr) return false; 
-
-  if (wcid == awc->cluster_id) 
-    return true;
-  else 
-    return false; 
+  warp_id_t wcid = wid / warps_per_cluster; //relies on integer floor divide 
+  if (active_cluster == nullptr) return false; 
+  else return wcid == active_cluster->cluster_id;
 }
 
 
 bool velma_table_t::warp_has_reached_nth_vid(int n, warp_id_t wid){
-  warp_id_t wcid = wid / warpcluster_size;
+  warp_id_t wcid = wid / warps_per_cluster;
   //are we even tracking this warp?
-  if (warpclusters->find(wcid) == warpclusters->end()) return false; 
+  if (velma_clusters.find(wcid) == velma_clusters.end()) return false; 
   
-  warpcluster_entry_t* wc = &(warpclusters->begin()->second); 
+  velma_cluster_t* wc = &(velma_clusters.begin()->second); 
   //does this cluster HAVE n velma entries? 
-  if (wc->velma_entries.size() <= n) return false;
+  if (wc->clues.size() <= n) return false;
 
-  //is this warp's bitmask marked in the nth entry? 
-  if (wc->velma_entries[n].has_warp_reached(wid))
+  //is this warp's bitmask marked in the nth clue? 
+  if (wc->clues[n].has_warp_reached(wid))
     return true;
   else 
     return false; 
 }
 
 bool velma_table_t::warp_unmarked_for_active_vid(warp_id_t wid){
-  warp_id_t wcid = wid / warpcluster_size; 
+  warp_id_t wcid = wid / warps_per_cluster; 
   //get and check the active cluster's existence 
-  warpcluster_entry_t* awc = get_active_warpcluster(); 
-  if (awc == nullptr) return true;
-  //this cluster isn't the active one. 
-  if (awc->cluster_id != wcid) return true; 
-
-  //active vid for the cluster 
-  velma_id_t active_vid = awc->get_active_velma_id(); 
-  if (active_vid == -1 or awc->velma_entries.empty()) return true;
-  //finally, check to see if this warp has reached. 
-  return !(awc->velma_entries.begin()->has_warp_reached(wid));
-}
-
-
-velma_table_t::velma_table_t(int num_velma_ids){
-  //populate velma id table 
-  for (int i = 0; i < num_velma_ids; i++){
-    velma_ids_flags.insert({static_cast<velma_id_t>(i), true});
+  if (active_cluster != nullptr and 
+      active_cluster->cluster_id == wcid and 
+      !active_cluster->clues.empty())
+  {
+    return !(active_cluster->clues.begin()->has_warp_reached(wid));
   }
+  else return true; 
+
 }
+
+
 
 velma_table_t::velma_table_t(shader_core_ctx* m_shader, tag_array* m_tag_arr, int velma_ids_per_sm,
-                            int warps_per_velma_cluster, int velma_clusters_per_sm, int velma_killtimer_start) 
+                            int warps_per_velma_cluster, int velma_clusters_per_sm, int velma_temperature_start) 
                                 : shader(m_shader), 
                                   tag_arr(m_tag_arr), 
                                   ids_per_sm(velma_ids_per_sm),
-                                  warpcluster_size(warps_per_velma_cluster), 
+                                  warps_per_cluster(warps_per_velma_cluster), 
                                   clusters_per_sm(velma_clusters_per_sm),
-                                  killtimer_start(velma_killtimer_start)
+                                  temperature_start(velma_temperature_start)
 {
   //populate velma id table 
   for (int i = 0; i < velma_ids_per_sm; i++){
@@ -466,9 +405,9 @@ velma_status velma_table_t::determine_warp_status(warp_id_t wid){
     else      
       return VELMA_ACTIVE_REACHED;
   } //is this a velma warp? 
-  else if (warpclusters->find(wid / warpcluster_size) != warpclusters->end())
+  else if (velma_clusters.find(wid / warps_per_cluster) != velma_clusters.end())
   { 
-    //has this reached in its first velma entry? 
+    //has this reached in its first velma clue? 
     if (!warp_has_reached_nth_vid(0, wid))
       return VELMA_NOT_REACHED; 
     else 
@@ -483,11 +422,10 @@ velma_status velma_table_t::determine_warp_status(warp_id_t wid){
 void velma_table_t::flush(){
   //YEET ALL THE THINGS!
   //deleta all of our tracking 
-  if (warpclusters != nullptr) warpclusters->clear();
+  velma_clusters.clear();
   cycle_accumulated_vids_addrs.clear();
   //reset our variables 
-  active_wc = nullptr; 
-  active_velma_id = -1;
+  active_cluster = nullptr; 
   //free all of our velma ids 
   for (auto& vid_flag : velma_ids_flags){
     vid_flag.second = true;
@@ -497,15 +435,15 @@ void velma_table_t::flush(){
 
 void velma_table_t::clear_empty_clusters(){
   std::vector<warp_id_t> empty_wc_ids; 
-  for (auto& wid_clust : *warpclusters){
+  for (auto& wid_clust : velma_clusters){
     warp_id_t wcid = wid_clust.first;
-    warpcluster_entry_t* wc = &(wid_clust.second);
-    if (wc->velma_entries.empty()){
+    velma_cluster_t* wc = &(wid_clust.second);
+    if (wc->clues.empty()){
       empty_wc_ids.push_back(wcid); 
     }
   }
   for (warp_id_t wcid : empty_wc_ids){
-    warpclusters->erase(wcid);
+    velma_clusters.erase(wcid);
   }
 }
 
@@ -522,66 +460,24 @@ void velma_table_t::clear_empty_clusters(){
 //get a vid from wid and pc 
 void velma_table_t::charge_timer(warp_id_t wid, velma_pc_t pc){
   if (determine_warp_status(wid) != VELMA_NOT_REACHED) return;
-  warp_id_t wcid = wid / warpcluster_size; 
-  warpcluster_entry_t* wc = get_warpcluster(wcid);
+  warp_id_t wcid = wid / warps_per_cluster; 
+  velma_cluster_t* wc = get_velma_cluster(wcid);
   
   if (wc == nullptr) return;
-  if (wc->velma_entries.empty()) return;
-  wc->velma_entries.begin()->charge_timer();
+  if (wc->clues.empty()) return;
+  wc->clues.begin()->charge_timer();
 }
 
 
 void velma_table_t::reset(){
-  if (warpclusters != nullptr){
-    warpclusters->clear();
-  }
-  else warpclusters = new std::map<warp_id_t, warpcluster_entry_t>();
+  velma_clusters.clear();
+  
   for (auto& id_fl : velma_ids_flags){
     id_fl.second = 1;
   }
-  active_wc = nullptr;
-  active_velma_id = -1;
+  active_cluster = nullptr;
 }
 
 
 
-
-/*
-//does nothing :)
-void nocache_velma_table_t::set_tag_array(tag_array* tag_arr){}
-
-
-void nocache_velma_table_t::cycle(){
-  //is the table empty? clear all the things. 
-  if (warpclusters.empty()){
-    active_wc = nullptr; 
-    active_velma_id = -1; 
-    for (auto& vid_flag : velma_ids_flags){
-      vid_flag.second = true;
-    }
-    return;
-  }
-
-  //handle velma_id expirations 
-  std::vector<velma_id_t> expiring_vids = evict_expiring_entries();
-  free_vids(expiring_vids);
-
-  //clear empty clusters 
-  clear_empty_clusters();
-  
-  //with our table entries managed, we now assess if we should change the active_wc 
-  //and/or the active_vid.
-  if (active_wc == nullptr){
-    if (warpclusters.empty()){
-      active_velma_id = -1;
-    }
-  }
-  else {
-    //now change the active velma_id. 
-    active_velma_id = active_wc->get_active_velma_id();
-    //have the tag array label all the lines for this cycle. 
-  }
-}
-
-*/
 

@@ -195,7 +195,7 @@ void shader_core_ctx::create_schedulers() {
       : sched_config.find("gto") != std::string::npos ? CONCRETE_SCHEDULER_GTO
       : sched_config.find("rrr") != std::string::npos ? CONCRETE_SCHEDULER_RRR
       : sched_config.find("old") != std::string::npos ? CONCRETE_SCHEDULER_OLDEST_FIRST
-      : sched_config.find("velmarr") != std::string::npos ? CONCRETE_SCHEDULER_VELMARR
+      : sched_config.find("velma-rr") != std::string::npos ? CONCRETE_SCHEDULER_VELMARR
       //: sched_config.find("velru_sched") != std::string::npos ? CONCRETE_SCHEDULER_VELRU
       //: sched_config.find("nocaching_velma_rr") != std::string::npos ? CONCRETE_SCHEDULER_NOCACHING_VELMA
       : sched_config.find("warp_limiting") != std::string::npos ? CONCRETE_SCHEDULER_WARP_LIMITING

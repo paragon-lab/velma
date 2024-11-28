@@ -17,12 +17,6 @@
 
 
 
-#define VELMA_warps_per_cluster 8
-#define VELMA_IDS_PER_SM 64
-#define VELMA_CLUSTERS_PER_SM 2
-//result from old histogramming. 
-#define VELMA_temperature_START 1024
-
 
 using velma_id_t = int64_t;
 using velma_temperature_t = uint16_t;

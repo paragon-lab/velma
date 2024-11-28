@@ -467,6 +467,7 @@ void velma_table_t::cool_clue_temperature(warp_id_t wid, velma_pc_t pc){
       break;
     case VELMA_NOT_REACHED:
       get_velma_cluster(wid / warps_per_cluster)->clues.begin()->decrease_temperature();
+      break;
     default: 
       break;
   }

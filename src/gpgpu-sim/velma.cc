@@ -75,6 +75,59 @@ clue_t* velma_cluster_t::get_clue(velma_id_t vid){
   return clue; 
 }
 
+std::vector<clue_t*> velma_cluster_t::get_matching_entries(velma_pc_t pc){
+  std::vector<clue_t*> pc_matching_entries;
+  for (int i = 0; i < clues.size(); i++){
+    if (clues[i].pc == pc) 
+      pc_matching_entries.push_back(&(clues[i]));
+  }
+  return pc_matching_entries;
+}
+
+std::vector<clue_t*> velma_cluster_t::find_reached(warp_id_t wid, velma_pc_t pc){
+  std::vector<clue_t*> matching_entries = get_matching_entries(pc);
+  std::vector<clue_t*> reached_entries;
+  for (int i = 0; i < matching_entries.size(); i++){
+    if (matching_entries[i]->has_warp_reached(wid) == true){
+      reached_entries.push_back(matching_entries[i]);
+    }
+  }
+  return reached_entries;
+}
+
+
+/* If a warp reaches in more than one entry matching the pc, it simply cannot 
+ * be a follower for the active entry. 
+ */ 
+clue_t* velma_cluster_t::first_unreached(warp_id_t wid, velma_pc_t pc){
+  std::vector<clue_t*> matching_entries = get_matching_entries(pc);
+  for (clue_t* entry : matching_entries){
+    if (entry->has_warp_reached(wid) == false) return entry;
+  }
+  return nullptr;
+}
+
+
+//has the warp reached in the active entry for this cluster? 
+bool velma_cluster_t::reached_active(warp_id_t wid){
+  if (!clues.empty()){
+    return clues.begin()->has_warp_reached(wid);
+  }
+}
+
+
+//cooling 
+void velma_cluster_t::charge_unreached_timer(warp_id_t wid, velma_pc_t pc){
+  clue_t* unreached = first_unreached(wid, pc);
+  if (unreached != nullptr and unreached->decrease_temperature() <= 0){
+    //erase unreached if it's gone cold! 
+    clues.erase(std::find(clues.begin(), clues.end(), *unreached));
+  }
+  
+  
+}
+
+
  
 /* Pops the top velma clue, advancing the queue.
  * also returns the velma id of the NEXT element 

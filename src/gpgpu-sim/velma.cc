@@ -36,8 +36,8 @@ inline bool clue_t::has_warp_reached(warp_id_t wid){
 
 inline bool clue_t::all_reached(){
   bool all_reached = true;
-  for (bool reached : reaching_bitmask)
-    all_reached = all_reached and reached;
+  for (int i = 0; i < warps_per_cluster; i++)
+    all_reached = all_reached and reaching_bitmask[i];
   return all_reached;
 }
 
@@ -95,11 +95,48 @@ std::vector<clue_t*> velma_cluster_t::find_reached(warp_id_t wid, velma_pc_t pc)
   return reached_entries;
 }
 
+clue_t* velma_cluster_t::find_last_reached(warp_id_t wid, velma_pc_t pc){
+  std::vector<clue_t*> reaching = find_reached(wid, pc);
+  return (reaching.empty()) ? nullptr : reaching.back();
+}
 
 /* If a warp reaches in more than one entry matching the pc, it simply cannot 
  * be a follower for the active entry. 
  */ 
-clue_t* velma_cluster_t::first_unreached(warp_id_t wid, velma_pc_t pc){
+/* finds the first warp in which the warp in question has not reached. 
+ * this is pc-agnostic. Why? For the active entry, we want to cool 
+ * the temperature every time a warp which has not reached executes
+ * *any* instruction, not just the pc of that entry.
+ */ 
+clue_t* velma_cluster_t::find_first_unreached(warp_id_t wid){
+  for (int i = 0; i < clues.size(); i++){
+    if (!clues[i].has_warp_reached(wid)) return &(clues[i]);
+  }
+  return nullptr;
+}
+
+
+//has the warp reached in the active entry for this cluster? 
+bool velma_cluster_t::reached_active(warp_id_t wid){
+  if (!clues.empty())
+    return clues.begin()->has_warp_reached(wid);
+}
+
+
+inline void velma_cluster_t::erase_entry(clue_t* clue){clues.erase(std::find(clues.begin(), clues.end(), *clue));}
+
+
+
+inline velma_temperature_t velma_cluster_t::cool_clue(clue_t* clue){
+  return clue->decrease_temperature();
+}
+
+inline void velma_cluster_t::mark_warp_reaching(clue_t* clue, warp_id_t wid){
+  clue->mark_warp_reached(wid);
+}
+
+
+clue_t* velma_cluster_t::first_matching_unreached(warp_id_t wid, velma_pc_t pc){
   std::vector<clue_t*> matching_entries = get_matching_entries(pc);
   for (clue_t* entry : matching_entries){
     if (entry->has_warp_reached(wid) == false) return entry;
@@ -108,23 +145,84 @@ clue_t* velma_cluster_t::first_unreached(warp_id_t wid, velma_pc_t pc){
 }
 
 
-//has the warp reached in the active entry for this cluster? 
-bool velma_cluster_t::reached_active(warp_id_t wid){
-  if (!clues.empty()){
-    return clues.begin()->has_warp_reached(wid);
-  }
+
+
+//cooling. will evict if the clue hits 0!
+void velma_cluster_t::mark_first_matching_unreached(warp_id_t wid, velma_pc_t pc){
+  clue_t* unreached = first_matching_unreached(wid, pc);
+  if (unreached != nullptr) unreached->mark_warp_reached(wid);
 }
 
 
-//cooling 
-void velma_cluster_t::charge_unreached_timer(warp_id_t wid, velma_pc_t pc){
-  clue_t* unreached = first_unreached(wid, pc);
-  if (unreached != nullptr and unreached->decrease_temperature() <= 0){
-    //erase unreached if it's gone cold! 
-    clues.erase(std::find(clues.begin(), clues.end(), *unreached));
+bool velma_cluster_t::warp_unreached_active(warp_id_t wid){
+  if (clues.size() > 1) return clues.begin->has_warp_reached(wid);
+  else return false;
+}
+
+
+velma_id_t velma_cluster_t::check_and_evict_cold(clue_t* clue){
+  velma_id_t evicted_id = -1;
+  if (clue->is_cold() and clue != nullptr){ 
+    evicted_id = clue->velma_id; 
+    erase_entry(clue);
   }
+  return evicted_id; 
+}
+
+
+/* We need to do a few things here:
+ *  1. 
+ *
+ */
+
+clue_t* velma_cluster_t::charge_first_unreached(warp_id_t wid){
+  clue_t* unreached = find_first_unreached(wid);;
+  if (unreached != nullptr){
+    unreached->decrease_temperature();
+  }
+  return unreached;
+}
+
+
+clue_t* velma_cluster_t::attempt_add_entry(velma_pc_t pc){
+  clue_t* new_clue = nullptr; 
+  velma_id_t free_vid = find_free_velma_id();
+  if (free_vid != -1){
+    mark_velma_id_taken(free_vid);
+    clues.emplace_back(clue_t(pc, free_vid, temperature_start, warps_per_cluster));
+    new_clue = &(clues.back());
+  }
+  return new_clue;
+}
+
+
+warp_access_ids_t velma_cluster_t::process_tracked_warp_access(warp_id_t wid, velma_pc_t pc){
+  /*1st:  Find the first entry in which the warp is unmarked. Cool its temperature. */ 
+  clue_t* charged_unreached = charge_first_unreached(wid);
+
+  /*2nd:  Find the first entry matching PC in which the warp is unmarked. Mark
+          it as reaching for that entry.*/ 
+  clue_t* marked_reached = mark_first_matching_unreached(wid, pc);
+
+  /*3rd: Check if the unreached and charged entries are the same. */
+  bool charged_marked_same = marked_reached == charged_unreached and 
+                        charged_unreached != nullptr; 
+
+  /*4th: Check if either clue is cold and evict as necessary.
+   *     Successful eviction returns the velma_id of the evicted element.*/
+
+  velma_id_t charged_id = check_and_evict_cold(charged_unreached);
+  velma_id_t marked_id = (charged_marked_same) ? charged_id : check_and_evict_cold(marked_reached);
   
-  
+  /*5th: If we did not mark one, and there's space, add an entry and mark it reached!*/
+  clue_t* new_entry = nullptr;
+  if (marked_id == -1){
+    new_entry = attempt_add_entry(pc);
+    if (new_entry != nullptr) new_entry->mark_warp_reached(wid);
+  }
+
+  /*6th: Package evictions. */
+   eviction_ids(charged_id, marked_id);
 }
 
 

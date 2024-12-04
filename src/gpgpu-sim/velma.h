@@ -19,14 +19,28 @@
 
 
 using velma_id_t = int64_t;
-using velma_temperature_t = uint16_t;
+using velma_temperature_t = int16_t;
 using warp_id_t = unsigned; 
 using velma_pc_t = unsigned; 
 using velma_addr_t = uint64_t; 
 
+struct warp_access_ids_t{
+  velma_id_t charged_evicted;
+  velma_id_t marked_evicted;
+  velma_id_t new_entry;
+  
+  warp_access_ids_t(){
+    charged_evicted = -1;
+    marked_evicted = -1;
+    new_entry = -1;
+  }
 
-
-
+  warp_access_ids_t(velma_id_t charged_, velma_id_t marked_, velma_id_t new_entry_)
+                  : charged_evicted(charged_), 
+                    marked_evicted(marked_),
+                    new_entry(new_entry_){}
+  ~warp_access_ids_t(){}
+};
 
 
 
